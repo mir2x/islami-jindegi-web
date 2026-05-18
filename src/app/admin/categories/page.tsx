@@ -1,139 +1,25 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus, Pencil, Trash2, Tag, ChevronRight, FolderOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCategoryStore } from '@/store/category-store'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type { Category } from '@/types'
 
-interface CategoryFormState {
-  title: string
-  position: string
-  parentId: string
-}
-
-const empty: CategoryFormState = { title: '', position: '', parentId: '' }
-
-function CategorySheet({
-  open,
-  onOpenChange,
-  category,
-  parentCategories,
-  defaultParentId,
-  onSuccess,
-}: {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  category: Category | null
-  parentCategories: Category[]
-  defaultParentId?: string
-  onSuccess: () => void
-}) {
-  const { create, update } = useCategoryStore()
-  const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState<CategoryFormState>(empty)
-
-  useEffect(() => {
-    if (open) {
-      setForm(category
-        ? { title: category.title, position: String(category.position), parentId: category.parentId ?? '' }
-        : { ...empty, parentId: defaultParentId ?? '' }
-      )
-    }
-  }, [open, category, defaultParentId])
-
-  function set(field: keyof CategoryFormState, value: string) {
-    setForm(prev => ({ ...prev, [field]: value }))
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.title.trim()) { toast.error('Title is required'); return }
-    setLoading(true)
-    try {
-      const payload = {
-        title: form.title.trim(),
-        position: form.position ? parseInt(form.position) : undefined,
-        parentId: form.parentId || null,
-      }
-      if (category) {
-        await update(category.id, payload)
-        toast.success('Category updated')
-      } else {
-        await create(payload)
-        toast.success('Category created')
-      }
-      onSuccess()
-    } catch {
-      toast.error('Something went wrong')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const isEdit = !!category
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="mb-6">
-          <SheetTitle>{isEdit ? 'Edit Category' : 'Add Category'}</SheetTitle>
-        </SheetHeader>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-1.5">
-            <Label>Title <span className="text-destructive">*</span></Label>
-            <Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="Category title" maxLength={100} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Parent Category</Label>
-            <Select value={form.parentId || 'none'} onValueChange={v => set('parentId', !v || v === 'none' ? '' : v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Top-level category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— Top-level category</SelectItem>
-                {parentCategories.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Position</Label>
-            <Input type="number" value={form.position} onChange={e => set('position', e.target.value)} placeholder="Auto" min={1} />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Saving...' : isEdit ? 'Update' : 'Create'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
 export default function CategoriesPage() {
+  const router = useRouter()
   const { categories, loading, fetch, remove } = useCategoryStore()
 
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<Category | null>(null)
-  const [defaultParentId, setDefaultParentId] = useState<string | undefined>()
   const [deleting, setDeleting] = useState<Category | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   useEffect(() => { fetch() }, [fetch])
 
-  // Auto-expand all parents on load
   useEffect(() => {
     if (categories.length > 0) {
       setExpanded(new Set(categories.map(c => c.id)))
@@ -141,18 +27,6 @@ export default function CategoriesPage() {
   }, [categories])
 
   const parentCategories = categories.filter(c => !c.parentId)
-
-  function openCreate(parentId?: string) {
-    setEditing(null)
-    setDefaultParentId(parentId)
-    setSheetOpen(true)
-  }
-
-  function openEdit(cat: Category) {
-    setEditing(cat)
-    setDefaultParentId(undefined)
-    setSheetOpen(true)
-  }
 
   function toggleExpand(id: string) {
     setExpanded(prev => {
@@ -191,7 +65,7 @@ export default function CategoriesPage() {
             )}
           </p>
         </div>
-        <Button onClick={() => openCreate()} className="gap-2 shadow-sm">
+        <Button onClick={() => router.push('/admin/categories/new')} className="gap-2 shadow-sm">
           <Plus className="w-4 h-4" /> Add Category
         </Button>
       </div>
@@ -232,7 +106,7 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                   <Button
                     variant="ghost" size="icon"
-                    onClick={() => openCreate(parent.id)}
+                    onClick={() => router.push(`/admin/categories/new?parentId=${parent.id}`)}
                     className="h-7 w-7 text-muted-foreground hover:text-primary"
                     title="Add subcategory"
                   >
@@ -240,7 +114,7 @@ export default function CategoriesPage() {
                   </Button>
                   <Button
                     variant="ghost" size="icon"
-                    onClick={() => openEdit(parent)}
+                    onClick={() => router.push(`/admin/categories/${parent.id}/edit`)}
                     className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -266,7 +140,7 @@ export default function CategoriesPage() {
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                         <Button
                           variant="ghost" size="icon"
-                          onClick={() => openEdit(child)}
+                          onClick={() => router.push(`/admin/categories/${child.id}/edit`)}
                           className="h-7 w-7 text-muted-foreground hover:text-foreground"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -287,15 +161,6 @@ export default function CategoriesPage() {
           ))}
         </div>
       )}
-
-      <CategorySheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        category={editing}
-        parentCategories={parentCategories}
-        defaultParentId={defaultParentId}
-        onSuccess={() => { setSheetOpen(false); fetch() }}
-      />
 
       <Dialog open={!!deleting} onOpenChange={o => !o && setDeleting(null)}>
         <DialogContent>

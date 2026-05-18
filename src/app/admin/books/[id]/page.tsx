@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowLeft, BookOpen, ChevronDown, ChevronRight,
-  ExternalLink, Pencil, Globe, BookMarked, Tag, Users,
+  ExternalLink, Pencil, Globe, BookMarked, Tag, Users, Plus,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -13,78 +13,36 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { BookDetail, Chapter, SubChapter } from '@/types'
 
 function SubChapterRow({ sub }: { sub: SubChapter }) {
+  const router = useRouter()
   const [expanded, setExpanded] = useState(false)
 
   return (
     <div className="border-l-2 border-border ml-6 pl-4">
-      <button
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-start gap-2.5 py-2.5 text-left group"
-      >
-        <span className="mt-0.5 shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
-          {expanded
-            ? <ChevronDown className="w-3.5 h-3.5" />
-            : <ChevronRight className="w-3.5 h-3.5" />}
-        </span>
-        <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors leading-snug">
-          {sub.title}
-        </span>
-      </button>
+      <div className="flex items-start gap-2 group">
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="flex-1 flex items-start gap-2.5 py-2.5 text-left min-w-0"
+        >
+          <span className="mt-0.5 shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
+            {expanded
+              ? <ChevronDown className="w-3.5 h-3.5" />
+              : <ChevronRight className="w-3.5 h-3.5" />}
+          </span>
+          <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors leading-snug">
+            {sub.title}
+          </span>
+        </button>
+        <button
+          onClick={() => router.push(`/admin/subchapters/${sub.id}/edit`)}
+          className="shrink-0 mt-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+          title="Edit subchapter"
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+      </div>
       {expanded && sub.body && (
         <div className="pb-3 pr-2">
-          <div
-            className="prose-content"
-            dangerouslySetInnerHTML={{ __html: sub.body }}
-          />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ChapterRow({ chapter, index }: { chapter: Chapter; index: number }) {
-  const [expanded, setExpanded] = useState(false)
-
-  return (
-    <div className="border border-border rounded-xl overflow-hidden">
-      <button
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left bg-card hover:bg-muted/30 transition-colors"
-      >
-        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-          {index}
-        </span>
-        <span className="flex-1 font-semibold text-foreground leading-snug">{chapter.title}</span>
-        <div className="flex items-center gap-2 shrink-0">
-          {chapter.subChapters.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {chapter.subChapters.length} sub{chapter.subChapters.length === 1 ? '' : 's'}
-            </span>
-          )}
-          {expanded
-            ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-        </div>
-      </button>
-
-      {expanded && (
-        <div className="px-5 pb-4 pt-3 border-t border-border bg-card">
-          {chapter.body && (
-            <div
-              className="prose-content mb-4"
-              dangerouslySetInnerHTML={{ __html: chapter.body }}
-            />
-          )}
-          {chapter.subChapters.length > 0 && (
-            <div className="space-y-0.5">
-              {chapter.subChapters.map(sub => (
-                <SubChapterRow key={sub.id} sub={sub} />
-              ))}
-            </div>
-          )}
-          {!chapter.body && chapter.subChapters.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">No content</p>
-          )}
+          <div className="prose-content" dangerouslySetInnerHTML={{ __html: sub.body }} />
         </div>
       )}
     </div>
@@ -105,12 +63,6 @@ export default function BookDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  function reload() {
-    setLoading(true)
-    api.get<BookDetail>(`/api/books/${id}`)
-      .then(setBook)
-      .finally(() => setLoading(false))
-  }
 
   const totalSubChapters = book?.chapters.reduce((sum, c) => sum + c.subChapters.length, 0) ?? 0
 
@@ -282,16 +234,19 @@ export default function BookDetailPage() {
               {totalSubChapters > 0 && ` · ${totalSubChapters} subchapter${totalSubChapters !== 1 ? 's' : ''}`}
             </p>
           </div>
-          {book.chapters.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setExpandAll(v => !v)}
-              className="text-muted-foreground text-xs"
-            >
-              {expandAll ? 'Collapse all' : 'Expand all'}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => router.push(`/admin/subchapters/new?bookId=${id}`)} className="gap-1.5 text-xs">
+              <Plus className="w-3.5 h-3.5" /> Add Subchapter
             </Button>
-          )}
+            <Button variant="outline" size="sm" onClick={() => router.push(`/admin/chapters/new?bookId=${id}`)} className="gap-1.5 text-xs">
+              <Plus className="w-3.5 h-3.5" /> Add Chapter
+            </Button>
+            {book.chapters.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setExpandAll(v => !v)} className="text-muted-foreground text-xs">
+                {expandAll ? 'Collapse all' : 'Expand all'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {book.chapters.length === 0 ? (
@@ -330,30 +285,40 @@ function ChapterRowControlled({
   index: number
   forceExpanded: boolean
 }) {
+  const router = useRouter()
   const [localExpanded, setLocalExpanded] = useState(false)
   const expanded = forceExpanded || localExpanded
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
-      <button
-        onClick={() => setLocalExpanded(v => !v)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left bg-card hover:bg-muted/30 transition-colors"
-      >
-        <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-          {index}
-        </span>
-        <span className="flex-1 font-semibold text-foreground leading-snug">{chapter.title}</span>
-        <div className="flex items-center gap-2 shrink-0">
-          {chapter.subChapters.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {chapter.subChapters.length} sub{chapter.subChapters.length === 1 ? '' : 's'}
-            </span>
-          )}
-          {expanded
-            ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-        </div>
-      </button>
+      <div className="flex items-center gap-3 px-5 py-4 bg-card hover:bg-muted/30 transition-colors group">
+        <button
+          onClick={() => setLocalExpanded(v => !v)}
+          className="flex-1 flex items-center gap-3 text-left min-w-0"
+        >
+          <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+            {index}
+          </span>
+          <span className="flex-1 font-semibold text-foreground leading-snug">{chapter.title}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {chapter.subChapters.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {chapter.subChapters.length} sub{chapter.subChapters.length === 1 ? '' : 's'}
+              </span>
+            )}
+            {expanded
+              ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+          </div>
+        </button>
+        <button
+          onClick={() => router.push(`/admin/chapters/${chapter.id}/edit`)}
+          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+          title="Edit chapter"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {expanded && (
         <div className="px-5 pb-4 pt-3 border-t border-border bg-card">
