@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import type { MadrasahDetail, MadrasahInfoItem, MadrasahPhotoItem } from '@/types'
 
 interface Props {
@@ -71,10 +72,10 @@ export function MadrasahForm({ madrasah }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
-    if (!introduction.trim()) { toast.error('Introduction is required'); return }
+    if (!introduction.trim() || introduction === '<p></p>') { toast.error('Introduction is required'); return }
 
     const infoPayload: MadrasahInfoItem[] = infos
-      .filter(i => i.label.trim() && i.info.trim())
+      .filter(i => i.label.trim() && i.info.trim() && i.info !== '<p></p>')
       .map((i, idx) => ({ id: null, label: i.label.trim(), info: i.info.trim(), position: idx + 1 }))
 
     const photoPayload: MadrasahPhotoItem[] = photos
@@ -140,7 +141,7 @@ export function MadrasahForm({ madrasah }: Props) {
 
           <div className="space-y-1.5">
             <Label>Introduction <span className="text-destructive">*</span></Label>
-            <Textarea value={introduction} onChange={e => setIntroduction(e.target.value)} placeholder="Full introduction..." rows={6} />
+            <RichTextEditor value={introduction} onChange={setIntroduction} placeholder="Full introduction..." minHeight="180px" />
           </div>
 
           <div className="w-40 space-y-1.5">
@@ -166,18 +167,18 @@ export function MadrasahForm({ madrasah }: Props) {
           {infos.map((info, idx) => (
             <div key={info.key} className="flex gap-2 items-start">
               <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-2.5 shrink-0" />
-              <div className="grid grid-cols-2 gap-2 flex-1">
+              <div className="flex-1 space-y-2">
                 <Input
                   value={info.label}
                   onChange={e => updateInfo(info.key, 'label', e.target.value)}
                   placeholder={`Label ${idx + 1} (e.g. Founded)`}
                   maxLength={100}
                 />
-                <Input
+                <RichTextEditor
                   value={info.info}
-                  onChange={e => updateInfo(info.key, 'info', e.target.value)}
+                  onChange={v => updateInfo(info.key, 'info', v)}
                   placeholder="Value"
-                  maxLength={300}
+                  minHeight="80px"
                 />
               </div>
               <Button

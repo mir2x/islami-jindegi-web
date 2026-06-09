@@ -8,7 +8,7 @@ import { useNamazTimeStore } from '@/store/namaz-time-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import type { NamazTimeDetail } from '@/types'
 
 interface Props {
@@ -41,7 +41,7 @@ export function NamazTimeForm({ namazTime }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
-    if (!masail.trim()) { toast.error('Masail is required'); return }
+    if (!masail.trim() || masail === '<p></p>') { toast.error('Masail is required'); return }
 
     setLoading(true)
     try {
@@ -111,7 +111,7 @@ export function NamazTimeForm({ namazTime }: Props) {
               <span className="ml-2 text-xs text-muted-foreground font-normal">legal rulings</span>
               <span className="text-destructive ml-1">*</span>
             </Label>
-            <Textarea value={masail} onChange={e => setMasail(e.target.value)} placeholder="Write masail content..." rows={8} />
+            <RichTextEditor value={masail} onChange={setMasail} placeholder="Write masail content..." minHeight="220px" />
           </div>
 
           <div className="space-y-1.5">
@@ -119,7 +119,7 @@ export function NamazTimeForm({ namazTime }: Props) {
               Fazail
               <span className="ml-2 text-xs text-muted-foreground font-normal">virtues</span>
             </Label>
-            <Textarea value={fazail} onChange={e => setFazail(e.target.value)} placeholder="Write fazail content..." rows={6} />
+            <RichTextEditor value={fazail} onChange={setFazail} placeholder="Write fazail content..." minHeight="160px" />
           </div>
         </div>
 
