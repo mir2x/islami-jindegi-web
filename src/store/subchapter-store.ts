@@ -7,7 +7,7 @@ interface SubChapterStore {
   loading: boolean
   fetch: (params?: { page?: number; pageSize?: number; search?: string; bookId?: string }) => Promise<void>
   create: (data: { chapterId: string; parentSubChapterId?: string | null; title: string; body?: string | null; position?: number }) => Promise<void>
-  update: (id: string, data: { title: string; body?: string | null; position?: number; parentSubChapterId?: string | null }) => Promise<void>
+  update: (id: string, data: { title: string; body?: string | null; position?: number; chapterId?: string; parentSubChapterId?: string | null }) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 

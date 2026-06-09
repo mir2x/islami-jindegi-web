@@ -54,113 +54,116 @@ export default function CategoriesPage() {
   const totalCategories = categories.reduce((sum, c) => sum + 1 + c.children.length, 0)
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {loading ? 'Loading...' : (
-              <><span className="font-semibold text-foreground">{parentCategories.length}</span> categories · <span className="font-semibold text-foreground">{totalCategories - parentCategories.length}</span> subcategories</>
-            )}
-          </p>
+    <div className="h-full flex flex-col overflow-hidden">
+
+      {/* ── Fixed top section ── */}
+      <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {loading ? 'Loading...' : (
+                <><span className="font-semibold text-foreground">{parentCategories.length}</span> categories · <span className="font-semibold text-foreground">{totalCategories - parentCategories.length}</span> subcategories</>
+              )}
+            </p>
+          </div>
+          <Button onClick={() => router.push('/admin/categories/new')} className="gap-2 shadow-sm">
+            <Plus className="w-4 h-4" /> Add Category
+          </Button>
         </div>
-        <Button onClick={() => router.push('/admin/categories/new')} className="gap-2 shadow-sm">
-          <Plus className="w-4 h-4" /> Add Category
-        </Button>
       </div>
 
-      {/* Tree */}
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : categories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 border border-dashed rounded-xl">
-          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-3">
-            <Tag className="w-5 h-5 text-muted-foreground/50" />
+      {/* ── Scrollable list area ── */}
+      <div className="flex-1 overflow-y-auto px-8 pb-6">
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+            ))}
           </div>
-          <p className="font-medium">No categories yet</p>
-          <p className="text-sm text-muted-foreground mt-1">Add your first category to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {categories.map(parent => (
-            <div key={parent.id} className="bg-card border rounded-xl overflow-hidden shadow-sm">
-              {/* Parent row */}
-              <div className="flex items-center gap-3 px-4 py-3.5 group">
-                <button
-                  onClick={() => toggleExpand(parent.id)}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ChevronRight className={`w-4 h-4 transition-transform ${expanded.has(parent.id) ? 'rotate-90' : ''}`} />
-                </button>
-                <FolderOpen className="w-4 h-4 text-primary shrink-0" />
-                <span className="flex-1 font-semibold">{parent.title}</span>
-                <span className="text-xs text-muted-foreground mr-2">
-                  {parent.children.length > 0 && `${parent.children.length} sub`}
-                </span>
-                <span className="text-xs text-muted-foreground w-8 text-right">{parent.position}</span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => router.push(`/admin/categories/new?parentId=${parent.id}`)}
-                    className="h-7 w-7 text-muted-foreground hover:text-primary"
-                    title="Add subcategory"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => router.push(`/admin/categories/${parent.id}/edit`)}
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => setDeleting(parent)}
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Children */}
-              {expanded.has(parent.id) && parent.children.length > 0 && (
-                <div className="border-t divide-y divide-border/60">
-                  {parent.children.map(child => (
-                    <div key={child.id} className="flex items-center gap-3 px-4 py-3 pl-11 bg-muted/20 group">
-                      <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <span className="flex-1 text-sm text-foreground/80">{child.title}</span>
-                      <span className="text-xs text-muted-foreground w-8 text-right">{child.position}</span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
-                        <Button
-                          variant="ghost" size="icon"
-                          onClick={() => router.push(`/admin/categories/${child.id}/edit`)}
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon"
-                          onClick={() => setDeleting(child)}
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+        ) : categories.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed rounded-xl">
+            <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-3">
+              <Tag className="w-5 h-5 text-muted-foreground/50" />
             </div>
-          ))}
-        </div>
-      )}
+            <p className="font-medium">No categories yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Add your first category to get started</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {categories.map(parent => (
+              <div key={parent.id} className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                <div className="flex items-center gap-3 px-4 py-3.5 group">
+                  <button
+                    onClick={() => toggleExpand(parent.id)}
+                    className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronRight className={`w-4 h-4 transition-transform ${expanded.has(parent.id) ? 'rotate-90' : ''}`} />
+                  </button>
+                  <FolderOpen className="w-4 h-4 text-primary shrink-0" />
+                  <span className="flex-1 font-semibold">{parent.title}</span>
+                  <span className="text-xs text-muted-foreground mr-2">
+                    {parent.children.length > 0 && `${parent.children.length} sub`}
+                  </span>
+                  <span className="text-xs text-muted-foreground w-8 text-right">{parent.position}</span>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                    <Button
+                      variant="ghost" size="icon"
+                      onClick={() => router.push(`/admin/categories/new?parentId=${parent.id}`)}
+                      className="h-7 w-7 text-muted-foreground hover:text-primary"
+                      title="Add subcategory"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon"
+                      onClick={() => router.push(`/admin/categories/${parent.id}/edit`)}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon"
+                      onClick={() => setDeleting(parent)}
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+
+                {expanded.has(parent.id) && parent.children.length > 0 && (
+                  <div className="border-t divide-y divide-border/60">
+                    {parent.children.map(child => (
+                      <div key={child.id} className="flex items-center gap-3 px-4 py-3 pl-11 bg-muted/20 group">
+                        <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span className="flex-1 text-sm text-foreground/80">{child.title}</span>
+                        <span className="text-xs text-muted-foreground w-8 text-right">{child.position}</span>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                          <Button
+                            variant="ghost" size="icon"
+                            onClick={() => router.push(`/admin/categories/${child.id}/edit`)}
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon"
+                            onClick={() => setDeleting(child)}
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <Dialog open={!!deleting} onOpenChange={o => !o && setDeleting(null)}>
         <DialogContent>

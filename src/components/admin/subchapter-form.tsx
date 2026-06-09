@@ -73,13 +73,14 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
         title: form.title.trim(),
         body: form.body || null,
         position: form.position ? parseInt(form.position) : undefined,
+        chapterId: form.chapterId || undefined,
         parentSubChapterId: form.parentSubChapterId || null,
       }
       if (isEdit) {
         await update(subChapter.id, payload)
         toast.success('Subchapter updated')
       } else {
-        await create({ chapterId: form.chapterId, ...payload })
+        await create({ ...payload, chapterId: form.chapterId })
         toast.success('Subchapter created')
       }
       router.back()
@@ -111,91 +112,85 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
           <div className="bg-card border rounded-xl p-6 space-y-5">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
-            {/* Book selector — hidden in edit mode since parent can't change */}
-            {!isEdit && (
-              <div className="space-y-1.5">
-                <Label>Book <span className="text-destructive">*</span></Label>
-                <Popover open={bookOpen} onOpenChange={setBookOpen}>
-                  <PopoverTrigger className={cn(
-                    'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm',
-                    form.bookId ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
-                    <span className="truncate">{allBooks.find(b => b.id === form.bookId)?.title ?? 'Select book...'}</span>
-                    <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search books..." />
-                      <CommandList>
-                        <CommandEmpty>No books found.</CommandEmpty>
-                        <CommandGroup>
-                          {allBooks.map(b => (
-                            <CommandItem key={b.id} value={b.title} onSelect={() => {
-                              setForm(f => ({ ...f, bookId: b.id, chapterId: '', parentSubChapterId: '' }))
-                              setBookOpen(false)
+            {/* Book selector */}
+            <div className="space-y-1.5">
+              <Label>Book <span className="text-destructive">*</span></Label>
+              <Popover open={bookOpen} onOpenChange={setBookOpen}>
+                <PopoverTrigger className={cn(
+                  'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm',
+                  form.bookId ? 'text-foreground' : 'text-muted-foreground'
+                )}>
+                  <span className="truncate">{allBooks.find(b => b.id === form.bookId)?.title ?? 'Select book...'}</span>
+                  <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search books..." />
+                    <CommandList>
+                      <CommandEmpty>No books found.</CommandEmpty>
+                      <CommandGroup>
+                        {allBooks.map(b => (
+                          <CommandItem key={b.id} value={b.title} onSelect={() => {
+                            setForm(f => ({ ...f, bookId: b.id, chapterId: '', parentSubChapterId: '' }))
+                            setBookOpen(false)
+                          }}>
+                            <Check className={cn('mr-2 w-4 h-4', form.bookId === b.id ? 'opacity-100' : 'opacity-0')} />
+                            {b.title}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Parent picker — always editable */}
+            <div className="space-y-1.5">
+              <Label>Parent <span className="text-destructive">*</span></Label>
+              <Popover open={parentOpen} onOpenChange={setParentOpen}>
+                <PopoverTrigger disabled={!form.bookId} className={cn(
+                  'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm disabled:opacity-50',
+                  (form.chapterId || form.parentSubChapterId) ? 'text-foreground' : 'text-muted-foreground'
+                )}>
+                  <span className="truncate">{parentLabel}</span>
+                  <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search..." />
+                    <CommandList>
+                      <CommandEmpty>No results.</CommandEmpty>
+                      {bookChapters.length > 0 && (
+                        <CommandGroup heading="Chapter">
+                          {bookChapters.map(c => (
+                            <CommandItem key={c.id} value={c.title} onSelect={() => {
+                              setForm(f => ({ ...f, chapterId: c.id, parentSubChapterId: '' }))
+                              setParentOpen(false)
                             }}>
-                              <Check className={cn('mr-2 w-4 h-4', form.bookId === b.id ? 'opacity-100' : 'opacity-0')} />
-                              {b.title}
+                              <Check className={cn('mr-2 w-4 h-4', form.chapterId === c.id && !form.parentSubChapterId ? 'opacity-100' : 'opacity-0')} />
+                              {c.title}
                             </CommandItem>
                           ))}
                         </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            {/* Parent picker */}
-            <div className="space-y-1.5">
-              <Label>Parent <span className="text-destructive">*</span></Label>
-              {isEdit ? (
-                <p className="text-sm font-medium text-foreground">{subChapter.chapterTitle}</p>
-              ) : (
-                <Popover open={parentOpen} onOpenChange={setParentOpen}>
-                  <PopoverTrigger disabled={!form.bookId} className={cn(
-                    'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm disabled:opacity-50',
-                    (form.chapterId || form.parentSubChapterId) ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
-                    <span className="truncate">{parentLabel}</span>
-                    <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search..." />
-                      <CommandList>
-                        <CommandEmpty>No results.</CommandEmpty>
-                        {bookChapters.length > 0 && (
-                          <CommandGroup heading="Chapter">
-                            {bookChapters.map(c => (
-                              <CommandItem key={c.id} value={c.title} onSelect={() => {
-                                setForm(f => ({ ...f, chapterId: c.id, parentSubChapterId: '' }))
-                                setParentOpen(false)
-                              }}>
-                                <Check className={cn('mr-2 w-4 h-4', form.chapterId === c.id && !form.parentSubChapterId ? 'opacity-100' : 'opacity-0')} />
-                                {c.title}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        )}
-                        {allSubChapters.length > 0 && (
-                          <CommandGroup heading="Subchapter">
-                            {allSubChapters.map(s => (
-                              <CommandItem key={s.id} value={s.title} onSelect={() => {
-                                setForm(f => ({ ...f, chapterId: s.chapterId, parentSubChapterId: s.id }))
-                                setParentOpen(false)
-                              }}>
-                                <Check className={cn('mr-2 w-4 h-4', form.parentSubChapterId === s.id ? 'opacity-100' : 'opacity-0')} />
-                                <span className="pl-2">{s.title}</span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        )}
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              )}
+                      )}
+                      {allSubChapters.length > 0 && (
+                        <CommandGroup heading="Subchapter">
+                          {allSubChapters.filter(s => s.id !== subChapter?.id).map(s => (
+                            <CommandItem key={s.id} value={s.title} onSelect={() => {
+                              setForm(f => ({ ...f, chapterId: s.chapterId, parentSubChapterId: s.id }))
+                              setParentOpen(false)
+                            }}>
+                              <Check className={cn('mr-2 w-4 h-4', form.parentSubChapterId === s.id ? 'opacity-100' : 'opacity-0')} />
+                              <span className="pl-2">{s.title}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-1.5">

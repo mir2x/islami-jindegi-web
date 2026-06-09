@@ -21,8 +21,6 @@ import type { Book, ChapterListItem, SubChapterListItem } from '@/types'
 
 type Tab = 'books' | 'chapters' | 'subchapters'
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function BooksPage() {
   const { result, loading, fetch, remove } = useBookStore()
   const { fetchAll: fetchAuthors, all: authors } = useAuthorStore()
@@ -93,9 +91,10 @@ export default function BooksPage() {
   const isLoading = tab === 'books' ? loading : tab === 'chapters' ? chapterLoading : subLoading
 
   return (
-    <div className="min-h-full flex flex-col">
-      <div className="flex-1 p-8">
-        {/* Header */}
+    <div className="h-full flex flex-col overflow-hidden">
+
+      {/* ── Fixed top section ── */}
+      <div className="shrink-0 px-8 pt-8 bg-background">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Books</h1>
@@ -108,8 +107,7 @@ export default function BooksPage() {
           {tab === 'subchapters' && <Button onClick={() => router.push('/admin/subchapters/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Subchapter</Button>}
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6 border-b border-border">
+        <div className="flex items-center gap-1 border-b border-border">
           {(['books', 'chapters', 'subchapters'] as Tab[]).map(t => (
             <button key={t} onClick={() => switchTab(t)} className={cn('px-4 py-2 text-sm font-medium transition-colors capitalize border-b-2 -mb-px', tab === t ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}>
               {t}
@@ -117,8 +115,7 @@ export default function BooksPage() {
           ))}
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex flex-wrap gap-3 py-4">
           <div className="relative flex-1 min-w-56 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder={`Search ${tab}...`} value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9 bg-card" />
@@ -191,19 +188,24 @@ export default function BooksPage() {
             </Popover>
           )}
         </div>
+      </div>
 
-        {/* Tables */}
+      {/* ── Scrollable table area ── */}
+      <div className="flex-1 overflow-y-auto px-8 pb-6">
+
         {tab === 'books' && (
-          <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
             <table className="w-full">
-              <thead><tr className="border-b bg-muted/40">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authors</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
-                <th className="px-5 py-3.5 w-24" />
-              </tr></thead>
+              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
+                <tr className="border-b">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authors</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
+                  <th className="px-5 py-3.5 w-24" />
+                </tr>
+              </thead>
               <tbody className="divide-y divide-border/60">
                 {loading && Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
@@ -237,8 +239,8 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><Badge variant="outline" className="text-xs font-medium">{book.language}</Badge></td>
                     <td className="px-5 py-4">
                       {book.published
-                        ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Published</span>
-                        : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
+                        ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
+                        : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
                     </td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{book.position}</span></td>
                     <td className="px-5 py-4">
@@ -255,15 +257,17 @@ export default function BooksPage() {
         )}
 
         {tab === 'chapters' && (
-          <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
             <table className="w-full">
-              <thead><tr className="border-b bg-muted/40">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-24">Subs</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
-                <th className="px-5 py-3.5 w-24" />
-              </tr></thead>
+              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
+                <tr className="border-b">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-24">Subs</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
+                  <th className="px-5 py-3.5 w-24" />
+                </tr>
+              </thead>
               <tbody className="divide-y divide-border/60">
                 {chapterLoading && Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
@@ -297,15 +301,17 @@ export default function BooksPage() {
         )}
 
         {tab === 'subchapters' && (
-          <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
             <table className="w-full">
-              <thead><tr className="border-b bg-muted/40">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subchapter</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
-                <th className="px-5 py-3.5 w-24" />
-              </tr></thead>
+              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
+                <tr className="border-b">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subchapter</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
+                  <th className="px-5 py-3.5 w-24" />
+                </tr>
+              </thead>
               <tbody className="divide-y divide-border/60">
                 {subLoading && Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
@@ -338,7 +344,6 @@ export default function BooksPage() {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-5">
             <p className="text-sm text-muted-foreground">Page <span className="font-medium text-foreground">{page}</span> of <span className="font-medium text-foreground">{totalPages}</span></p>

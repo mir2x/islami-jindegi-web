@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useCallback, useRef, useState } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, type Editor, Extension } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
+import { TextStyle } from '@tiptap/extension-text-style'
+import { FontSize } from '@tiptap/extension-font-size'
 import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableHeader } from '@tiptap/extension-table-header'
@@ -22,7 +24,102 @@ import {
   Undo, Redo, RowsIcon, Columns3, Trash2,
   Eye, PenLine,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+
+// Custom text-direction extension — adds dir="ltr"|"rtl" to block nodes
+const TEXT_DIR_TYPES = ['paragraph', 'heading', 'listItem', 'bulletList', 'orderedList']
+const TextDirection = Extension.create({
+  name: 'textDirection',
+  addGlobalAttributes() {
+    return [{
+      types: TEXT_DIR_TYPES,
+      attributes: {
+        dir: {
+          default: null,
+          parseHTML: el => el.getAttribute('dir') || null,
+          renderHTML: attrs => attrs.dir ? { dir: attrs.dir } : {},
+        },
+      },
+    }]
+  },
+  addCommands() {
+    return {
+      setTextDirection: (dir: 'ltr' | 'rtl') => ({ commands }: { commands: any }) => {
+        return TEXT_DIR_TYPES.every(type => commands.updateAttributes(type, { dir }))
+      },
+      unsetTextDirection: () => ({ commands }: { commands: any }) => {
+        return TEXT_DIR_TYPES.every(type => commands.updateAttributes(type, { dir: null }))
+      },
+    } as any
+  },
+})
+
+const FONT_SIZES = ['10', '11', '12', '13', '14', '15', '16', '18', '20', '22', '24', '28', '32', '36', '48', '72']
+
+function FontSizeSelector({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false)
+  const [inputVal, setInputVal] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const currentSize = editor.getAttributes('textStyle').fontSize?.replace('px', '') ?? ''
+
+  const apply = (size: string) => {
+    const num = parseInt(size)
+    if (!isNaN(num) && num >= 1 && num <= 400) {
+      editor.chain().focus().setFontSize(`${num}px`).run()
+    }
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className={cn(
+        'flex items-center h-7 border rounded overflow-hidden transition-colors',
+        open ? 'border-primary' : 'border-border'
+      )}>
+        <input
+          type="text"
+          value={open ? inputVal : currentSize}
+          placeholder="—"
+          onFocus={() => { setOpen(true); setInputVal(currentSize) }}
+          onChange={e => setInputVal(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); apply(inputVal) }
+            if (e.key === 'Escape') setOpen(false)
+          }}
+          className="w-9 h-full text-center text-xs bg-transparent text-foreground outline-none placeholder:text-muted-foreground/50"
+        />
+      </div>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[52px] max-h-52 overflow-y-auto">
+          {FONT_SIZES.map(size => (
+            <button
+              key={size}
+              type="button"
+              onMouseDown={e => { e.preventDefault(); apply(size) }}
+              className={cn(
+                'w-full px-3 py-[3px] text-xs text-left hover:bg-muted transition-colors',
+                size === currentSize && 'bg-primary/10 text-primary font-semibold'
+              )}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -64,6 +161,7 @@ function Divider() {
 export function RichEditor({ value, onChange, placeholder = 'Start writing...', editorKey }: RichEditorProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [mode, setMode] = useState<'edit' | 'preview'>('edit')
+  const [, forceRender] = useState(0)
 
   const editor = useEditor({
     extensions: [
@@ -73,7 +171,10 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
         orderedList: { keepMarks: true },
       }),
       Underline,
+      TextStyle,
+      FontSize,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextDirection,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -98,6 +199,18 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
       editor.commands.setContent(value || '')
     }
   }, [editor, editorKey, value])
+
+  // Re-render toolbar on every selection or state change
+  useEffect(() => {
+    if (!editor) return
+    const update = () => forceRender(n => n + 1)
+    editor.on('selectionUpdate', update)
+    editor.on('transaction', update)
+    return () => {
+      editor.off('selectionUpdate', update)
+      editor.off('transaction', update)
+    }
+  }, [editor])
 
   const insertTable = useCallback(() => {
     editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
@@ -141,9 +254,9 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
   const inTable = editor.isActive('table')
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden flex flex-col bg-card">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-border bg-muted/40">
+    <div className="border border-border rounded-lg bg-card">
+      {/* Toolbar — sticky so it stays visible while page scrolls */}
+      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-border bg-card/95 backdrop-blur-sm rounded-t-lg">
         {/* History */}
         <ToolbarButton title="Undo (Ctrl+Z)" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
           <Undo className="w-3.5 h-3.5" />
@@ -164,6 +277,11 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
         <ToolbarButton title="Heading 3" active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
           <Heading3 className="w-3.5 h-3.5" />
         </ToolbarButton>
+
+        <Divider />
+
+        {/* Font size */}
+        <FontSizeSelector editor={editor} />
 
         <Divider />
 
@@ -196,11 +314,41 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
         <ToolbarButton title="Align Center" active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()}>
           <AlignCenter className="w-3.5 h-3.5" />
         </ToolbarButton>
-        <ToolbarButton title="Align Right (for RTL)" active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()}>
+        <ToolbarButton title="Align Right" active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()}>
           <AlignRight className="w-3.5 h-3.5" />
         </ToolbarButton>
         <ToolbarButton title="Justify" active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()}>
           <AlignJustify className="w-3.5 h-3.5" />
+        </ToolbarButton>
+
+        <Divider />
+
+        {/* Text direction (LTR / RTL) */}
+        <ToolbarButton
+          title="Left to Right (LTR)"
+          active={editor.isActive({ dir: 'ltr' })}
+          onClick={() => (editor as any).chain().focus().setTextDirection('ltr').run()}
+        >
+          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="1" y1="4" x2="10" y2="4" />
+            <line x1="1" y1="8" x2="8"  y2="8" />
+            <line x1="1" y1="12" x2="10" y2="12" />
+            <polyline points="12,6 15,8 12,10" fill="currentColor" stroke="none" />
+            <line x1="11" y1="8" x2="15" y2="8" />
+          </svg>
+        </ToolbarButton>
+        <ToolbarButton
+          title="Right to Left (RTL) — Arabic / Urdu"
+          active={editor.isActive({ dir: 'rtl' })}
+          onClick={() => (editor as any).chain().focus().setTextDirection('rtl').run()}
+        >
+          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="6"  y1="4" x2="15" y2="4" />
+            <line x1="8"  y1="8" x2="15" y2="8" />
+            <line x1="6"  y1="12" x2="15" y2="12" />
+            <polyline points="4,6 1,8 4,10" fill="currentColor" stroke="none" />
+            <line x1="1" y1="8" x2="5" y2="8" />
+          </svg>
         </ToolbarButton>
 
         <Divider />
@@ -291,14 +439,14 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
         </div>
       </div>
 
-      {/* Editor */}
-      <div className={cn('overflow-y-auto min-h-[500px]', mode === 'preview' && 'hidden')}>
+      {/* Editor — fixed height, scrolls internally */}
+      <div className={cn('h-[640px] overflow-y-auto', mode === 'preview' && 'hidden')}>
         <EditorContent editor={editor} />
       </div>
 
-      {/* Preview */}
+      {/* Preview — same fixed height */}
       {mode === 'preview' && (
-        <div className="min-h-[500px] overflow-y-auto bg-background/50">
+        <div className="h-[640px] overflow-y-auto bg-background/50 rounded-b-lg">
           <div
             className="prose-content p-5"
             dangerouslySetInnerHTML={{

@@ -1,3 +1,18 @@
+export type MediaType = 'image' | 'audio' | 'document'
+
+export interface MediaItem {
+  id: string
+  fileName: string
+  url: string
+  type: MediaType
+  mimeType: string
+  size: number
+  width: number | null
+  height: number | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Author {
   id: string
   name: string
@@ -102,4 +117,174 @@ export interface PagedResult<T> {
   total: number
   page: number
   pageSize: number
+}
+
+export interface MalfuzatListItem {
+  id: string
+  title: string
+  excerpt: string | null
+  language: string
+  hasAudio: boolean
+  audioUrl: string | null
+  published: boolean
+  publishedAt: string | null
+  position: number | null
+  createdAt: string
+  updatedAt: string
+  author: Author
+  categories: Category[]
+}
+
+export interface MalfuzatDetail extends MalfuzatListItem {
+  body: string | null
+  documentUrl: string | null
+}
+
+export interface MasailListItem {
+  id: string
+  title: string
+  language: string
+  hasAudio: boolean
+  audioUrl: string | null
+  published: boolean
+  publishedAt: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+  author: Author | null
+  categories: Category[]
+}
+
+export interface MasailDetail extends MasailListItem {
+  question: string
+  answer: string | null
+  documentUrl: string | null
+}
+
+export interface DuaListItem {
+  id: string
+  title: string
+  excerpt: string | null
+  language: string
+  audioUrl: string | null
+  published: boolean
+  position: number
+  createdAt: string
+  updatedAt: string
+  categories: Category[]
+}
+
+export interface DuaDetail extends DuaListItem {
+  body: string
+  documentUrl: string | null
+}
+
+export interface BayanListItem {
+  id: string
+  title: string
+  excerpt: string | null
+  language: string
+  location: string | null
+  audioUrl: string | null
+  published: boolean
+  publishedAt: string
+  position: number
+  createdAt: string
+  updatedAt: string
+  author: Author
+  categories: Category[]
+}
+
+export type BayanDetail = BayanListItem
+
+export interface ArticleListItem {
+  id: string
+  title: string
+  excerpt: string | null
+  language: string
+  published: boolean
+  publishedAt: string | null
+  position: number | null
+  createdAt: string
+  updatedAt: string
+  author: Author | null
+  categories: Category[]
+}
+
+export interface ArticleDetail extends ArticleListItem {
+  body: string
+  documentUrl: string | null
+}
+
+export interface NewsListItem {
+  id: string
+  title: string
+  excerpt: string | null
+  language: string
+  published: boolean
+  publishedAt: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NewsDetail extends NewsListItem {
+  body: string
+}
+
+export interface MadrasahInfoItem {
+  id: string | null
+  label: string
+  info: string
+  position: number
+}
+
+export interface MadrasahPhotoItem {
+  id: string | null
+  title: string
+  imageUrl: string
+  position: number
+}
+
+export interface MadrasahListItem {
+  id: string
+  title: string
+  excerpt: string | null
+  position: number
+  infoCount: number
+  photoCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MadrasahDetail {
+  id: string
+  title: string
+  excerpt: string | null
+  introduction: string
+  position: number
+  infos: MadrasahInfoItem[]
+  photos: MadrasahPhotoItem[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NamazTimeListItem {
+  id: string
+  title: string
+  titleBn: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NamazTimeDetail {
+  id: string
+  title: string
+  titleBn: string | null
+  masail: string
+  fazail: string | null
+  position: number
+  createdAt: string
+  updatedAt: string
 }

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Check, ChevronsUpDown, X, ArrowLeft, Upload, FileText, ImageIcon, Loader2 } from 'lucide-react'
+import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useBookStore } from '@/store/book-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { MediaField } from '@/components/admin/media-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,12 +32,7 @@ export function BookForm({ book }: Props) {
   const { all: authors, fetchAll } = useAuthorStore()
   const { categories, fetch: fetchCategories } = useCategoryStore()
 
-  const coverInputRef = useRef<HTMLInputElement>(null)
-  const documentInputRef = useRef<HTMLInputElement>(null)
-
   const [loading, setLoading] = useState(false)
-  const [coverUploading, setCoverUploading] = useState(false)
-  const [documentUploading, setDocumentUploading] = useState(false)
   const [title, setTitle] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [publisher, setPublisher] = useState('')
@@ -90,48 +86,6 @@ export function BookForm({ book }: Props) {
     )
   }
 
-  async function uploadFile(file: File, type: 'image' | 'document') {
-    const formData = new FormData()
-    formData.append('file', file)
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload/${type}`, {
-      method: 'POST',
-      body: formData,
-    })
-    if (!res.ok) throw new Error(await res.text())
-    const data = await res.json()
-    return data.url as string
-  }
-
-  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCoverUploading(true)
-    try {
-      const url = await uploadFile(file, 'image')
-      setCoverUrl(url)
-    } catch {
-      toast.error('Cover upload failed')
-    } finally {
-      setCoverUploading(false)
-      e.target.value = ''
-    }
-  }
-
-  async function handleDocumentChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setDocumentUploading(true)
-    try {
-      const url = await uploadFile(file, 'document')
-      setDocumentUrl(url)
-    } catch {
-      toast.error('Document upload failed')
-    } finally {
-      setDocumentUploading(false)
-      e.target.value = ''
-    }
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
@@ -170,296 +124,207 @@ export function BookForm({ book }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-8">
+    <div className="max-w-6xl mx-auto px-6 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="w-4 h-4" />
           {isEdit ? 'Back to book' : 'Back to books'}
         </button>
-        <h1 className="text-2xl font-bold">{isEdit ? 'Edit Book' : 'Add New Book'}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {isEdit ? `Editing "${book.title}"` : 'Fill in the details to add a new book'}
-        </p>
+        <h1 className="text-lg font-semibold">
+          {isEdit ? `Edit Book` : 'Add New Book'}
+        </h1>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {/* Basic info */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
+        <div className="grid grid-cols-[1fr_280px] gap-5 items-start">
 
-            <div className="space-y-1.5">
-              <Label>Title <span className="text-destructive">*</span></Label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Book title" maxLength={100} />
-            </div>
+          {/* LEFT COLUMN */}
+          <div className="space-y-5">
 
-            <div className="space-y-1.5">
-              <Label>
-                Excerpt
-                <span className="ml-2 text-xs text-muted-foreground font-normal">for SEO & social media</span>
-              </Label>
-              <Textarea
-                value={excerpt}
-                onChange={e => setExcerpt(e.target.value)}
-                placeholder="Short description..."
-                rows={3}
-                maxLength={160}
-              />
-              <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
-            </div>
+            {/* Basic Information */}
+            <div className="bg-card border rounded-xl p-5 space-y-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Language <span className="text-destructive">*</span></Label>
-                <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label>Title <span className="text-destructive">*</span></Label>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Book title" maxLength={100} />
               </div>
-              <div className="space-y-1.5">
-                <Label>Publisher</Label>
-                <Input value={publisher} onChange={e => setPublisher(e.target.value)} placeholder="Publisher name" maxLength={100} />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Price</Label>
-                <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 250 BDT" maxLength={50} />
+                <Label>
+                  Excerpt
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">for SEO & social media</span>
+                </Label>
+                <Textarea
+                  value={excerpt}
+                  onChange={e => setExcerpt(e.target.value)}
+                  placeholder="Short description..."
+                  rows={3}
+                  maxLength={160}
+                />
+                <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
               </div>
-              <div className="space-y-1.5">
-                <Label>Published At</Label>
-                <Input type="date" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
-              </div>
-            </div>
-          </div>
 
-          {/* Authors & Categories */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Authors & Categories</h2>
-
-            <div className="space-y-1.5">
-              <Label>Authors</Label>
-              <Popover open={authorOpen} onOpenChange={setAuthorOpen}>
-                <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
-                  {selectedAuthors.length ? `${selectedAuthors.length} selected` : 'Select authors...'}
-                  <ChevronsUpDown className="w-4 h-4 opacity-50" />
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search authors..." />
-                    <CommandList>
-                      <CommandEmpty>No authors found.</CommandEmpty>
-                      <CommandGroup>
-                        {authors.map(a => (
-                          <CommandItem key={a.id} value={a.name} onSelect={() => toggleAuthor(a)}>
-                            <Check className={cn('mr-2 w-4 h-4', selectedAuthors.find(x => x.id === a.id) ? 'opacity-100' : 'opacity-0')} />
-                            {a.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {selectedAuthors.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {selectedAuthors.map(a => (
-                    <Badge key={a.id} variant="secondary" className="gap-1 pr-1">
-                      {a.name}
-                      <button type="button" onClick={e => { e.stopPropagation(); toggleAuthor(a) }} className="rounded-full hover:bg-black/10 p-0.5">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Language <span className="text-destructive">*</span></Label>
+                  <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Categories</Label>
-              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
-                  {selectedCategories.length ? `${selectedCategories.length} selected` : 'Select categories...'}
-                  <ChevronsUpDown className="w-4 h-4 opacity-50" />
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search categories..." />
-                    <CommandList>
-                      <CommandEmpty>No categories found.</CommandEmpty>
-                      <CommandGroup>
-                        {flatCategories.map(c => (
-                          <CommandItem key={c.id} value={c.title} onSelect={() => toggleCategory(c)}>
-                            <Check className={cn('mr-2 w-4 h-4', selectedCategories.find(x => x.id === c.id) ? 'opacity-100' : 'opacity-0')} />
-                            <span className={c.parentId ? 'pl-3 text-muted-foreground' : 'font-medium'}>{c.title}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {selectedCategories.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {selectedCategories.map(c => (
-                    <Badge key={c.id} variant="secondary" className="gap-1 pr-1">
-                      {c.title}
-                      <button type="button" onClick={e => { e.stopPropagation(); toggleCategory(c) }} className="rounded-full hover:bg-black/10 p-0.5">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
+                <div className="space-y-1.5">
+                  <Label>Publisher</Label>
+                  <Input value={publisher} onChange={e => setPublisher(e.target.value)} placeholder="Publisher name" maxLength={100} />
                 </div>
-              )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Price</Label>
+                  <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 250 BDT" maxLength={50} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Published At</Label>
+                  <Input type="date" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Media */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Media</h2>
+            {/* Authors & Categories */}
+            <div className="bg-card border rounded-xl p-5 space-y-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Authors & Categories</h2>
 
-            {/* Cover image */}
-            <div className="space-y-2">
-              <Label>Cover Image</Label>
-              <div className="flex items-start gap-4">
-                {/* Preview */}
-                <div className="shrink-0 w-24 h-32 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
-                  {coverUploading ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  ) : coverUrl ? (
-                    <img src={coverUrl} alt="cover" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+              <div className="grid grid-cols-2 gap-4">
+                {/* Authors */}
+                <div className="space-y-1.5">
+                  <Label>Authors</Label>
+                  <Popover open={authorOpen} onOpenChange={setAuthorOpen}>
+                    <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
+                      {selectedAuthors.length ? `${selectedAuthors.length} selected` : 'Select authors...'}
+                      <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search authors..." />
+                        <CommandList>
+                          <CommandEmpty>No authors found.</CommandEmpty>
+                          <CommandGroup>
+                            {authors.map(a => (
+                              <CommandItem key={a.id} value={a.name} onSelect={() => toggleAuthor(a)}>
+                                <Check className={cn('mr-2 w-4 h-4', selectedAuthors.find(x => x.id === a.id) ? 'opacity-100' : 'opacity-0')} />
+                                {a.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {selectedAuthors.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {selectedAuthors.map(a => (
+                        <Badge key={a.id} variant="secondary" className="gap-1 pr-1">
+                          {a.name}
+                          <button type="button" onClick={e => { e.stopPropagation(); toggleAuthor(a) }} className="rounded-full hover:bg-black/10 p-0.5">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
                   )}
                 </div>
-                <div className="flex-1 space-y-2">
-                  <input
-                    ref={coverInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleCoverChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={coverUploading}
-                    onClick={() => coverInputRef.current?.click()}
-                    className="gap-2 w-full"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    {coverUrl ? 'Change cover' : 'Upload cover'}
-                  </Button>
-                  {coverUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCoverUrl('')}
-                      className="gap-2 w-full text-destructive hover:text-destructive"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Remove cover
-                    </Button>
-                  )}
-                  <p className="text-xs text-muted-foreground">JPEG, PNG or WebP · max 10 MB</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Document */}
-            <div className="space-y-2">
-              <Label>Document (PDF)</Label>
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
-                <div className="flex-1 min-w-0">
-                  {documentUploading ? (
-                    <span className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                    </span>
-                  ) : documentUrl ? (
-                    <a
-                      href={documentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline truncate block"
-                    >
-                      {documentUrl.split('/').pop()}
-                    </a>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No document uploaded</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <input
-                    ref={documentInputRef}
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={handleDocumentChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={documentUploading}
-                    onClick={() => documentInputRef.current?.click()}
-                    className="gap-1.5"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    {documentUrl ? 'Replace' : 'Upload'}
-                  </Button>
-                  {documentUrl && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDocumentUrl('')}
-                      className="text-destructive hover:text-destructive px-2"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
+                {/* Categories */}
+                <div className="space-y-1.5">
+                  <Label>Categories</Label>
+                  <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                    <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
+                      {selectedCategories.length ? `${selectedCategories.length} selected` : 'Select categories...'}
+                      <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search categories..." />
+                        <CommandList>
+                          <CommandEmpty>No categories found.</CommandEmpty>
+                          <CommandGroup>
+                            {flatCategories.map(c => (
+                              <CommandItem key={c.id} value={c.title} onSelect={() => toggleCategory(c)}>
+                                <Check className={cn('mr-2 w-4 h-4', selectedCategories.find(x => x.id === c.id) ? 'opacity-100' : 'opacity-0')} />
+                                <span className={c.parentId ? 'pl-3 text-muted-foreground' : 'font-medium'}>{c.title}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {selectedCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {selectedCategories.map(c => (
+                        <Badge key={c.id} variant="secondary" className="gap-1 pr-1">
+                          {c.title}
+                          <button type="button" onClick={e => { e.stopPropagation(); toggleCategory(c) }} className="rounded-full hover:bg-black/10 p-0.5">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">PDF only · max 100 MB</p>
             </div>
-          </div>
 
-          {/* Settings */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
+            {/* Settings */}
+            <div className="bg-card border rounded-xl p-5 space-y-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Position</Label>
-                <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Position</Label>
+                  <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
+                <Label htmlFor="published" className="cursor-pointer">Published</Label>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
-              <Label htmlFor="published" className="cursor-pointer">Published</Label>
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
+                {loading ? 'Saving...' : isEdit ? 'Update Book' : 'Create Book'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => router.back()}>
+                Cancel
+              </Button>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
-              {loading ? 'Saving...' : isEdit ? 'Update Book' : 'Create Book'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
-            </Button>
+          {/* RIGHT COLUMN — Media */}
+          <div className="space-y-4">
+            <div className="bg-card border rounded-xl p-4 space-y-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Media</h2>
+              <div className="space-y-1.5">
+                <Label>Cover Image</Label>
+                <MediaField accept="image" value={coverUrl} onChange={setCoverUrl} placeholder="No cover image" compact />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Document (PDF)</Label>
+                <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" compact />
+              </div>
+            </div>
           </div>
+
         </div>
       </form>
     </div>
