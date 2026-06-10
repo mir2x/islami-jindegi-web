@@ -48,6 +48,7 @@ export interface Book {
   updatedAt: string
   authors: Author[]
   categories: Category[]
+  chapterCount: number
 }
 
 export interface SubChapter {

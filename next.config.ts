@@ -9,11 +9,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.fly.storage.tigris.dev' },
     ],
   },
-  webpack: (config) => {
-    // react-pdf: canvas is optional, disable to avoid build errors in Next.js
-    config.resolve.alias.canvas = false
-    return config
-  },
+  turbopack: {},
 };
 
 export default nextConfig;
