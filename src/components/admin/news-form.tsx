@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { useNewsStore } from '@/store/news-store'
+import { RichEditor } from '@/components/admin/rich-editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { NewsDetail } from '@/types'
@@ -50,7 +50,7 @@ export function NewsForm({ news }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
-    if (!body.trim() || body === '<p></p>') { toast.error('Body is required'); return }
+    if (!body.trim()) { toast.error('Body is required'); return }
 
     setLoading(true)
     try {
@@ -111,7 +111,7 @@ export function NewsForm({ news }: Props) {
 
           <div className="space-y-1.5">
             <Label>Body <span className="text-destructive">*</span></Label>
-            <RichTextEditor value={body} onChange={setBody} placeholder="Full news content..." minHeight="280px" />
+            <RichEditor value={body} onChange={setBody} placeholder="Full news content..." editorKey={news?.id} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

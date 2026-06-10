@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { useNamazTimeStore } from '@/store/namaz-time-store'
+import { RichEditor } from '@/components/admin/rich-editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import type { NamazTimeDetail } from '@/types'
 
 interface Props {
@@ -41,7 +41,7 @@ export function NamazTimeForm({ namazTime }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
-    if (!masail.trim() || masail === '<p></p>') { toast.error('Masail is required'); return }
+    if (!masail.trim()) { toast.error('Masail is required'); return }
 
     setLoading(true)
     try {
@@ -111,7 +111,7 @@ export function NamazTimeForm({ namazTime }: Props) {
               <span className="ml-2 text-xs text-muted-foreground font-normal">legal rulings</span>
               <span className="text-destructive ml-1">*</span>
             </Label>
-            <RichTextEditor value={masail} onChange={setMasail} placeholder="Write masail content..." minHeight="220px" />
+            <RichEditor value={masail} onChange={setMasail} placeholder="Write masail content..." editorKey={namazTime?.id} />
           </div>
 
           <div className="space-y-1.5">
@@ -119,7 +119,7 @@ export function NamazTimeForm({ namazTime }: Props) {
               Fazail
               <span className="ml-2 text-xs text-muted-foreground font-normal">virtues</span>
             </Label>
-            <RichTextEditor value={fazail} onChange={setFazail} placeholder="Write fazail content..." minHeight="160px" />
+            <RichEditor value={fazail} onChange={setFazail} placeholder="Write fazail content..." editorKey={namazTime?.id ? `${namazTime.id}-fazail` : undefined} />
           </div>
         </div>
 

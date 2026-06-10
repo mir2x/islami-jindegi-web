@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Trash2, GripVertical } from 'lucide-react'
 import { useMadrasahStore } from '@/store/madrasah-store'
+import { RichEditor } from '@/components/admin/rich-editor'
 import { MediaField } from '@/components/admin/media-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import type { MadrasahDetail, MadrasahInfoItem, MadrasahPhotoItem } from '@/types'
 
 interface Props {
@@ -19,6 +19,10 @@ interface Props {
 
 type DraftInfo = { key: string; label: string; info: string }
 type DraftPhoto = { key: string; title: string; imageUrl: string }
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
 
 export function MadrasahForm({ madrasah }: Props) {
   const router = useRouter()
@@ -40,7 +44,7 @@ export function MadrasahForm({ madrasah }: Props) {
       setExcerpt(madrasah.excerpt ?? '')
       setIntroduction(madrasah.introduction)
       setPosition(String(madrasah.position))
-      setInfos(madrasah.infos.map(i => ({ key: crypto.randomUUID(), label: i.label, info: i.info })))
+      setInfos(madrasah.infos.map(i => ({ key: crypto.randomUUID(), label: i.label, info: stripHtml(i.info) })))
       setPhotos(madrasah.photos.map(p => ({ key: crypto.randomUUID(), title: p.title, imageUrl: p.imageUrl })))
     }
   }, [madrasah])
@@ -72,10 +76,10 @@ export function MadrasahForm({ madrasah }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
-    if (!introduction.trim() || introduction === '<p></p>') { toast.error('Introduction is required'); return }
+    if (!introduction.trim()) { toast.error('Introduction is required'); return }
 
     const infoPayload: MadrasahInfoItem[] = infos
-      .filter(i => i.label.trim() && i.info.trim() && i.info !== '<p></p>')
+      .filter(i => i.label.trim() && i.info.trim())
       .map((i, idx) => ({ id: null, label: i.label.trim(), info: i.info.trim(), position: idx + 1 }))
 
     const photoPayload: MadrasahPhotoItem[] = photos
@@ -141,7 +145,7 @@ export function MadrasahForm({ madrasah }: Props) {
 
           <div className="space-y-1.5">
             <Label>Introduction <span className="text-destructive">*</span></Label>
-            <RichTextEditor value={introduction} onChange={setIntroduction} placeholder="Full introduction..." minHeight="180px" />
+            <RichEditor value={introduction} onChange={setIntroduction} placeholder="Full introduction..." editorKey={madrasah?.id} />
           </div>
 
           <div className="w-40 space-y-1.5">
@@ -167,18 +171,18 @@ export function MadrasahForm({ madrasah }: Props) {
           {infos.map((info, idx) => (
             <div key={info.key} className="flex gap-2 items-start">
               <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-2.5 shrink-0" />
-              <div className="flex-1 space-y-2">
+              <div className="grid grid-cols-2 gap-2 flex-1">
                 <Input
                   value={info.label}
                   onChange={e => updateInfo(info.key, 'label', e.target.value)}
                   placeholder={`Label ${idx + 1} (e.g. Founded)`}
                   maxLength={100}
                 />
-                <RichTextEditor
+                <Input
                   value={info.info}
-                  onChange={v => updateInfo(info.key, 'info', v)}
+                  onChange={e => updateInfo(info.key, 'info', e.target.value)}
                   placeholder="Value"
-                  minHeight="80px"
+                  maxLength={300}
                 />
               </div>
               <Button

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
 import { BookOpen, Users, Tag, LayoutDashboard, ScrollText, HelpCircle, Sparkles, Mic, Newspaper, Images, School, Clock, Rss } from 'lucide-react'
 import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,19 @@ const nav = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+
+  // Admin always uses dark theme; restore user preference when leaving
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+    return () => {
+      document.documentElement.classList.remove('dark')
+      try {
+        if (localStorage.getItem('ij-theme') === 'dark') {
+          document.documentElement.classList.add('dark')
+        }
+      } catch { /* ignore */ }
+    }
+  }, [])
 
   return (
     <div className="flex h-screen bg-background">
