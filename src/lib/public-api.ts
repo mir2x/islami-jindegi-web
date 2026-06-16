@@ -1,4 +1,4 @@
-import type { Book, BookDetail, Author, Category, BayanListItem, ArticleListItem, NewsListItem, MalfuzatListItem, NamazTimeListItem, PagedResult } from '@/types'
+import type { Book, BookDetail, Author, Category, BayanListItem, ArticleListItem, NewsListItem, MalfuzatListItem, NamazTimeListItem, PagedResult, MushafEdition } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -10,6 +10,11 @@ async function get<T>(path: string, revalidate = 300): Promise<T | null> {
   } catch {
     return null
   }
+}
+
+export async function getMushafs(): Promise<MushafEdition[]> {
+  const r = await get<MushafEdition[]>('/api/quran/mushafs', 3600)
+  return r ?? []
 }
 
 export async function getRecentBooks(pageSize = 10) {

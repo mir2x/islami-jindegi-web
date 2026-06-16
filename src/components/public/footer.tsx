@@ -24,12 +24,12 @@ export function Footer() {
             <div className="flex items-center gap-2.5 mb-3">
               <Image
                 src="/logo-icon.png"
-                alt="ইসলামী জিন্দেগী"
+                alt="ইসলামী যিন্দেগী"
                 width={28}
                 height={28}
                 className="rounded-lg"
               />
-              <span className="font-bold text-foreground">ইসলামী জিন্দেগী</span>
+              <span className="font-bold text-foreground">ইসলামী যিন্দেগী</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               ইসলামী জীবনযাপনের আলোকবর্তিকা। কিতাব, বয়ান, মালফুযাত ও আরও অনেক কিছু এক জায়গায়।
@@ -70,7 +70,7 @@ export function Footer() {
 
         <div className="mt-10 pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} ইসলামী জিন্দেগী। সর্বস্বত্ব সংরক্ষিত।
+            © {new Date().getFullYear()} ইসলামী যিন্দেগী। সর্বস্বত্ব সংরক্ষিত।
           </p>
           <div className="flex items-center gap-4">
             <a href="https://twitter.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Twitter</a>

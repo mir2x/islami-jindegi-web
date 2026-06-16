@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import { BookOpen, Users, Tag, LayoutDashboard, ScrollText, HelpCircle, Sparkles, Mic, Newspaper, Images, School, Clock, Rss } from 'lucide-react'
+import { BookOpen, Users, Tag, LayoutDashboard, ScrollText, HelpCircle, Sparkles, Mic, Newspaper, Images, School, Clock, Rss, Moon } from 'lucide-react'
 import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +21,7 @@ const nav = [
   { label: 'News', href: '/admin/news', icon: Rss },
   { label: 'Madrasah', href: '/admin/madrasah', icon: School },
   { label: 'Namaz Times', href: '/admin/namaz-times', icon: Clock },
+  { label: 'Hijri Sightings', href: '/admin/hijri', icon: Moon },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

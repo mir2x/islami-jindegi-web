@@ -9,14 +9,15 @@ import 'react-pdf/dist/Page/TextLayer.css'
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
   ZoomIn, ZoomOut, Download, Maximize, Minimize, BookOpen, AlignLeft,
-  Square, Columns, LayoutList,
+  Square, Columns, LayoutList, BookMarked,
 } from 'lucide-react'
 import type { BookDetail } from '@/types'
 import { cn } from '@/lib/utils'
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
-type ViewMode = 'single' | 'double' | 'scroll'
+type LayoutMode = 'single' | 'double'
+type NavMode = 'continuous' | 'flip'
 
 interface Props {
   book: BookDetail
@@ -30,12 +31,12 @@ const SCROLL_BUFFER = 3
 export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
-  const [scaleIdx, setScaleIdx] = useState(2) // 1.0 = fit
+  const [scaleIdx, setScaleIdx] = useState(2)
   const [pageInputValue, setPageInputValue] = useState('1')
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('single')
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('single')
+  const [navMode, setNavMode] = useState<NavMode>('flip')
   const [vpSize, setVpSize] = useState({ w: 0, h: 0 })
-  // scroll mode: which page numbers have been (or should be) rendered
   const [scrollRendered, setScrollRendered] = useState<Set<number>>(new Set([1, 2, 3]))
 
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -61,13 +62,13 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT') return
-      const step = viewMode === 'double' ? 2 : 1
+      const step = layoutMode === 'double' ? 2 : 1
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault()
-        if (viewMode !== 'scroll') setPageNumber(p => Math.max(1, p - step))
+        if (navMode !== 'continuous') setPageNumber(p => Math.max(1, p - step))
       } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault()
-        if (viewMode !== 'scroll') setPageNumber(p => Math.min(numPages, p + step))
+        if (navMode !== 'continuous') setPageNumber(p => Math.min(numPages, p + step))
       } else if (e.key === '+' || e.key === '=') {
         setScaleIdx(i => Math.min(ZOOM_STEPS.length - 1, i + 1))
       } else if (e.key === '-') {
@@ -76,7 +77,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [numPages, viewMode])
+  }, [numPages, layoutMode, navMode])
 
   useEffect(() => { setPageInputValue(String(pageNumber)) }, [pageNumber])
 
@@ -86,9 +87,9 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
 
-  // ── Scroll mode: lazy render + page tracking ──────────────
+  // ── Continuous mode: lazy render + page tracking ──────────
   useEffect(() => {
-    if (viewMode !== 'scroll' || numPages === 0) return
+    if (navMode !== 'continuous' || numPages === 0) return
 
     scrollObserversRef.current.forEach(o => o.disconnect())
     scrollObserversRef.current = []
@@ -99,15 +100,12 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
 
       const obs = new IntersectionObserver(([entry]) => {
         if (!entry.isIntersecting) return
-        // Track current visible page
         if (entry.intersectionRatio >= 0.3) setPageNumber(pNum)
-        // Load this page + buffer pages
         setScrollRendered(prev => {
           const next = new Set(prev)
           for (let j = Math.max(1, pNum - SCROLL_BUFFER); j <= Math.min(numPages, pNum + SCROLL_BUFFER); j++) {
             next.add(j)
           }
-          // Check if anything changed
           if ([...next].every(x => prev.has(x))) return prev
           return next
         })
@@ -121,14 +119,14 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
       scrollObserversRef.current.forEach(o => o.disconnect())
       scrollObserversRef.current = []
     }
-  }, [viewMode, numPages])
+  }, [navMode, numPages])
 
   const onLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
     setNumPages(n)
   }, [])
 
   // ── Navigation ────────────────────────────────────────────
-  const step = viewMode === 'double' ? 2 : 1
+  const step = layoutMode === 'double' ? 2 : 1
   const prevPage = () => setPageNumber(p => Math.max(1, p - step))
   const nextPage = () => setPageNumber(p => Math.min(numPages, p + step))
   const zoomOut = () => setScaleIdx(i => Math.max(0, i - 1))
@@ -138,7 +136,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
     const n = parseInt(pageInputValue, 10)
     if (!isNaN(n) && n >= 1 && n <= numPages) {
       setPageNumber(n)
-      if (viewMode === 'scroll') {
+      if (navMode === 'continuous') {
         scrollPageRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     } else {
@@ -154,27 +152,28 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
     }
   }
 
-  const switchMode = (mode: ViewMode) => {
-    if (mode === 'double' && pageNumber % 2 === 0) {
-      setPageNumber(p => Math.max(1, p - 1)) // snap to odd
-    }
-    if (mode === 'scroll') {
-      // Pre-load pages around current position
+  const switchNavMode = (mode: NavMode) => {
+    if (mode === 'continuous') {
       setScrollRendered(new Set(
         Array.from({ length: SCROLL_BUFFER * 2 + 1 }, (_, i) =>
           Math.max(1, Math.min(numPages || 999, pageNumber - SCROLL_BUFFER + i))
         )
       ))
     }
-    setViewMode(mode)
+    setNavMode(mode)
+  }
+
+  const switchLayoutMode = (mode: LayoutMode) => {
+    if (mode === 'double' && pageNumber % 2 === 0) {
+      setPageNumber(p => Math.max(1, p - 1))
+    }
+    setLayoutMode(mode)
   }
 
   // ── Derived dimensions ─────────────────────────────────────
-  // All modes use fit-height as the base; scale multiplies from there
   const fitH = vpSize.h > 0 ? (vpSize.h - 48) * scale : undefined
-  const estimatedW = fitH ? fitH * 0.707 : 300 // A4 portrait ratio for placeholders
+  const estimatedW = fitH ? fitH * 0.707 : 300
 
-  // For double page: left is always odd
   const leftPage = pageNumber % 2 === 0 ? pageNumber - 1 : pageNumber
   const rightPage = leftPage + 1
 
@@ -218,16 +217,23 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
         {/* Controls */}
         <div className="flex items-center gap-0.5 shrink-0">
 
-          {/* View mode toggle */}
-          <div className="flex items-center border border-border rounded-lg overflow-hidden mr-1">
-            <ModeBtn active={viewMode === 'single'} onClick={() => switchMode('single')} title="একক পৃষ্ঠা">
+          {/* Layout: single / double */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            <ModeBtn active={layoutMode === 'single'} onClick={() => switchLayoutMode('single')} title="একক পৃষ্ঠা">
               <Square className="w-3.5 h-3.5" />
             </ModeBtn>
-            <ModeBtn active={viewMode === 'double'} onClick={() => switchMode('double')} title="দুই পৃষ্ঠা">
+            <ModeBtn active={layoutMode === 'double'} onClick={() => switchLayoutMode('double')} title="দুই পৃষ্ঠা">
               <Columns className="w-3.5 h-3.5" />
             </ModeBtn>
-            <ModeBtn active={viewMode === 'scroll'} onClick={() => switchMode('scroll')} title="ক্রমিক স্ক্রল">
+          </div>
+
+          {/* Nav: continuous / flip */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden ml-1">
+            <ModeBtn active={navMode === 'continuous'} onClick={() => switchNavMode('continuous')} title="ক্রমাগত স্ক্রল">
               <LayoutList className="w-3.5 h-3.5" />
+            </ModeBtn>
+            <ModeBtn active={navMode === 'flip'} onClick={() => switchNavMode('flip')} title="পাতা উল্টানো">
+              <BookMarked className="w-3.5 h-3.5" />
             </ModeBtn>
           </div>
 
@@ -288,8 +294,10 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
       <div
         ref={viewportRef}
         className={cn(
-          'flex-1 overflow-auto bg-muted/20 dark:bg-muted/10',
-          viewMode !== 'scroll' && 'flex items-center justify-center'
+          'flex-1 relative',
+          navMode === 'continuous'
+            ? 'overflow-auto bg-muted/20 dark:bg-muted/10'
+            : 'overflow-hidden bg-muted/20 dark:bg-muted/10 flex items-center justify-center'
         )}
       >
         <Document
@@ -298,51 +306,51 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
           loading={<PdfLoading />}
           error={<PdfError url={pdfUrl} />}
           className={cn(
-            viewMode === 'scroll'
+            navMode === 'continuous'
               ? 'flex flex-col items-center gap-4 py-6 px-4 w-full'
               : 'flex flex-col items-center py-6 px-4'
           )}
         >
-          {/* ─ Single page ─ */}
-          {viewMode === 'single' && fitH !== undefined && (
-            <Page
-              pageNumber={pageNumber}
-              height={fitH}
-              renderTextLayer
-              renderAnnotationLayer
-              className="shadow-xl rounded-lg overflow-hidden"
-              loading={
-                <div className="bg-card rounded-lg shadow-xl animate-pulse" style={{ height: fitH, width: fitH * 0.707 }} />
-              }
-            />
-          )}
 
-          {/* ─ Double page (book spread) ─ */}
-          {viewMode === 'double' && fitH !== undefined && (
-            <div className="flex items-start gap-2 sm:gap-4">
+          {/* ─ Flip mode ─ */}
+          {navMode === 'flip' && fitH !== undefined && (
+            layoutMode === 'single' ? (
               <Page
-                pageNumber={leftPage}
+                pageNumber={pageNumber}
                 height={fitH}
                 renderTextLayer
                 renderAnnotationLayer
-                className="shadow-xl rounded-r overflow-hidden"
-                loading={<div className="bg-card rounded shadow-xl animate-pulse" style={{ height: fitH, width: estimatedW }} />}
+                className="shadow-xl rounded-lg overflow-hidden"
+                loading={
+                  <div className="bg-card rounded-lg shadow-xl animate-pulse" style={{ height: fitH, width: fitH * 0.707 }} />
+                }
               />
-              {rightPage <= numPages && (
+            ) : (
+              <div className="flex items-start gap-2 sm:gap-4">
                 <Page
-                  pageNumber={rightPage}
+                  pageNumber={leftPage}
                   height={fitH}
                   renderTextLayer
                   renderAnnotationLayer
-                  className="shadow-xl rounded-l overflow-hidden"
+                  className="shadow-xl rounded-r overflow-hidden"
                   loading={<div className="bg-card rounded shadow-xl animate-pulse" style={{ height: fitH, width: estimatedW }} />}
                 />
-              )}
-            </div>
+                {rightPage <= numPages && (
+                  <Page
+                    pageNumber={rightPage}
+                    height={fitH}
+                    renderTextLayer
+                    renderAnnotationLayer
+                    className="shadow-xl rounded-l overflow-hidden"
+                    loading={<div className="bg-card rounded shadow-xl animate-pulse" style={{ height: fitH, width: estimatedW }} />}
+                  />
+                )}
+              </div>
+            )
           )}
 
           {/* ─ Continuous scroll ─ */}
-          {viewMode === 'scroll' && fitH !== undefined && numPages > 0 &&
+          {navMode === 'continuous' && fitH !== undefined && numPages > 0 &&
             Array.from({ length: numPages }, (_, i) => {
               const pNum = i + 1
               return (
@@ -371,10 +379,36 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
             })
           }
         </Document>
+
+        {/* ─ Flip click zones ─ */}
+        {navMode === 'flip' && numPages > 0 && (
+          <>
+            <button
+              onClick={prevPage}
+              disabled={pageNumber <= 1}
+              aria-label="আগের পাতা"
+              className="absolute left-0 top-0 h-full w-[15%] flex items-center justify-start pl-3 group disabled:pointer-events-none"
+            >
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 rounded-full p-2">
+                <ChevronLeft className="w-6 h-6 text-white drop-shadow" />
+              </div>
+            </button>
+            <button
+              onClick={nextPage}
+              disabled={pageNumber >= numPages}
+              aria-label="পরের পাতা"
+              className="absolute right-0 top-0 h-full w-[15%] flex items-center justify-end pr-3 group disabled:pointer-events-none"
+            >
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 rounded-full p-2">
+                <ChevronRight className="w-6 h-6 text-white drop-shadow" />
+              </div>
+            </button>
+          </>
+        )}
       </div>
 
-      {/* ── Mobile bottom nav (single/double only) ───────────── */}
-      {viewMode !== 'scroll' && (
+      {/* ── Mobile bottom nav (flip only) ───────────────────── */}
+      {navMode === 'flip' && (
         <div className="lg:hidden flex items-center justify-between px-5 py-3 border-t border-border bg-background shrink-0">
           <button
             onClick={prevPage}
@@ -384,7 +418,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
             <ChevronLeft className="w-4 h-4" /> আগের
           </button>
           <span className="text-sm text-muted-foreground tabular-nums">
-            {viewMode === 'double' ? `${leftPage}–${Math.min(rightPage, numPages)}` : pageNumber} / {numPages || '—'}
+            {layoutMode === 'double' ? `${leftPage}–${Math.min(rightPage, numPages)}` : pageNumber} / {numPages || '—'}
           </span>
           <button
             onClick={nextPage}

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   BookOpen, Mic, ScrollText, HelpCircle, Sparkles,
-  Newspaper, Rss, School, Clock, ArrowRight,
+  Newspaper, Rss, School, Clock, ArrowRight, BookMarked,
 } from 'lucide-react'
 import {
   getRecentBooks, getRecentBayans, getRecentArticles,
@@ -12,6 +12,7 @@ import {
 // ─── Section nav cards ────────────────────────────────────────────────────────
 
 const SECTIONS = [
+  { label: 'কুরআন', sub: 'Holy Quran', href: '/quran', icon: BookMarked },
   { label: 'কিতাব', sub: 'Islamic Books', href: '/books', icon: BookOpen },
   { label: 'বয়ান', sub: 'Lectures & Speeches', href: '/bayan', icon: Mic },
   { label: 'মালফুযাত', sub: 'Scholarly Sayings', href: '/malfuzat', icon: ScrollText },
@@ -169,7 +170,7 @@ export default async function HomePage() {
             بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </p>
           <h1 className="text-center text-5xl sm:text-6xl font-bold text-foreground mt-4">
-            ইসলামী জিন্দেগী
+            ইসলামী যিন্দেগী
           </h1>
           <p className="text-center text-xl text-muted-foreground mt-3">
             ইসলামী জীবনযাপনের আলোকবর্তিকা

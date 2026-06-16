@@ -14,7 +14,7 @@ export async function generateMetadata({
   const { id } = await params
   const book = await getBook(id)
   return {
-    title: book ? `${book.title} | ইসলামী জিন্দেগী` : 'কিতাব | ইসলামী জিন্দেগী',
+    title: book ? `${book.title} | ইসলামী যিন্দেগী` : 'কিতাব | ইসলামী যিন্দেগী',
     description: book?.excerpt ?? undefined,
   }
 }

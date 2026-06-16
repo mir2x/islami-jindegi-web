@@ -1,3 +1,25 @@
+export interface AyahBox {
+  ayah_number: number
+  box_id: number
+  max_x: number
+  max_y: number
+  min_x: number
+  min_y: number
+  page_number: number
+  sura_number: number
+}
+
+export interface MushafEdition {
+  id: string
+  title: string
+  width: number
+  height: number
+  ext: string
+  totalPages: number
+  pagesBaseUrl: string
+  ayahBoxesUrl: string
+}
+
 export type MediaType = 'image' | 'audio' | 'document'
 
 export interface MediaItem {
@@ -286,6 +308,19 @@ export interface NamazTimeDetail {
   masail: string
   fazail: string | null
   position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface HijriMonthSighting {
+  id: string
+  countryCode: string
+  hijriYear: number
+  hijriMonth: number
+  monthNameEn: string
+  monthNameAr: string
+  monthNameBn: string
+  gregorianStartDate: string // YYYY-MM-DD
   createdAt: string
   updatedAt: string
 }

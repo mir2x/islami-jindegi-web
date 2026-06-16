@@ -4,7 +4,7 @@ import { getBooks, getAllCategories, getAllAuthors } from '@/lib/public-api'
 import { BooksClient } from '@/components/public/books/books-client'
 
 export const metadata: Metadata = {
-  title: 'কিতাব | ইসলামী জিন্দেগী',
+  title: 'কিতাব | ইসলামী যিন্দেগী',
   description: 'ইসলামী কিতাব ও পুস্তকের সংগ্রহ',
 }
 

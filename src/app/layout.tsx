@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'ইসলামী জিন্দেগী',
+  title: 'ইসলামী যিন্দেগী',
   description: 'ইসলামী জীবনযাপনের আলোকবর্তিকা',
 }
 

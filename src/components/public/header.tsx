@@ -9,6 +9,7 @@ import { ThemeToggle } from './theme-toggle'
 import { cn } from '@/lib/utils'
 
 const NAV = [
+  { label: 'কুরআন', href: '/quran' },
   { label: 'কিতাব', href: '/books' },
   { label: 'বয়ান', href: '/bayan' },
   { label: 'মালফুযাত', href: '/malfuzat' },
@@ -45,13 +46,13 @@ export function Header() {
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
             <Image
               src="/logo-icon.png"
-              alt="ইসলামী জিন্দেগী"
+              alt="ইসলামী যিন্দেগী"
               width={36}
               height={36}
               className="rounded-xl shadow-sm"
             />
             <span className="text-[17px] font-bold text-foreground leading-tight hidden sm:block">
-              ইসলামী জিন্দেগী
+              ইসলামী যিন্দেগী
             </span>
           </Link>
 
