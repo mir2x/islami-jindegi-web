@@ -174,10 +174,6 @@ const TABS: { key: Tab; label: string; href: string }[] = [
 export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) {
   const [tab, setTab] = useState<Tab>('books')
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
 
   const currentTabHref = TABS.find(t => t.key === tab)?.href ?? '/'
 
