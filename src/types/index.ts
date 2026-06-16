@@ -220,6 +220,30 @@ export interface BayanListItem {
 
 export type BayanDetail = BayanListItem
 
+export interface BayanAuthorOption {
+  id: string
+  name: string
+  count: number
+}
+
+export interface BayanCategoryOption {
+  id: string
+  title: string
+  count: number
+}
+
+export interface BookAuthorOption {
+  id: string
+  name: string
+  count: number
+}
+
+export interface BookCategoryOption {
+  id: string
+  title: string
+  count: number
+}
+
 export interface ArticleListItem {
   id: string
   title: string

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { BookOpen } from 'lucide-react'
-import { getBooks, getAllCategories, getAllAuthors } from '@/lib/public-api'
+import { getBooks, getBookCategories, getBookAuthors } from '@/lib/public-api'
 import { BooksClient } from '@/components/public/books/books-client'
 
 export const metadata: Metadata = {
@@ -22,8 +22,8 @@ export default async function BooksPage({
       authorId: sp.author,
       page: Number(sp.page ?? 1),
     }),
-    getAllCategories(),
-    getAllAuthors(),
+    getBookCategories(),
+    getBookAuthors(),
   ])
 
   return (
