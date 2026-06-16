@@ -312,6 +312,39 @@ export interface NamazTimeDetail {
   updatedAt: string
 }
 
+export interface QuranSurah {
+  number: number
+  nameArabic: string
+  nameBengali: string
+  nameEnglish: string
+  transliteration: string
+  totalAyahs: number
+  revelationType: 'Meccan' | 'Medinan'
+  paraNumber: number
+}
+
+export interface QuranWord {
+  id: number
+  arabic: string
+  bengali: string
+}
+
+export interface QuranTranslation {
+  translator: string
+  text: string
+}
+
+export interface QuranAyah {
+  number: number
+  arabic: string
+  translations: QuranTranslation[]
+  words: QuranWord[]
+}
+
+export interface QuranSurahDetail extends QuranSurah {
+  ayahs: QuranAyah[]
+}
+
 export interface HijriMonthSighting {
   id: string
   countryCode: string

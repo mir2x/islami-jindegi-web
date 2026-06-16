@@ -1,4 +1,4 @@
-import type { Book, BookDetail, Author, Category, BayanListItem, ArticleListItem, NewsListItem, MalfuzatListItem, NamazTimeListItem, PagedResult, MushafEdition } from '@/types'
+import type { Book, BookDetail, Author, Category, BayanListItem, ArticleListItem, NewsListItem, MalfuzatListItem, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -76,4 +76,14 @@ export async function getRecentNews(pageSize = 6) {
 export async function getNamazTimes() {
   const r = await get<PagedResult<NamazTimeListItem>>(`/api/namaz-times?page=1&pageSize=10`, 3600)
   return r?.data ?? []
+}
+
+export async function getQuranSurahs(): Promise<QuranSurah[]> {
+  const r = await get<QuranSurah[]>('/api/quran/surahs', 86400)
+  return r ?? []
+}
+
+export async function getQuranSurah(number: number, translator?: string): Promise<QuranSurahDetail | null> {
+  const q = translator ? `?translator=${encodeURIComponent(translator)}` : ''
+  return get<QuranSurahDetail>(`/api/quran/surahs/${number}/ayahs${q}`, 86400)
 }
