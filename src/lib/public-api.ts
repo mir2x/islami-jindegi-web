@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -125,6 +125,32 @@ export async function getMalfuzatAuthors() {
 
 export async function getMalfuzatCategories() {
   const r = await get<MalfuzatCategoryOption[]>('/api/malfuzat/categories?published=true', 600)
+  return r ?? []
+}
+
+export async function getDuas(opts: {
+  page?: number
+  pageSize?: number
+  search?: string
+  categoryId?: string
+  hasAudio?: boolean
+} = {}) {
+  const q = new URLSearchParams()
+  q.set('published', 'true')
+  q.set('page', String(opts.page ?? 1))
+  q.set('pageSize', String(opts.pageSize ?? 20))
+  if (opts.search) q.set('search', opts.search)
+  if (opts.categoryId) q.set('categoryId', opts.categoryId)
+  if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
+  return get<PagedResult<DuaListItem>>(`/api/dua?${q}`, 120)
+}
+
+export async function getDua(id: string) {
+  return get<DuaDetail>(`/api/dua/${id}`, 300)
+}
+
+export async function getDuaCategories() {
+  const r = await get<DuaCategoryOption[]>('/api/dua/categories?published=true', 600)
   return r ?? []
 }
 

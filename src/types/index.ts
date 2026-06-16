@@ -226,6 +226,12 @@ export interface DuaDetail extends DuaListItem {
   documentUrl: string | null
 }
 
+export interface DuaCategoryOption {
+  id: string
+  title: string
+  count: number
+}
+
 export interface BayanListItem {
   id: string
   title: string

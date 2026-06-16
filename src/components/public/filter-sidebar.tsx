@@ -17,9 +17,10 @@ interface Props {
   selected: string
   onSelect: (id: string) => void
   emptyText: string
+  listClassName?: string
 }
 
-export function SidebarOptionList({ title, items, search, onSearch, selected, onSelect, emptyText }: Props) {
+export function SidebarOptionList({ title, items, search, onSearch, selected, onSelect, emptyText, listClassName }: Props) {
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="px-4 pt-4 pb-3">
@@ -34,7 +35,7 @@ export function SidebarOptionList({ title, items, search, onSearch, selected, on
           />
         </div>
       </div>
-      <div className="max-h-72 overflow-y-auto px-2 pb-2">
+      <div className={cn('overflow-y-auto px-2 pb-2', listClassName ?? 'max-h-72')}>
         {items.map(item => (
           <button
             key={item.id}
