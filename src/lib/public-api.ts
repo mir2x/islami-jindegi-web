@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -243,6 +243,16 @@ export async function getNewsList(opts: {
 
 export async function getNewsItem(id: string) {
   return get<NewsDetail>(`/api/news/${id}`, 300)
+}
+
+export async function getMadrasahs(opts: { page?: number; search?: string } = {}) {
+  const q = new URLSearchParams({ page: String(opts.page ?? 1), pageSize: '20' })
+  if (opts.search) q.set('search', opts.search)
+  return get<PagedResult<MadrasahListItem>>(`/api/madrasahs?${q}`, 120)
+}
+
+export async function getMadrasah(id: string) {
+  return get<MadrasahDetail>(`/api/madrasahs/${id}`, 300)
 }
 
 export async function getNamazTimes() {
