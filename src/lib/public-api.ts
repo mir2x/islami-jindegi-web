@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -192,9 +192,57 @@ export async function getRecentArticles(pageSize = 6) {
   return r?.data ?? []
 }
 
+export async function getArticles(opts: {
+  page?: number
+  pageSize?: number
+  search?: string
+  categoryId?: string
+  authorId?: string
+} = {}) {
+  const q = new URLSearchParams()
+  q.set('published', 'true')
+  q.set('page', String(opts.page ?? 1))
+  q.set('pageSize', String(opts.pageSize ?? 20))
+  if (opts.search) q.set('search', opts.search)
+  if (opts.categoryId) q.set('categoryId', opts.categoryId)
+  if (opts.authorId) q.set('authorId', opts.authorId)
+  return get<PagedResult<ArticleListItem>>(`/api/articles?${q}`, 120)
+}
+
+export async function getArticle(id: string) {
+  return get<ArticleDetail>(`/api/articles/${id}`, 300)
+}
+
+export async function getArticleAuthors() {
+  const r = await get<ArticleAuthorOption[]>('/api/articles/authors?published=true', 600)
+  return r ?? []
+}
+
+export async function getArticleCategories() {
+  const r = await get<ArticleCategoryOption[]>('/api/articles/categories?published=true', 600)
+  return r ?? []
+}
+
 export async function getRecentNews(pageSize = 6) {
   const r = await get<PagedResult<NewsListItem>>(`/api/news?page=1&pageSize=${pageSize}&published=true`, 180)
   return r?.data ?? []
+}
+
+export async function getNewsList(opts: {
+  page?: number
+  pageSize?: number
+  search?: string
+} = {}) {
+  const q = new URLSearchParams()
+  q.set('published', 'true')
+  q.set('page', String(opts.page ?? 1))
+  q.set('pageSize', String(opts.pageSize ?? 20))
+  if (opts.search) q.set('search', opts.search)
+  return get<PagedResult<NewsListItem>>(`/api/news?${q}`, 120)
+}
+
+export async function getNewsItem(id: string) {
+  return get<NewsDetail>(`/api/news/${id}`, 300)
 }
 
 export async function getNamazTimes() {

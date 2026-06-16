@@ -293,6 +293,18 @@ export interface ArticleDetail extends ArticleListItem {
   documentUrl: string | null
 }
 
+export interface ArticleAuthorOption {
+  id: string
+  name: string
+  count: number
+}
+
+export interface ArticleCategoryOption {
+  id: string
+  title: string
+  count: number
+}
+
 export interface NewsListItem {
   id: string
   title: string
@@ -308,6 +320,7 @@ export interface NewsListItem {
 export interface NewsDetail extends NewsListItem {
   body: string
 }
+
 
 export interface MadrasahInfoItem {
   id: string | null
