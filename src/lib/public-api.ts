@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -125,6 +125,39 @@ export async function getMalfuzatAuthors() {
 
 export async function getMalfuzatCategories() {
   const r = await get<MalfuzatCategoryOption[]>('/api/malfuzat/categories?published=true', 600)
+  return r ?? []
+}
+
+export async function getMasails(opts: {
+  page?: number
+  pageSize?: number
+  search?: string
+  categoryId?: string
+  authorId?: string
+  hasAudio?: boolean
+} = {}) {
+  const q = new URLSearchParams()
+  q.set('published', 'true')
+  q.set('page', String(opts.page ?? 1))
+  q.set('pageSize', String(opts.pageSize ?? 20))
+  if (opts.search) q.set('search', opts.search)
+  if (opts.categoryId) q.set('categoryId', opts.categoryId)
+  if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
+  return get<PagedResult<MasailListItem>>(`/api/masail?${q}`, 120)
+}
+
+export async function getMasail(id: string) {
+  return get<MasailDetail>(`/api/masail/${id}`, 300)
+}
+
+export async function getMasailAuthors() {
+  const r = await get<MasailAuthorOption[]>('/api/masail/authors?published=true', 600)
+  return r ?? []
+}
+
+export async function getMasailCategories() {
+  const r = await get<MasailCategoryOption[]>('/api/masail/categories?published=true', 600)
   return r ?? []
 }
 

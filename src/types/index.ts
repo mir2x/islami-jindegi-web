@@ -196,6 +196,18 @@ export interface MasailDetail extends MasailListItem {
   documentUrl: string | null
 }
 
+export interface MasailAuthorOption {
+  id: string
+  name: string
+  count: number
+}
+
+export interface MasailCategoryOption {
+  id: string
+  title: string
+  count: number
+}
+
 export interface DuaListItem {
   id: string
   title: string
