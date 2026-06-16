@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, NewsListItem, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -93,6 +93,39 @@ export async function getBayanCategories() {
 export async function getRecentMalfuzat(pageSize = 8) {
   const r = await get<PagedResult<MalfuzatListItem>>(`/api/malfuzat?page=1&pageSize=${pageSize}&published=true`, 180)
   return r?.data ?? []
+}
+
+export async function getMalfuzats(opts: {
+  page?: number
+  pageSize?: number
+  search?: string
+  categoryId?: string
+  authorId?: string
+  hasAudio?: boolean
+} = {}) {
+  const q = new URLSearchParams()
+  q.set('published', 'true')
+  q.set('page', String(opts.page ?? 1))
+  q.set('pageSize', String(opts.pageSize ?? 20))
+  if (opts.search) q.set('search', opts.search)
+  if (opts.categoryId) q.set('categoryId', opts.categoryId)
+  if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
+  return get<PagedResult<MalfuzatListItem>>(`/api/malfuzat?${q}`, 120)
+}
+
+export async function getMalfuzat(id: string) {
+  return get<MalfuzatDetail>(`/api/malfuzat/${id}`, 300)
+}
+
+export async function getMalfuzatAuthors() {
+  const r = await get<MalfuzatAuthorOption[]>('/api/malfuzat/authors?published=true', 600)
+  return r ?? []
+}
+
+export async function getMalfuzatCategories() {
+  const r = await get<MalfuzatCategoryOption[]>('/api/malfuzat/categories?published=true', 600)
+  return r ?? []
 }
 
 export async function getRecentArticles(pageSize = 6) {

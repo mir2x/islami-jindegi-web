@@ -20,6 +20,24 @@ type ActiveContent =
   | { kind: 'chapter'; chapter: Chapter }
   | { kind: 'sub'; chapter: Chapter; sub: SubChapter }
 
+// ─── Tree helpers ───────────────────────────────────────────────────────────
+// Chapter.subChapters arrives as a flat list (all nesting levels mixed
+// together), grouped only by parentSubChapterId. Reconstruct the tree.
+
+function topLevelSubs(chapter: Chapter): SubChapter[] {
+  return chapter.subChapters.filter(s => !s.parentSubChapterId)
+}
+
+function childrenOf(chapter: Chapter, parentId: string): SubChapter[] {
+  return chapter.subChapters.filter(s => s.parentSubChapterId === parentId)
+}
+
+// Depth-first flattening (parent immediately followed by its own children) —
+// used for prev/next navigation and for picking a sensible default chapter.
+function flattenSubs(chapter: Chapter, subs: SubChapter[]): SubChapter[] {
+  return subs.flatMap(s => [s, ...flattenSubs(chapter, childrenOf(chapter, s.id))])
+}
+
 export function ChapterReader({ book, onSwitchToPdf }: Props) {
   const firstReadable = book.chapters.find(c => c.body || c.subChapters.some(s => s.body))
 
@@ -41,7 +59,8 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -54,6 +73,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
 
   const pickSub = (chapter: Chapter, sub: SubChapter) => {
     setActive({ kind: 'sub', chapter, sub })
+    if (childrenOf(chapter, sub.id).length > 0 && !expanded.has(sub.id)) toggleExpand(sub.id)
     setDrawerOpen(false)
   }
 
@@ -71,12 +91,21 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
         ? { title: active.chapter.title, body: active.chapter.body }
         : { title: active.sub.title, body: active.sub.body }
 
-  // Prev / next chapter navigation
+  // When the current page has no body of its own, it's likely just a
+  // container — show its direct children as an index instead of "no content".
+  const childIndexItems: { id: string; title: string; onClick: () => void }[] =
+    active.kind === 'chapter'
+      ? topLevelSubs(active.chapter).map(s => ({ id: s.id, title: s.title, onClick: () => pickSub(active.chapter, s) }))
+      : active.kind === 'sub'
+        ? childrenOf(active.chapter, active.sub.id).map(s => ({ id: s.id, title: s.title, onClick: () => pickSub(active.chapter, s) }))
+        : []
+
+  // Prev / next chapter navigation (depth-first across chapters + nested subchapters)
   const flatItems: ActiveContent[] = [
     ...(book.excerpt ? [{ kind: 'intro' } as ActiveContent] : []),
     ...book.chapters.flatMap(c => [
       { kind: 'chapter', chapter: c } as ActiveContent,
-      ...c.subChapters.map(s => ({ kind: 'sub', chapter: c, sub: s } as ActiveContent)),
+      ...flattenSubs(c, topLevelSubs(c)).map(s => ({ kind: 'sub', chapter: c, sub: s } as ActiveContent)),
     ]),
   ]
   const currentIdx = flatItems.findIndex(item => {
@@ -177,15 +206,17 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
                 )}
               </button>
 
-              {expanded.has(chapter.id) && chapter.subChapters.map(sub => (
-                <SidebarItem
-                  key={sub.id}
-                  label={sub.title}
-                  active={isSubActive(sub.id)}
-                  onClick={() => pickSub(chapter, sub)}
-                  indent
+              {expanded.has(chapter.id) && (
+                <SidebarSubTree
+                  chapter={chapter}
+                  subs={topLevelSubs(chapter)}
+                  depth={0}
+                  expanded={expanded}
+                  toggleExpand={toggleExpand}
+                  isSubActive={isSubActive}
+                  pickSub={pickSub}
                 />
-              ))}
+              )}
             </div>
           ))}
         </div>
@@ -284,6 +315,22 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
                 style={{ fontSize: `${fontSize}px`, lineHeight: 1.9 }}
                 dangerouslySetInnerHTML={{ __html: content.body }}
               />
+            ) : childIndexItems.length > 0 ? (
+              <div>
+                <p className="text-sm text-muted-foreground mb-4">এই অধ্যায়ে নিম্নলিখিত বিষয়গুলো রয়েছে:</p>
+                <div className="space-y-2">
+                  {childIndexItems.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={item.onClick}
+                      className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
+                    >
+                      <span className="text-sm font-medium text-foreground">{item.title}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
               <p className="text-muted-foreground italic text-base">এই অধ্যায়ে কোনো বিষয়বস্তু নেই।</p>
             )}
@@ -343,5 +390,66 @@ function SidebarItem({
     >
       {label}
     </button>
+  )
+}
+
+// Recursively renders a level of the subchapter tree, indenting deeper levels.
+function SidebarSubTree({
+  chapter, subs, depth, expanded, toggleExpand, isSubActive, pickSub,
+}: {
+  chapter: Chapter
+  subs: SubChapter[]
+  depth: number
+  expanded: Set<string>
+  toggleExpand: (id: string) => void
+  isSubActive: (id: string) => boolean
+  pickSub: (chapter: Chapter, sub: SubChapter) => void
+}) {
+  return (
+    <>
+      {subs.map(sub => {
+        const children = childrenOf(chapter, sub.id)
+        const hasChildren = children.length > 0
+        return (
+          <div key={sub.id}>
+            <button
+              onClick={() => pickSub(chapter, sub)}
+              className={cn(
+                'w-full text-left py-2.5 flex items-start justify-between gap-2 text-sm leading-snug transition-colors',
+                depth === 0 ? 'pl-8 pr-4' : 'pl-12 pr-4',
+                isSubActive(sub.id)
+                  ? 'text-primary font-semibold bg-primary/8'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <span>{sub.title}</span>
+              {hasChildren && (
+                <span
+                  className="shrink-0 mt-0.5 text-muted-foreground/70"
+                  onClick={e => { e.stopPropagation(); toggleExpand(sub.id) }}
+                >
+                  {expanded.has(sub.id)
+                    ? <ChevronDown className="w-3.5 h-3.5" />
+                    : <ChevronRight className="w-3.5 h-3.5" />
+                  }
+                </span>
+              )}
+            </button>
+
+            {hasChildren && expanded.has(sub.id) && (
+              <SidebarSubTree
+                chapter={chapter}
+                subs={children}
+                depth={depth + 1}
+                expanded={expanded}
+                toggleExpand={toggleExpand}
+                isSubActive={isSubActive}
+                pickSub={pickSub}
+              />
+            )}
+          </div>
+        )
+      })}
+    </>
   )
 }

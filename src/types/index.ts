@@ -163,6 +163,18 @@ export interface MalfuzatDetail extends MalfuzatListItem {
   documentUrl: string | null
 }
 
+export interface MalfuzatAuthorOption {
+  id: string
+  name: string
+  count: number
+}
+
+export interface MalfuzatCategoryOption {
+  id: string
+  title: string
+  count: number
+}
+
 export interface MasailListItem {
   id: string
   title: string
