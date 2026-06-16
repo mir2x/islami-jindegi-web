@@ -193,6 +193,44 @@ export function formatTimeBn(d: Date) {
   return `${toBnNum(h)}:${m.split('').map(c => BN_DIGITS[+c] ?? c).join('')} ${ampm}`
 }
 
+// ── Bangla (Bengali solar) calendar ──────────────────────────────────────────
+const BANGLA_MONTHS_BN = [
+  'বৈশাখ', 'জ্যৈষ্ঠ', 'আষাঢ়', 'শ্রাবণ', 'ভাদ্র', 'আশ্বিন',
+  'কার্তিক', 'অগ্রহায়ণ', 'পৌষ', 'মাঘ', 'ফাল্গুন', 'চৈত্র',
+]
+
+// [gregMonth, gregDay] when each Bangla month starts (Bangladesh official calendar)
+const BANGLA_STARTS: [number, number][] = [
+  [4, 14], [5, 15], [6, 16], [7, 16], [8, 16], [9, 16],
+  [10, 16], [11, 15], [12, 15], [1, 14], [2, 13], [3, 14],
+]
+
+export function toBanglaDate(date: Date): { day: number; monthBn: string; year: number } {
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  const d = date.getDate()
+
+  // Remap months so Bangla year (starting April) runs 4→15 instead of wrapping at 12
+  const seq = (gm: number) => (gm < 4 ? gm + 12 : gm)
+  const seqM = seq(m)
+
+  let banglaMonthIdx = 0
+  let banglaDay = 1
+
+  for (let i = BANGLA_STARTS.length - 1; i >= 0; i--) {
+    const [sm, sd] = BANGLA_STARTS[i]
+    const seqSM = seq(sm)
+    if (seqM > seqSM || (seqM === seqSM && d >= sd)) {
+      banglaMonthIdx = i
+      banglaDay = d - sd + 1
+      break
+    }
+  }
+
+  const banglaYear = m >= 4 ? y - 593 : y - 594
+  return { day: banglaDay, monthBn: BANGLA_MONTHS_BN[banglaMonthIdx], year: banglaYear }
+}
+
 export function countdownText(target: Date, now: Date): string {
   let diff = target.getTime() - now.getTime()
   if (diff < 0) diff += 86400000
