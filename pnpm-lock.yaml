@@ -53,6 +53,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.23.4
         version: 3.23.4
+      adhan:
+        specifier: ^4.4.4
+        version: 4.4.4
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1496,6 +1499,9 @@ packages:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  adhan@4.4.4:
+    resolution: {integrity: sha512-6KmAwLtk2ZU0hLdMR3HofOuoEMa76mKv75Bknv8OEwquIGGNUFabWZna+dJI3gEuS7TqUw62Ro5PkwccgW19zw==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -5010,6 +5016,8 @@ snapshots:
       acorn: 8.16.0
 
   acorn@8.16.0: {}
+
+  adhan@4.4.4: {}
 
   agent-base@7.1.4: {}
 

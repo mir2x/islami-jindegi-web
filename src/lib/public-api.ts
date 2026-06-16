@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, NamazTimeDetail, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -256,8 +256,12 @@ export async function getMadrasah(id: string) {
 }
 
 export async function getNamazTimes() {
-  const r = await get<PagedResult<NamazTimeListItem>>(`/api/namaz-times?page=1&pageSize=10`, 3600)
+  const r = await get<PagedResult<NamazTimeListItem>>(`/api/namaz-times?page=1&pageSize=20`, 3600)
   return r?.data ?? []
+}
+
+export async function getNamazTimeDetail(id: string) {
+  return get<NamazTimeDetail>(`/api/namaz-times/${id}`, 3600)
 }
 
 export async function getQuranSurahs(): Promise<QuranSurah[]> {
