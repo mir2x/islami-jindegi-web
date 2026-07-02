@@ -189,10 +189,10 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
     <div className="flex flex-col bg-background lg:h-[calc(100vh-68px)] lg:overflow-hidden">
 
       {/* ── Main row: stacked on mobile, side-by-side on desktop ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 lg:p-4">
 
-        {/* ── LEFT: full-width on mobile, 40% on desktop ─────────── */}
-        <div className="w-full lg:w-[40%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border/40 p-4 gap-3 lg:overflow-hidden">
+        {/* ── LEFT: full-width on mobile, 50% on desktop ─────────── */}
+        <div className="w-full lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-4 gap-3 lg:overflow-hidden">
           <PrayerCard />
 
           <nav className="flex-1 min-h-0 grid grid-cols-4 lg:grid-cols-3 auto-rows-fr gap-1">
@@ -213,7 +213,7 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
         </div>
 
         {/* ── RIGHT: full-width on mobile ─────────────────────────── */}
-        <div className="flex-1 min-w-0 flex flex-col lg:overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col lg:overflow-hidden lg:border lg:border-border/40 lg:rounded-2xl">
 
           {/* Tab bar */}
           <div className="shrink-0 flex items-center justify-between gap-2 px-4 lg:px-5 pt-4 pb-3 border-b border-border/30">
