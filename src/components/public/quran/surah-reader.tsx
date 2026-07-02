@@ -45,7 +45,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioError, setAudioError] = useState(false)
   const [surahSearch, setSurahSearch] = useState('')
-  const [verseInput, setVerseInput] = useState('')
+  const [selectedNavSurah, setSelectedNavSurah] = useState<QuranSurah>(surah)
   const [pageInput, setPageInput] = useState('')
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -137,13 +137,6 @@ export function SurahReader({ surah, allSurahs }: Props) {
       )
     : allSurahs
 
-  function jumpToVerse() {
-    const n = parseInt(verseInput)
-    if (!n || n < 1 || n > surah.totalAyahs) return
-    ayahRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setActiveAyah(n)
-    setShowNav(false)
-  }
 
   return (
     <div className="flex flex-col bg-background h-svh">
@@ -285,49 +278,47 @@ export function SurahReader({ surah, allSurahs }: Props) {
 
               {/* ── আয়াত tab ── */}
               {navTab === 'verse' && (
-                <div className="px-4 pt-4 space-y-4 overflow-y-auto">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1.5">{surah.nameBengali} · মোট {surah.totalAyahs} আয়াত</p>
-                    <p className="text-sm font-medium text-foreground mb-3">আয়াত নম্বর দিয়ে যান</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min={1}
-                        max={surah.totalAyahs}
-                        value={verseInput}
-                        onChange={e => setVerseInput(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && jumpToVerse()}
-                        placeholder={`১ – ${surah.totalAyahs}`}
-                        className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
+                <div className="flex flex-1 overflow-hidden">
+                  {/* Left: surah list */}
+                  <div className="flex-1 overflow-y-auto border-r border-border">
+                    {allSurahs.map(s => (
                       <button
-                        onClick={jumpToVerse}
-                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                        key={s.number}
+                        onClick={() => setSelectedNavSurah(s)}
+                        className={cn(
+                          'w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted',
+                          selectedNavSurah.number === s.number && 'bg-muted/60'
+                        )}
                       >
-                        যান
+                        <span className="text-xs text-muted-foreground tabular-nums w-5 shrink-0">{s.number}</span>
+                        <span className={cn('text-sm truncate', selectedNavSurah.number === s.number ? 'font-bold text-foreground' : 'text-muted-foreground')}>{s.nameBengali}</span>
                       </button>
-                    </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">সকল আয়াত</p>
-                    <div className="space-y-0.5">
-                      {surah.ayahs.map(a => (
+                  {/* Right: verse numbers */}
+                  <div className="w-14 overflow-y-auto shrink-0">
+                    {Array.from({ length: selectedNavSurah.totalAyahs }, (_, i) => i + 1).map(n => {
+                      const isCurrentVerse = selectedNavSurah.number === surah.number && activeAyah === n
+                      return (
                         <button
-                          key={a.number}
+                          key={n}
                           onClick={() => {
-                            ayahRefs.current[a.number - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                            setActiveAyah(a.number)
+                            if (selectedNavSurah.number === surah.number) {
+                              ayahRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                              setActiveAyah(n)
+                            } else {
+                              router.push(`/quran/surah/${selectedNavSurah.number}`)
+                            }
                           }}
                           className={cn(
-                            'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors hover:bg-muted',
-                            activeAyah === a.number && 'bg-primary/10 text-primary'
+                            'w-full py-2.5 text-sm text-center transition-colors hover:bg-muted',
+                            isCurrentVerse ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground'
                           )}
                         >
-                          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-muted shrink-0">{a.number}</span>
-                          <p className="text-sm text-muted-foreground truncate">{a.translations[0]?.text?.slice(0, 50) ?? ''}…</p>
+                          {n}
                         </button>
-                      ))}
-                    </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
