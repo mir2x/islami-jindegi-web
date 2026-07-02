@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   ChevronLeft, ChevronRight, ArrowLeft, BookOpen,
   Play, Pause, SkipBack, SkipForward, Volume2, Settings, X, List,
+  Copy, Share2, Bookmark, MoreHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { QuranSurahDetail, QuranSurah, QuranAyah } from '@/types'
@@ -361,6 +362,25 @@ const AyahCard = forwardRef<HTMLDivElement, {
   onPlay: () => void
 }>(function AyahCard({ ayah, translator, showWords, isActive, onPlay }, ref) {
   const translation = ayah.translations.find(t => t.translator === translator)
+  const [bookmarked, setBookmarked] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    const text = `${ayah.arabic}\n${translation?.text ?? ''}`
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
+  function handleShare() {
+    const text = `${ayah.arabic}\n${translation?.text ?? ''}`
+    if (navigator.share) {
+      navigator.share({ text })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+    }
+  }
 
   return (
     <div
@@ -370,12 +390,12 @@ const AyahCard = forwardRef<HTMLDivElement, {
         isActive && 'bg-primary/5 -mx-4 px-4 rounded-lg border-primary/20'
       )}
     >
-      {/* Ayah number + play */}
+      {/* Ayah number + actions row */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={onPlay}
           className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors',
+            'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors shrink-0',
             isActive
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary'
@@ -384,13 +404,43 @@ const AyahCard = forwardRef<HTMLDivElement, {
         >
           {ayah.number}
         </button>
-        {isActive && (
-          <div className="flex gap-0.5 items-end h-4">
-            {[1, 2, 3].map(i => (
-              <span key={i} className="w-0.5 bg-primary rounded-full animate-bounce" style={{ height: `${[60, 100, 40][i-1]}%`, animationDelay: `${i * 0.1}s` }} />
-            ))}
-          </div>
-        )}
+
+        <div className="flex items-center gap-0.5">
+          {isActive && (
+            <div className="flex gap-0.5 items-end h-4 mr-2">
+              {[1, 2, 3].map(i => (
+                <span key={i} className="w-0.5 bg-primary rounded-full animate-bounce" style={{ height: `${[60, 100, 40][i-1]}%`, animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </div>
+          )}
+          <button
+            onClick={handleCopy}
+            title="কপি করুন"
+            className={cn('p-1.5 rounded-md transition-colors', copied ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleShare}
+            title="শেয়ার করুন"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setBookmarked(b => !b)}
+            title="বুকমার্ক"
+            className={cn('p-1.5 rounded-md transition-colors', bookmarked ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+          >
+            <Bookmark className={cn('w-3.5 h-3.5', bookmarked && 'fill-current')} />
+          </button>
+          <button
+            title="আরো"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Arabic */}
