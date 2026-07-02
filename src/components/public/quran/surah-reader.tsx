@@ -146,7 +146,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
   }
 
   return (
-    <div className="flex flex-col bg-background min-h-screen">
+    <div className="flex flex-col bg-background h-svh">
       <audio
         ref={audioRef}
         onEnded={handleEnded}
@@ -155,15 +155,12 @@ export function SurahReader({ surah, allSurahs }: Props) {
       />
 
       {/* ── Top bar ── */}
-      <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur">
+      <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border bg-background z-10">
         <Link href="/quran" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
 
-        <button
-          onClick={() => setShowNav(v => !v)}
-          className="flex-1 min-w-0 text-left group"
-        >
+        <button onClick={() => setShowNav(v => !v)} className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-1">
             <h1 className="font-bold text-foreground text-base leading-tight truncate">{surah.nameBengali}</h1>
             <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0', showNav && 'rotate-180')} />
@@ -184,7 +181,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
 
       {/* ── Settings panel ── */}
       {showSettings && (
-        <div className="border-b border-border bg-muted/30 px-4 py-4">
+        <div className="shrink-0 border-b border-border bg-muted/30 px-4 py-4">
           <div className="max-w-2xl mx-auto space-y-4">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">অনুবাদ</p>
@@ -218,11 +215,12 @@ export function SurahReader({ surah, allSurahs }: Props) {
         </div>
       )}
 
-      {/* ── Navigation panel ── */}
-      {showNav && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowNav(false)} />
-          <div className="relative w-80 max-w-[90vw] h-full bg-background flex flex-col shadow-2xl">
+      {/* ── Body: nav sidebar + scrollable content ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Nav sidebar — inline below top bar, no overlay */}
+        {showNav && (
+          <div className="w-72 shrink-0 border-r border-border flex flex-col overflow-hidden bg-background">
 
             {/* Tabs + X in one row */}
             <div className="flex items-center border-b border-border shrink-0">
@@ -287,7 +285,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
 
               {/* ── আয়াত tab ── */}
               {navTab === 'verse' && (
-                <div className="px-4 pt-4 space-y-4">
+                <div className="px-4 pt-4 space-y-4 overflow-y-auto">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1.5">{surah.nameBengali} · মোট {surah.totalAyahs} আয়াত</p>
                     <p className="text-sm font-medium text-foreground mb-3">আয়াত নম্বর দিয়ে যান</p>
@@ -310,7 +308,6 @@ export function SurahReader({ surah, allSurahs }: Props) {
                       </button>
                     </div>
                   </div>
-
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">সকল আয়াত</p>
                     <div className="space-y-0.5">
@@ -320,7 +317,6 @@ export function SurahReader({ surah, allSurahs }: Props) {
                           onClick={() => {
                             ayahRefs.current[a.number - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                             setActiveAyah(a.number)
-                            setShowNav(false)
                           }}
                           className={cn(
                             'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors hover:bg-muted',
@@ -388,9 +384,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
                       placeholder="পৃষ্ঠা নম্বর"
                       className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <button
-                      className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-                    >
+                    <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
                       যান
                     </button>
                   </div>
@@ -400,68 +394,73 @@ export function SurahReader({ surah, allSurahs }: Props) {
 
             </div>
           </div>
+        )}
+
+        {/* ── Scrollable content ── */}
+        <div className="flex-1 overflow-y-auto">
+
+          {/* Surah header */}
+          <div className="text-center py-8 border-b border-border/50">
+            <p className="text-4xl sm:text-5xl text-foreground mb-2" style={{ fontFamily: 'serif', direction: 'rtl', lineHeight: 1.6 }}>
+              {surah.nameArabic}
+            </p>
+            <p className="text-lg font-semibold text-foreground">{surah.nameBengali}</p>
+            <p className="text-sm text-muted-foreground mt-1">{surah.nameEnglish} · {surah.totalAyahs} আয়াত</p>
+            {surah.number !== 1 && surah.number !== 9 && (
+              <p className="mt-4 text-xl text-foreground" style={{ fontFamily: 'serif', direction: 'rtl' }}>
+                بِسۡمِ اللّٰہِ الرَّحۡمٰنِ الرَّحِیۡمِ
+              </p>
+            )}
+          </div>
+
+          {/* Ayahs */}
+          <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-0">
+            {surah.ayahs.map((ayah, i) => (
+              <AyahCard
+                key={ayah.number}
+                ayah={ayah}
+                translator={translator}
+                showWords={showWords}
+                isActive={activeAyah === ayah.number}
+                onPlay={() => playAyah(ayah.number)}
+                ref={el => { ayahRefs.current[i] = el }}
+              />
+            ))}
+          </div>
+
+          {/* Prev / Next surah */}
+          <div className="max-w-2xl mx-auto w-full px-4 pb-6 grid grid-cols-2 gap-3">
+            {prevSurah ? (
+              <Link
+                href={`/quran/surah/${prevSurah.number}`}
+                className="flex items-center gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              >
+                <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">আগের সূরা</p>
+                  <p className="text-sm font-semibold truncate group-hover:text-primary">{prevSurah.nameBengali}</p>
+                </div>
+              </Link>
+            ) : <div />}
+            {nextSurah && (
+              <Link
+                href={`/quran/surah/${nextSurah.number}`}
+                className="flex items-center justify-end gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              >
+                <div className="min-w-0 text-right">
+                  <p className="text-xs text-muted-foreground">পরের সূরা</p>
+                  <p className="text-sm font-semibold truncate group-hover:text-primary">{nextSurah.nameBengali}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
+              </Link>
+            )}
+          </div>
+
         </div>
-      )}
-
-      {/* ── Surah header ── */}
-      <div className="text-center py-8 border-b border-border/50">
-        <p className="text-4xl sm:text-5xl text-foreground mb-2" style={{ fontFamily: 'serif', direction: 'rtl', lineHeight: 1.6 }}>
-          {surah.nameArabic}
-        </p>
-        <p className="text-lg font-semibold text-foreground">{surah.nameBengali}</p>
-        <p className="text-sm text-muted-foreground mt-1">{surah.nameEnglish} · {surah.totalAyahs} আয়াত</p>
-        {surah.number !== 1 && surah.number !== 9 && (
-          <p className="mt-4 text-xl text-foreground" style={{ fontFamily: 'serif', direction: 'rtl' }}>
-            بِسۡمِ اللّٰہِ الرَّحۡمٰنِ الرَّحِیۡمِ
-          </p>
-        )}
       </div>
 
-      {/* ── Ayahs ── */}
-      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-0">
-        {surah.ayahs.map((ayah, i) => (
-          <AyahCard
-            key={ayah.number}
-            ayah={ayah}
-            translator={translator}
-            showWords={showWords}
-            isActive={activeAyah === ayah.number}
-            onPlay={() => playAyah(ayah.number)}
-            ref={el => { ayahRefs.current[i] = el }}
-          />
-        ))}
-      </div>
-
-      {/* ── Prev / Next surah ── */}
-      <div className="max-w-2xl mx-auto w-full px-4 pb-32 grid grid-cols-2 gap-3">
-        {prevSurah ? (
-          <Link
-            href={`/quran/surah/${prevSurah.number}`}
-            className="flex items-center gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
-          >
-            <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">আগের সূরা</p>
-              <p className="text-sm font-semibold truncate group-hover:text-primary">{prevSurah.nameBengali}</p>
-            </div>
-          </Link>
-        ) : <div />}
-        {nextSurah && (
-          <Link
-            href={`/quran/surah/${nextSurah.number}`}
-            className="flex items-center justify-end gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
-          >
-            <div className="min-w-0 text-right">
-              <p className="text-xs text-muted-foreground">পরের সূরা</p>
-              <p className="text-sm font-semibold truncate group-hover:text-primary">{nextSurah.nameBengali}</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
-          </Link>
-        )}
-      </div>
-
-      {/* ── Sticky audio player ── */}
-      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur px-4 py-3">
+      {/* ── Audio player — pinned to bottom of flex column ── */}
+      <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <div className="flex-1 min-w-0">
             {activeAyah !== null ? (
