@@ -112,17 +112,22 @@ function PrayerCard() {
 
 function BooksGrid({ books }: { books: Book[] }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
+    <div className="divide-y divide-border/50">
       {books.slice(0, 8).map(b => (
-        <Link key={b.id} href={`/books/${b.id}`} className="group min-w-0">
-          <div className="relative w-full rounded-xl overflow-hidden bg-muted mb-2 shadow-sm group-hover:shadow-md transition-shadow" style={{ aspectRatio: '3/4' }}>
+        <Link key={b.id} href={`/books/${b.id}`} className="group flex gap-4 py-4 first:pt-0 -mx-4 px-4 hover:bg-muted/30 transition-colors rounded-xl">
+          {/* Cover */}
+          <div className="relative w-20 sm:w-24 shrink-0 rounded-lg overflow-hidden bg-muted shadow-sm group-hover:shadow-md transition-shadow" style={{ aspectRatio: '3/4' }}>
             {b.coverUrl
-              ? <Image src={b.coverUrl} alt={b.title} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" sizes="200px" />
-              : <div className="w-full h-full bg-primary/8 flex items-center justify-center"><BookOpen className="w-8 h-8 text-primary/30" /></div>
+              ? <Image src={b.coverUrl} alt={b.title} fill className="object-cover" sizes="96px" />
+              : <div className="w-full h-full bg-primary/8 flex items-center justify-center"><BookOpen className="w-6 h-6 text-primary/30" /></div>
             }
           </div>
-          <p className="text-xs font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">{b.title}</p>
-          {b.authors[0] && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{b.authors[0].name}</p>}
+          {/* Info */}
+          <div className="flex-1 min-w-0 py-1">
+            <p className="font-semibold text-primary leading-snug line-clamp-2">{b.title}</p>
+            {b.authors[0] && <p className="text-sm text-foreground/70 mt-1">{b.authors[0].name}</p>}
+            {b.excerpt && <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{b.excerpt}</p>}
+          </div>
         </Link>
       ))}
     </div>
