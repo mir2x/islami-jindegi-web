@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  ChevronLeft, ChevronRight, ArrowLeft,
-  Play, Pause, SkipBack, SkipForward, Volume2, Settings, X, List,
+  ChevronLeft, ChevronRight, ChevronDown, ArrowLeft,
+  Play, Pause, SkipBack, SkipForward, Volume2, Settings, X,
   Copy, Share2, Bookmark, MoreHorizontal, Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -39,7 +39,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
   const [translator, setTranslator] = useState(TRANSLATORS[0].key)
   const [showWords, setShowWords] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [showNav, setShowNav] = useState(false)
+  const [showNav, setShowNav] = useState(true)
   const [navTab, setNavTab] = useState<NavTab>('surah')
   const [activeAyah, setActiveAyah] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -160,20 +160,19 @@ export function SurahReader({ surah, allSurahs }: Props) {
           <ArrowLeft className="w-5 h-5" />
         </Link>
 
-        <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-foreground text-base leading-tight truncate">{surah.nameBengali}</h1>
+        <button
+          onClick={() => setShowNav(v => !v)}
+          className="flex-1 min-w-0 text-left group"
+        >
+          <div className="flex items-center gap-1">
+            <h1 className="font-bold text-foreground text-base leading-tight truncate">{surah.nameBengali}</h1>
+            <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0', showNav && 'rotate-180')} />
+          </div>
           <p className="text-xs text-muted-foreground">{surah.totalAyahs} আয়াত · {surah.revelationType === 'Meccan' ? 'মক্কী' : 'মাদানী'} · পারা {surah.paraNumber}</p>
-        </div>
+        </button>
 
         <p className="text-2xl text-muted-foreground" style={{ fontFamily: 'serif', direction: 'rtl' }}>{surah.nameArabic}</p>
 
-        <button
-          onClick={() => setShowNav(v => !v)}
-          className={cn('p-1.5 rounded-lg transition-colors', showNav ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
-          title="নেভিগেশন"
-        >
-          <List className="w-5 h-5" />
-        </button>
         <button
           onClick={() => setShowSettings(s => !s)}
           className={cn('p-1.5 rounded-lg transition-colors', showSettings ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
@@ -225,22 +224,14 @@ export function SurahReader({ surah, allSurahs }: Props) {
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowNav(false)} />
           <div className="relative w-80 max-w-[90vw] h-full bg-background flex flex-col shadow-2xl">
 
-            {/* Panel header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-              <p className="font-bold text-foreground text-sm">নেভিগেশন</p>
-              <button onClick={() => setShowNav(false)} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* 4 tabs */}
-            <div className="flex border-b border-border shrink-0">
+            {/* Tabs + X in one row */}
+            <div className="flex items-center border-b border-border shrink-0">
               {NAV_TABS.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setNavTab(tab.id)}
                   className={cn(
-                    'flex-1 py-2.5 text-xs font-semibold transition-colors',
+                    'flex-1 py-3 text-xs font-semibold transition-colors',
                     navTab === tab.id
                       ? 'border-b-2 border-primary text-primary'
                       : 'text-muted-foreground hover:text-foreground'
@@ -249,6 +240,9 @@ export function SurahReader({ surah, allSurahs }: Props) {
                   {tab.label}
                 </button>
               ))}
+              <button onClick={() => setShowNav(false)} className="px-3 py-3 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Tab content */}
