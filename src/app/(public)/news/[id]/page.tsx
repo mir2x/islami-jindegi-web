@@ -36,7 +36,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
           <h1 className="text-2xl font-bold text-foreground leading-snug mb-4">{item.title}</h1>
 
           {/* Meta */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6 pb-6 border-b border-border/50">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6 pb-6 border-b border-border/50">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
               {new Date(date).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}

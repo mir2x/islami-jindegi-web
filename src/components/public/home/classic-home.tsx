@@ -110,10 +110,9 @@ function PrayerCard() {
 
 // ── Tab content ───────────────────────────────────────────────────────────────
 
-// 4-col grid; works at 50%-width panel where each col is ~150–170 px
 function BooksGrid({ books }: { books: Book[] }) {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
       {books.slice(0, 8).map(b => (
         <Link key={b.id} href={`/books/${b.id}`} className="group min-w-0">
           <div className="relative w-full rounded-xl overflow-hidden bg-muted mb-2 shadow-sm group-hover:shadow-md transition-shadow" style={{ aspectRatio: '3/4' }}>
@@ -182,47 +181,44 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
   const articlesForList = articles.map(a => ({ id: a.id, title: a.title, subtitle: a.author?.name ?? null }))
 
   return (
-    <div className="h-[calc(100vh-68px)] flex flex-col overflow-hidden bg-background">
+    <div className="flex flex-col bg-background lg:h-[calc(100vh-68px)] lg:overflow-hidden">
 
-      {/* ── Main row: 50 / 50 ─────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 flex">
+      {/* ── Main row: stacked on mobile, side-by-side on desktop ─── */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
 
-        {/* ── LEFT 35% ──────────────────────────────────────────────── */}
-        <div className="w-[40%] shrink-0 flex flex-col border-r border-border/40 p-4 gap-3 overflow-hidden">
+        {/* ── LEFT: full-width on mobile, 40% on desktop ─────────── */}
+        <div className="w-full lg:w-[40%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border/40 p-4 gap-3 lg:overflow-hidden">
           <PrayerCard />
 
-          <nav className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-1">
-            {SECTIONS.map(({ label, href, icon }, i) => (
+          <nav className="flex-1 min-h-0 grid grid-cols-4 lg:grid-cols-3 auto-rows-fr gap-1">
+            {SECTIONS.map(({ label, href, icon }) => (
               <Link
                 key={href}
                 href={href}
-                className={cn(
-                  'group flex flex-col items-center justify-center gap-3 px-2 rounded-2xl hover:bg-muted/50 transition-colors text-center',
-                  i === SECTIONS.length - 1 && SECTIONS.length % 3 === 1 && 'col-start-2'
-                )}
+                className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl hover:bg-muted/50 transition-colors text-center"
               >
-                <div className="w-28 h-28 rounded-3xl bg-card border border-border/40 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/30 transition-all p-5">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 lg:w-28 lg:h-28 rounded-2xl lg:rounded-3xl bg-card border border-border/40 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/30 transition-all p-3 sm:p-3.5 lg:p-5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={icon} alt={label} className="w-full h-full object-contain" />
                 </div>
-                <span className="text-base font-semibold text-foreground leading-tight">{label}</span>
+                <span className="text-[10px] sm:text-xs lg:text-base font-semibold text-foreground leading-tight">{label}</span>
               </Link>
             ))}
           </nav>
         </div>
 
-        {/* ── RIGHT 50% ─────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        {/* ── RIGHT: full-width on mobile ─────────────────────────── */}
+        <div className="flex-1 min-w-0 flex flex-col lg:overflow-hidden">
 
           {/* Tab bar */}
-          <div className="shrink-0 flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-border/30">
-            <div className="flex gap-0.5 bg-muted rounded-xl p-1">
+          <div className="shrink-0 flex items-center justify-between gap-2 px-4 lg:px-5 pt-4 pb-3 border-b border-border/30">
+            <div className="flex gap-0.5 bg-muted rounded-xl p-1 overflow-x-auto">
               {TABS.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setTab(key)}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap',
+                    'px-2.5 lg:px-3 py-1.5 rounded-lg text-[12px] lg:text-[13px] font-medium transition-all whitespace-nowrap',
                     tab === key
                       ? 'bg-background text-primary shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -232,15 +228,15 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <Link href={currentTabHref} className="text-xs text-primary font-medium hover:underline">সব দেখুন →</Link>
-              <span className="text-border/60 text-xs">|</span>
-              <Link href="/explore" className="text-xs text-muted-foreground hover:text-primary transition-colors">নতুন লেআউট →</Link>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href={currentTabHref} className="text-xs text-primary font-medium hover:underline whitespace-nowrap">সব দেখুন →</Link>
+              <span className="text-border/60 text-xs hidden sm:block">|</span>
+              <Link href="/explore" className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:block whitespace-nowrap">নতুন লেআউট →</Link>
             </div>
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-5">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5">
             {tab === 'books'    && <BooksGrid books={books} />}
             {tab === 'bayans'   && <CompactList items={bayansForList}   href="/bayan"    icon={Mic}       />}
             {tab === 'malfuzat' && <CompactList items={malfuzatForList} href="/malfuzat" icon={ScrollText} />}
@@ -250,12 +246,12 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
       </div>
 
       {/* ── Bottom news strip ─────────────────────────────────────────── */}
-      <div className="shrink-0 h-9 border-t border-border/40 bg-muted/30 flex items-center gap-3 px-5">
-        <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0 whitespace-nowrap">
+      <div className="shrink-0 h-9 border-t border-border/40 bg-muted/30 flex items-center gap-3 px-4 lg:px-5">
+        <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0 whitespace-nowrap hidden sm:block">
           সর্বশেষ সংবাদ
         </span>
-        <div className="w-px h-3.5 bg-border shrink-0" />
-        <div className="flex-1 flex items-center gap-4 overflow-hidden min-w-0">
+        <div className="hidden sm:block w-px h-3.5 bg-border shrink-0" />
+        <div className="flex-1 flex items-center gap-4 overflow-x-auto min-w-0">
           {news.map((n, i) => (
             <span key={n.id} className="flex items-center gap-4 shrink-0">
               {i > 0 && <span className="text-border/60 text-xs">·</span>}

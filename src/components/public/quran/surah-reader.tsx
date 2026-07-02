@@ -39,8 +39,12 @@ export function SurahReader({ surah, allSurahs }: Props) {
   const [translator, setTranslator] = useState(TRANSLATORS[0].key)
   const [showWords, setShowWords] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [showNav, setShowNav] = useState(true)
+  const [showNav, setShowNav] = useState(false)
   const [navTab, setNavTab] = useState<NavTab>('surah')
+
+  useEffect(() => {
+    if (window.innerWidth >= 1024) setShowNav(true)
+  }, [])
   const [activeAyah, setActiveAyah] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioError, setAudioError] = useState(false)

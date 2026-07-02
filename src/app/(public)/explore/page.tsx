@@ -171,7 +171,7 @@ export default async function ExplorePage() {
           <p className="text-center text-2xl text-muted-foreground mb-3" style={{ fontFamily: 'serif' }}>
             بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </p>
-          <h1 className="text-center text-5xl sm:text-6xl font-bold text-foreground mt-4">
+          <h1 className="text-center text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground mt-4">
             ইসলামী যিন্দেগী
           </h1>
           <p className="text-center text-xl text-muted-foreground mt-3">
