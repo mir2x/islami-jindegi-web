@@ -124,29 +124,32 @@ export function BookForm({ book }: Props) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="px-4 py-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-5">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
           {isEdit ? 'Back to book' : 'Back to books'}
         </button>
-        <h1 className="text-lg font-semibold">
-          {isEdit ? `Edit Book` : 'Add New Book'}
-        </h1>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {isEdit ? 'Edit Book' : 'Add New Book'}
+        </p>
+        {isEdit && book && (
+          <p className="text-sm font-medium mt-0.5 text-foreground/80">{book.title}</p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-[1fr_280px] gap-5 items-start">
+        <div className="grid grid-cols-[1fr_260px] gap-4 items-start">
 
           {/* LEFT COLUMN */}
-          <div className="space-y-5">
+          <div className="space-y-4">
 
             {/* Basic Information */}
-            <div className="bg-card border rounded-xl p-5 space-y-4">
+            <div className="bg-card border rounded-xl p-4 space-y-3">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
               <div className="space-y-1.5">
@@ -169,7 +172,7 @@ export function BookForm({ book }: Props) {
                 <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Language <span className="text-destructive">*</span></Label>
                   <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
@@ -185,7 +188,7 @@ export function BookForm({ book }: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Price</Label>
                   <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 250 BDT" maxLength={50} />
@@ -197,105 +200,86 @@ export function BookForm({ book }: Props) {
               </div>
             </div>
 
-            {/* Authors & Categories */}
-            <div className="bg-card border rounded-xl p-5 space-y-4">
+            {/* Authors & Categories — stacked full-width */}
+            <div className="bg-card border rounded-xl p-4 space-y-3">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Authors & Categories</h2>
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Authors */}
-                <div className="space-y-1.5">
-                  <Label>Authors</Label>
-                  <Popover open={authorOpen} onOpenChange={setAuthorOpen}>
-                    <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
-                      {selectedAuthors.length ? `${selectedAuthors.length} selected` : 'Select authors...'}
-                      <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search authors..." />
-                        <CommandList>
-                          <CommandEmpty>No authors found.</CommandEmpty>
-                          <CommandGroup>
-                            {authors.map(a => (
-                              <CommandItem key={a.id} value={a.name} onSelect={() => toggleAuthor(a)}>
-                                <Check className={cn('mr-2 w-4 h-4', selectedAuthors.find(x => x.id === a.id) ? 'opacity-100' : 'opacity-0')} />
-                                {a.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {selectedAuthors.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {selectedAuthors.map(a => (
-                        <Badge key={a.id} variant="secondary" className="gap-1 pr-1">
-                          {a.name}
-                          <button type="button" onClick={e => { e.stopPropagation(); toggleAuthor(a) }} className="rounded-full hover:bg-black/10 p-0.5">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Categories */}
-                <div className="space-y-1.5">
-                  <Label>Categories</Label>
-                  <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                    <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
-                      {selectedCategories.length ? `${selectedCategories.length} selected` : 'Select categories...'}
-                      <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search categories..." />
-                        <CommandList>
-                          <CommandEmpty>No categories found.</CommandEmpty>
-                          <CommandGroup>
-                            {flatCategories.map(c => (
-                              <CommandItem key={c.id} value={c.title} onSelect={() => toggleCategory(c)}>
-                                <Check className={cn('mr-2 w-4 h-4', selectedCategories.find(x => x.id === c.id) ? 'opacity-100' : 'opacity-0')} />
-                                <span className={c.parentId ? 'pl-3 text-muted-foreground' : 'font-medium'}>{c.title}</span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {selectedCategories.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {selectedCategories.map(c => (
-                        <Badge key={c.id} variant="secondary" className="gap-1 pr-1">
-                          {c.title}
-                          <button type="button" onClick={e => { e.stopPropagation(); toggleCategory(c) }} className="rounded-full hover:bg-black/10 p-0.5">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Settings */}
-            <div className="bg-card border rounded-xl p-5 space-y-4">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Position</Label>
-                  <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
-                </div>
+              {/* Authors */}
+              <div className="space-y-1.5">
+                <Label>Authors</Label>
+                <Popover open={authorOpen} onOpenChange={setAuthorOpen}>
+                  <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
+                    {selectedAuthors.length ? `${selectedAuthors.length} selected` : 'Select authors...'}
+                    <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search authors..." />
+                      <CommandList>
+                        <CommandEmpty>No authors found.</CommandEmpty>
+                        <CommandGroup>
+                          {authors.map(a => (
+                            <CommandItem key={a.id} value={a.name} onSelect={() => toggleAuthor(a)}>
+                              <Check className={cn('mr-2 w-4 h-4', selectedAuthors.find(x => x.id === a.id) ? 'opacity-100' : 'opacity-0')} />
+                              {a.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedAuthors.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedAuthors.map(a => (
+                      <Badge key={a.id} variant="secondary" className="gap-1 pr-1">
+                        {a.name}
+                        <button type="button" onClick={e => { e.stopPropagation(); toggleAuthor(a) }} className="rounded-full hover:bg-black/10 p-0.5">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
-                <Label htmlFor="published" className="cursor-pointer">Published</Label>
+              {/* Categories */}
+              <div className="space-y-1.5">
+                <Label>Categories</Label>
+                <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                  <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
+                    {selectedCategories.length ? `${selectedCategories.length} selected` : 'Select categories...'}
+                    <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search categories..." />
+                      <CommandList>
+                        <CommandEmpty>No categories found.</CommandEmpty>
+                        <CommandGroup>
+                          {flatCategories.map(c => (
+                            <CommandItem key={c.id} value={c.title} onSelect={() => toggleCategory(c)}>
+                              <Check className={cn('mr-2 w-4 h-4', selectedCategories.find(x => x.id === c.id) ? 'opacity-100' : 'opacity-0')} />
+                              <span className={c.parentId ? 'pl-3 text-muted-foreground' : 'font-medium'}>{c.title}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedCategories.map(c => (
+                      <Badge key={c.id} variant="secondary" className="gap-1 pr-1">
+                        {c.title}
+                        <button type="button" onClick={e => { e.stopPropagation(); toggleCategory(c) }} className="rounded-full hover:bg-black/10 p-0.5">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -310,9 +294,11 @@ export function BookForm({ book }: Props) {
             </div>
           </div>
 
-          {/* RIGHT COLUMN — Media */}
+          {/* RIGHT COLUMN — Media + Settings */}
           <div className="space-y-4">
-            <div className="bg-card border rounded-xl p-4 space-y-4">
+
+            {/* Media */}
+            <div className="bg-card border rounded-xl p-4 space-y-3">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Media</h2>
               <div className="space-y-1.5">
                 <Label>Cover Image</Label>
@@ -323,6 +309,20 @@ export function BookForm({ book }: Props) {
                 <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" compact />
               </div>
             </div>
+
+            {/* Settings */}
+            <div className="bg-card border rounded-xl p-4 space-y-3">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
+              <div className="space-y-1.5">
+                <Label>Position</Label>
+                <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
+                <Label htmlFor="published" className="cursor-pointer">Published</Label>
+              </div>
+            </div>
+
           </div>
 
         </div>
