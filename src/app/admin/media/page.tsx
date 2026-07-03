@@ -1,7 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Copy, FileAudio, FileText, ImageIcon, Loader2, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  Copy, FileAudio, FileText, ImageIcon, Loader2, Plus, Search, Trash2,
+  CheckCircle2, XCircle, X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { useMediaStore } from '@/store/media-store'
 import { Button } from '@/components/ui/button'
@@ -34,14 +37,86 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// ── Upload progress panel ────────────────────────────────────────────────────
+
+type UploadJob = {
+  id: string
+  name: string
+  size: number
+  progress: number
+  status: 'uploading' | 'done' | 'error'
+  error?: string
+}
+
+function UploadPanel({ jobs, onDismiss }: { jobs: UploadJob[]; onDismiss: () => void }) {
+  if (jobs.length === 0) return null
+  const allSettled = jobs.every(j => j.status !== 'uploading')
+  const doneCount  = jobs.filter(j => j.status === 'done').length
+  const errorCount = jobs.filter(j => j.status === 'error').length
+
+  return (
+    <div className="fixed bottom-5 right-5 w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-50">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40">
+        <div className="flex items-center gap-2">
+          {!allSettled && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />}
+          <span className="text-sm font-semibold">
+            {allSettled
+              ? errorCount > 0
+                ? `${doneCount} uploaded, ${errorCount} failed`
+                : `${doneCount} file${doneCount !== 1 ? 's' : ''} uploaded`
+              : `Uploading ${jobs.length} file${jobs.length !== 1 ? 's' : ''}…`}
+          </span>
+        </div>
+        {allSettled && (
+          <button onClick={onDismiss} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* File list */}
+      <div className="max-h-60 overflow-y-auto divide-y divide-border/50">
+        {jobs.map(job => (
+          <div key={job.id} className="px-4 py-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              {job.status === 'uploading' && <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin text-primary" />}
+              {job.status === 'done'      && <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-green-500" />}
+              {job.status === 'error'     && <XCircle className="w-3.5 h-3.5 shrink-0 text-destructive" />}
+              <span className="text-xs font-medium truncate flex-1 min-w-0">{job.name}</span>
+              <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                {job.status === 'uploading' ? `${job.progress}%` : formatBytes(job.size)}
+              </span>
+            </div>
+            {job.status === 'uploading' && (
+              <div className="h-1 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-[width] duration-150"
+                  style={{ width: `${job.progress}%` }}
+                />
+              </div>
+            )}
+            {job.status === 'error' && (
+              <p className="text-[11px] text-destructive mt-0.5 leading-snug">{job.error}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
+
 export default function MediaPage() {
-  const { result, loading, uploading, fetch, upload, remove } = useMediaStore()
-  const [search, setSearch] = useState('')
+  const { result, loading, fetch, upload, remove } = useMediaStore()
+  const [search, setSearch]         = useState('')
   const [filterType, setFilterType] = useState<FilterType>('all')
-  const [page, setPage] = useState(1)
-  const [selected, setSelected] = useState<MediaItem | null>(null)
-  const [deleting, setDeleting] = useState<MediaItem | null>(null)
+  const [page, setPage]             = useState(1)
+  const [selected, setSelected]     = useState<MediaItem | null>(null)
+  const [deleting, setDeleting]     = useState<MediaItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [uploadJobs, setUploadJobs] = useState<UploadJob[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(() => {
@@ -53,14 +128,31 @@ export default function MediaPage() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
-    try {
-      await Promise.all(files.map(f => upload(f)))
-      toast.success(files.length === 1 ? 'File uploaded' : `${files.length} files uploaded`)
-      load()
-    } catch {
-      toast.error('Upload failed')
-    }
     e.target.value = ''
+
+    const newJobs: UploadJob[] = files.map(f => ({
+      id: crypto.randomUUID(),
+      name: f.name,
+      size: f.size,
+      progress: 0,
+      status: 'uploading',
+    }))
+    setUploadJobs(prev => [...prev, ...newJobs])
+
+    await Promise.all(files.map(async (file, i) => {
+      const jobId = newJobs[i].id
+      try {
+        await upload(file, (pct) => {
+          setUploadJobs(prev => prev.map(j => j.id === jobId ? { ...j, progress: pct } : j))
+        })
+        setUploadJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'done', progress: 100 } : j))
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Upload failed'
+        setUploadJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'error', error: msg } : j))
+      }
+    }))
+
+    load()
   }
 
   async function handleDelete() {
@@ -83,6 +175,7 @@ export default function MediaPage() {
   }
 
   const totalPages = result ? Math.ceil(result.total / 36) : 1
+  const activeJobs = uploadJobs.filter(j => j.status === 'uploading').length
 
   return (
     <div className="h-full flex overflow-hidden">
@@ -99,9 +192,14 @@ export default function MediaPage() {
                   : 'Loading...'}
               </p>
             </div>
-            <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2 shadow-sm">
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Upload files
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={activeJobs > 0}
+              className="gap-2 shadow-sm"
+            >
+              {activeJobs > 0
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading {activeJobs}…</>
+                : <><Plus className="w-4 h-4" /> Upload files</>}
             </Button>
             <input
               ref={fileInputRef}
@@ -292,6 +390,12 @@ export default function MediaPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Upload progress panel */}
+      <UploadPanel
+        jobs={uploadJobs}
+        onDismiss={() => setUploadJobs([])}
+      />
     </div>
   )
 }

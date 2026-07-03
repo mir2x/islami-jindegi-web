@@ -14,8 +14,32 @@ interface MediaStore {
   loading: boolean
   uploading: boolean
   fetch: (params?: FetchParams) => Promise<void>
-  upload: (file: File) => Promise<MediaItem>
+  upload: (file: File, onProgress?: (pct: number) => void) => Promise<MediaItem>
   remove: (id: string) => Promise<void>
+}
+
+function uploadFile(file: File, onProgress?: (pct: number) => void): Promise<MediaItem> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL}/api/media/upload`)
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100))
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText) as MediaItem)
+      } else {
+        let msg = `Upload failed (${xhr.status})`
+        try { msg = JSON.parse(xhr.responseText)?.message ?? msg } catch { /* use default */ }
+        reject(new Error(msg))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Network error — check your connection'))
+    xhr.ontimeout = () => reject(new Error('Upload timed out'))
+    xhr.send(formData)
+  })
 }
 
 export const useMediaStore = create<MediaStore>((set) => ({
@@ -38,18 +62,10 @@ export const useMediaStore = create<MediaStore>((set) => ({
     }
   },
 
-  upload: async (file: File) => {
+  upload: async (file: File, onProgress?: (pct: number) => void) => {
     set({ uploading: true })
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/media/upload`, {
-        method: 'POST',
-        body: formData,
-      })
-      if (!res.ok) throw new Error(await res.text())
-      const item = await res.json() as MediaItem
-      return item
+      return await uploadFile(file, onProgress)
     } finally {
       set({ uploading: false })
     }

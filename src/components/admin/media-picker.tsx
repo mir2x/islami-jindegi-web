@@ -46,6 +46,8 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
   const [filterType, setFilterType] = useState<FilterType>(accept ?? 'all')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<MediaItem | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(() => {
@@ -59,15 +61,21 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
+    setUploadError(null)
+    setUploadProgress(0)
     try {
-      const item = await upload(file)
+      const item = await upload(file, (pct) => setUploadProgress(pct))
+      setUploadProgress(null)
       toast.success('Uploaded successfully')
       onSelect(item)
       onClose()
-    } catch {
-      toast.error('Upload failed')
+    } catch (err) {
+      setUploadProgress(null)
+      const msg = err instanceof Error ? err.message : 'Upload failed'
+      setUploadError(msg)
+      toast.error(msg)
     }
-    e.target.value = ''
   }
 
   function handleConfirm() {
@@ -136,6 +144,34 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
             />
           </div>
         </div>
+
+        {/* Upload progress */}
+        {(uploadProgress !== null || uploadError) && (
+          <div className="px-6 py-2.5 border-b bg-muted/20 shrink-0">
+            {uploadProgress !== null && (
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Uploading…</span>
+                    <span className="text-xs font-medium tabular-nums">{uploadProgress}%</span>
+                  </div>
+                  <div className="h-1 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-[width] duration-150"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            {uploadError && (
+              <p className="text-xs text-destructive flex items-center gap-1.5">
+                <span className="font-medium">Upload failed:</span> {uploadError}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Grid */}
         <div className="flex-1 overflow-y-auto p-5">
