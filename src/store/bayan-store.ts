@@ -9,6 +9,7 @@ interface BayanParams {
   authorId?: string
   categoryId?: string
   published?: boolean
+  sort?: string
 }
 
 interface BayanStore {
@@ -33,6 +34,7 @@ export const useBayanStore = create<BayanStore>((set) => ({
     if (params.authorId) q.set('authorId', params.authorId)
     if (params.categoryId) q.set('categoryId', params.categoryId)
     if (params.published !== undefined) q.set('published', String(params.published))
+    if (params.sort) q.set('sort', params.sort)
     const result = await api.get<PagedResult<BayanListItem>>(`/api/bayan?${q}`)
     set({ result, loading: false })
   },

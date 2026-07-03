@@ -43,6 +43,7 @@ export default function BayanPage() {
       authorId: authorId || undefined,
       categoryId: categoryId || undefined,
       published: published === '' ? undefined : published === 'true',
+      sort: 'position_desc',
     })
   }, [fetch, page, search, authorId, categoryId, published])
 
@@ -141,6 +142,7 @@ export default function BayanPage() {
           <table className="w-full">
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
               <tr className="border-b">
+                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Author</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
@@ -153,6 +155,7 @@ export default function BayanPage() {
             <tbody className="divide-y divide-border/60">
               {loading && Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i}>
+                  <td className="px-5 py-4"><Skeleton className="h-3.5 w-8" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-4 w-48" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-32" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
@@ -163,7 +166,7 @@ export default function BayanPage() {
                 </tr>
               ))}
               {!loading && result?.data.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-20 text-center">
+                <tr><td colSpan={8} className="px-5 py-20 text-center">
                   <div className="inline-flex w-14 h-14 rounded-2xl bg-muted items-center justify-center mb-4"><Mic className="w-6 h-6 text-muted-foreground/60" /></div>
                   <p className="font-medium">No bayan found</p>
                   <p className="text-sm text-muted-foreground mt-1">{search ? 'Try a different search' : 'Add your first entry'}</p>
@@ -171,6 +174,9 @@ export default function BayanPage() {
               )}
               {!loading && result?.data.map((item: BayanListItem) => (
                 <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/bayan/${item.id}/edit`)}>
+                  <td className="px-5 py-4">
+                    <span className="text-sm font-mono text-muted-foreground">{item.position}</span>
+                  </td>
                   <td className="px-5 py-4">
                     <p className="font-semibold leading-snug">{item.title}</p>
                     {item.excerpt && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{item.excerpt}</p>}
