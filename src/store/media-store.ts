@@ -15,6 +15,7 @@ interface MediaStore {
   uploading: boolean
   fetch: (params?: FetchParams) => Promise<void>
   upload: (file: File, onProgress?: (pct: number) => void) => Promise<MediaItem>
+  update: (id: string, patch: { fileName?: string; url?: string }) => Promise<MediaItem>
   remove: (id: string) => Promise<void>
 }
 
@@ -69,6 +70,10 @@ export const useMediaStore = create<MediaStore>((set) => ({
     } finally {
       set({ uploading: false })
     }
+  },
+
+  update: async (id: string, patch: { fileName?: string; url?: string }) => {
+    return api.patch<MediaItem>(`/api/media/${id}`, patch)
   },
 
   remove: async (id: string) => {

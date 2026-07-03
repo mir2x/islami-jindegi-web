@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Copy, FileAudio, FileText, ImageIcon, Loader2, Plus, Search, Trash2,
-  CheckCircle2, XCircle, X,
+  CheckCircle2, XCircle, X, Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMediaStore } from '@/store/media-store'
@@ -109,7 +109,7 @@ function UploadPanel({ jobs, onDismiss }: { jobs: UploadJob[]; onDismiss: () => 
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function MediaPage() {
-  const { result, loading, fetch, upload, remove } = useMediaStore()
+  const { result, loading, fetch, upload, update, remove } = useMediaStore()
   const [search, setSearch]         = useState('')
   const [filterType, setFilterType] = useState<FilterType>('all')
   const [page, setPage]             = useState(1)
@@ -117,6 +117,10 @@ export default function MediaPage() {
   const [deleting, setDeleting]     = useState<MediaItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [uploadJobs, setUploadJobs] = useState<UploadJob[]>([])
+  const [editing, setEditing]       = useState(false)
+  const [editName, setEditName]     = useState('')
+  const [editUrl, setEditUrl]       = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(() => {
@@ -172,6 +176,30 @@ export default function MediaPage() {
     if (!selected) return
     navigator.clipboard.writeText(selected.url)
     toast.success('URL copied')
+  }
+
+  function startEdit() {
+    if (!selected) return
+    setEditName(selected.fileName)
+    setEditUrl(selected.url)
+    setEditing(true)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+  }
+
+  async function handleSave() {
+    if (!selected) return
+    setSaveLoading(true)
+    try {
+      const updated = await update(selected.id, { fileName: editName, url: editUrl })
+      setSelected(updated)
+      setEditing(false)
+      toast.success('Saved')
+      load()
+    } catch { toast.error('Failed to save') }
+    finally { setSaveLoading(false) }
   }
 
   const totalPages = result ? Math.ceil(result.total / 36) : 1
@@ -266,7 +294,7 @@ export default function MediaPage() {
               {result.data.map(item => (
                 <button
                   key={item.id}
-                  onClick={() => setSelected(s => s?.id === item.id ? null : item)}
+                  onClick={() => { setSelected(s => s?.id === item.id ? null : item); setEditing(false) }}
                   className={cn(
                     'relative aspect-square rounded-xl border-2 overflow-hidden transition-all group',
                     selected?.id === item.id
@@ -326,7 +354,11 @@ export default function MediaPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">File name</p>
-                <p className="text-sm font-medium break-all">{selected.fileName}</p>
+                {editing ? (
+                  <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-8 text-sm" />
+                ) : (
+                  <p className="text-sm font-medium break-all">{selected.fileName}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -350,23 +382,43 @@ export default function MediaPage() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">URL</p>
-                <p className="text-xs text-muted-foreground break-all bg-muted rounded-md px-2 py-1.5 font-mono">{selected.url}</p>
+                {editing ? (
+                  <Input value={editUrl} onChange={e => setEditUrl(e.target.value)} className="h-8 text-xs font-mono" />
+                ) : (
+                  <p className="text-xs text-muted-foreground break-all bg-muted rounded-md px-2 py-1.5 font-mono">{selected.url}</p>
+                )}
               </div>
             </div>
 
             {/* Actions */}
             <div className="p-4 border-t flex flex-col gap-2 shrink-0">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={handleCopyUrl}>
-                <Copy className="w-3.5 h-3.5" /> Copy URL
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 w-full text-destructive hover:text-destructive hover:border-destructive/50"
-                onClick={() => setDeleting(selected)}
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete file
-              </Button>
+              {editing ? (
+                <>
+                  <Button size="sm" className="w-full" onClick={handleSave} disabled={saveLoading}>
+                    {saveLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save changes'}
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full" onClick={cancelEdit} disabled={saveLoading}>
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={startEdit}>
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={handleCopyUrl}>
+                    <Copy className="w-3.5 h-3.5" /> Copy URL
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 w-full text-destructive hover:text-destructive hover:border-destructive/50"
+                    onClick={() => setDeleting(selected)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete file
+                  </Button>
+                </>
+              )}
             </div>
           </>
         )}
