@@ -7,6 +7,7 @@ interface NewsParams {
   pageSize?: number
   search?: string
   published?: boolean
+  sort?: string
 }
 
 interface NewsStore {
@@ -31,6 +32,7 @@ export const useNewsStore = create<NewsStore>(() => ({
       if (params.pageSize) q.set('pageSize', String(params.pageSize))
       if (params.search) q.set('search', params.search)
       if (params.published !== undefined) q.set('published', String(params.published))
+      if (params.sort) q.set('sort', params.sort)
       const result = await api.get<PagedResult<NewsListItem>>(`/api/news?${q}`)
       useNewsStore.setState({ result, loading: false })
     } catch {

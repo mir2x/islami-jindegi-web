@@ -9,6 +9,7 @@ interface BookParams {
   authorId?: string
   categoryId?: string
   published?: boolean
+  sort?: string
 }
 
 interface BookStore {
@@ -33,6 +34,7 @@ export const useBookStore = create<BookStore>((set) => ({
     if (params.authorId) query.set('authorId', params.authorId)
     if (params.categoryId) query.set('categoryId', params.categoryId)
     if (params.published !== undefined) query.set('published', String(params.published))
+    if (params.sort) query.set('sort', params.sort)
     const result = await api.get<PagedResult<Book>>(`/api/books?${query}`)
     set({ result, loading: false })
   },

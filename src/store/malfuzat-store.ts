@@ -9,6 +9,7 @@ interface MalfuzatParams {
   authorId?: string
   categoryId?: string
   published?: boolean
+  sort?: string
 }
 
 interface MalfuzatStore {
@@ -33,6 +34,7 @@ export const useMalfuzatStore = create<MalfuzatStore>((set) => ({
     if (params.authorId) q.set('authorId', params.authorId)
     if (params.categoryId) q.set('categoryId', params.categoryId)
     if (params.published !== undefined) q.set('published', String(params.published))
+    if (params.sort) q.set('sort', params.sort)
     const result = await api.get<PagedResult<MalfuzatListItem>>(`/api/malfuzat?${q}`)
     set({ result, loading: false })
   },

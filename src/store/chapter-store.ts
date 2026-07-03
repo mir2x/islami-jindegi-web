@@ -5,7 +5,7 @@ import type { Chapter, ChapterListItem, PagedResult } from '@/types'
 interface ChapterStore {
   result: PagedResult<ChapterListItem> | null
   loading: boolean
-  fetch: (params?: { page?: number; pageSize?: number; search?: string; bookId?: string }) => Promise<void>
+  fetch: (params?: { page?: number; pageSize?: number; search?: string; bookId?: string; sort?: string }) => Promise<void>
   fetchByBook: (bookId: string) => Promise<Chapter[]>
   create: (bookId: string, data: { title: string; body?: string | null; position?: number }) => Promise<void>
   update: (id: string, data: { title: string; body?: string | null; position?: number }) => Promise<void>
@@ -23,6 +23,7 @@ export const useChapterStore = create<ChapterStore>(() => ({
     if (params.pageSize) query.set('pageSize', String(params.pageSize))
     if (params.search) query.set('search', params.search)
     if (params.bookId) query.set('bookId', params.bookId)
+    if (params.sort) query.set('sort', params.sort)
     const result = await api.get<PagedResult<ChapterListItem>>(`/api/chapters?${query}`)
     useChapterStore.setState({ result, loading: false })
   },

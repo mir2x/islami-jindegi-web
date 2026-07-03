@@ -8,6 +8,7 @@ interface DuaParams {
   search?: string
   categoryId?: string
   published?: boolean
+  sort?: string
 }
 
 interface DuaStore {
@@ -31,6 +32,7 @@ export const useDuaStore = create<DuaStore>((set) => ({
     if (params.search) q.set('search', params.search)
     if (params.categoryId) q.set('categoryId', params.categoryId)
     if (params.published !== undefined) q.set('published', String(params.published))
+    if (params.sort) q.set('sort', params.sort)
     const result = await api.get<PagedResult<DuaListItem>>(`/api/dua?${q}`)
     set({ result, loading: false })
   },

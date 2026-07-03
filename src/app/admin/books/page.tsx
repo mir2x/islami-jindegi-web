@@ -45,15 +45,15 @@ export default function BooksPage() {
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 
   const loadBooks = useCallback(() => {
-    fetch({ page, pageSize: 10, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined })
+    fetch({ page, pageSize: 10, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, sort: 'position_desc' })
   }, [fetch, page, search, authorId, categoryId])
 
   const loadChapters = useCallback(() => {
-    fetchChapters({ page, pageSize: 20, search: search || undefined, bookId: bookFilter || undefined })
+    fetchChapters({ page, pageSize: 20, search: search || undefined, bookId: bookFilter || undefined, sort: 'position_desc' })
   }, [fetchChapters, page, search, bookFilter])
 
   const loadSubs = useCallback(() => {
-    fetchSubs({ page, pageSize: 20, search: search || undefined, bookId: bookFilter || undefined })
+    fetchSubs({ page, pageSize: 20, search: search || undefined, bookId: bookFilter || undefined, sort: 'position_desc' })
   }, [fetchSubs, page, search, bookFilter])
 
   useEffect(() => { fetchAuthors(); fetchCategories() }, [fetchAuthors, fetchCategories])
@@ -198,22 +198,22 @@ export default function BooksPage() {
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
                 <tr className="border-b">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authors</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
                   <th className="px-5 py-3.5 w-24" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {loading && Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
+                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><div className="flex items-center gap-3"><Skeleton className="w-10 h-14 rounded-lg shrink-0" /><div className="space-y-2"><Skeleton className="h-4 w-44" /><Skeleton className="h-3 w-32" /></div></div></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-28" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
-                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-8 w-16 rounded-lg" /></td>
                   </tr>
                 ))}
@@ -226,6 +226,7 @@ export default function BooksPage() {
                 )}
                 {!loading && result?.data.map((book: Book) => (
                   <tr key={book.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/books/${book.id}`)}>
+                    <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{book.position}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         {book.coverUrl ? <img src={book.coverUrl} alt="" className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0 border" /> : <div className="w-10 h-14 bg-muted rounded-lg flex items-center justify-center shrink-0 border"><BookOpen className="w-4 h-4 text-muted-foreground/60" /></div>}
@@ -242,7 +243,6 @@ export default function BooksPage() {
                         ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
                         : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
                     </td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{book.position}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/books/${book.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
@@ -261,20 +261,20 @@ export default function BooksPage() {
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
                 <tr className="border-b">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-24">Subs</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
                   <th className="px-5 py-3.5 w-24" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {chapterLoading && Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
+                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-4 w-48" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-36" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-8" /></td>
-                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-8 w-16" /></td>
                   </tr>
                 ))}
@@ -283,10 +283,10 @@ export default function BooksPage() {
                 )}
                 {!chapterLoading && chapterResult?.data.map((c: ChapterListItem) => (
                   <tr key={c.id} className="hover:bg-muted/30 transition-colors group">
+                    <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{c.position}</span></td>
                     <td className="px-5 py-4"><p className="font-semibold">{c.title}</p></td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground line-clamp-1">{c.bookTitle}</span></td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{c.subChapterCount || '—'}</span></td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{c.position}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/chapters/${c.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
@@ -305,20 +305,20 @@ export default function BooksPage() {
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
                 <tr className="border-b">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subchapter</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
                   <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
                   <th className="px-5 py-3.5 w-24" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {subLoading && Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
+                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-4 w-48" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-32" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-36" /></td>
-                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-8 w-16" /></td>
                   </tr>
                 ))}
@@ -327,10 +327,10 @@ export default function BooksPage() {
                 )}
                 {!subLoading && subResult?.data.map((s: SubChapterListItem) => (
                   <tr key={s.id} className="hover:bg-muted/30 transition-colors group">
+                    <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{s.position}</span></td>
                     <td className="px-5 py-4"><p className="font-semibold">{s.title}</p></td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground line-clamp-1">{s.chapterTitle}</span></td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground line-clamp-1">{s.bookTitle}</span></td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{s.position}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/subchapters/${s.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>

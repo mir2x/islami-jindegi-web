@@ -9,6 +9,7 @@ interface MasailParams {
   authorId?: string
   categoryId?: string
   published?: boolean
+  sort?: string
 }
 
 interface MasailStore {
@@ -33,6 +34,7 @@ export const useMasailStore = create<MasailStore>((set) => ({
     if (params.authorId) q.set('authorId', params.authorId)
     if (params.categoryId) q.set('categoryId', params.categoryId)
     if (params.published !== undefined) q.set('published', String(params.published))
+    if (params.sort) q.set('sort', params.sort)
     const result = await api.get<PagedResult<MasailListItem>>(`/api/masail?${q}`)
     set({ result, loading: false })
   },

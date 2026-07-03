@@ -5,7 +5,7 @@ import type { SubChapterListItem, PagedResult } from '@/types'
 interface SubChapterStore {
   result: PagedResult<SubChapterListItem> | null
   loading: boolean
-  fetch: (params?: { page?: number; pageSize?: number; search?: string; bookId?: string }) => Promise<void>
+  fetch: (params?: { page?: number; pageSize?: number; search?: string; bookId?: string; sort?: string }) => Promise<void>
   create: (data: { chapterId: string; parentSubChapterId?: string | null; title: string; body?: string | null; position?: number }) => Promise<void>
   update: (id: string, data: { title: string; body?: string | null; position?: number; chapterId?: string; parentSubChapterId?: string | null }) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -22,6 +22,7 @@ export const useSubChapterStore = create<SubChapterStore>(() => ({
     if (params.pageSize) query.set('pageSize', String(params.pageSize))
     if (params.search) query.set('search', params.search)
     if (params.bookId) query.set('bookId', params.bookId)
+    if (params.sort) query.set('sort', params.sort)
     const result = await api.get<PagedResult<SubChapterListItem>>(`/api/subchapters?${query}`)
     useSubChapterStore.setState({ result, loading: false })
   },

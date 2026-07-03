@@ -43,6 +43,7 @@ export default function MalfuzatPage() {
       authorId: authorId || undefined,
       categoryId: categoryId || undefined,
       published: published === '' ? undefined : published === 'true',
+      sort: 'position_desc',
     })
   }, [fetch, page, search, authorId, categoryId, published])
 
@@ -141,24 +142,24 @@ export default function MalfuzatPage() {
           <table className="w-full">
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
               <tr className="border-b">
+                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Author</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audio</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">Pos.</th>
                 <th className="px-5 py-3.5 w-24" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {loading && Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i}>
+                  <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-4 w-56" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-32" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-10 rounded-full" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
-                  <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-8 w-16" /></td>
                 </tr>
               ))}
@@ -171,6 +172,7 @@ export default function MalfuzatPage() {
               )}
               {!loading && result?.data.map((item: MalfuzatListItem) => (
                 <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/malfuzat/${item.id}/edit`)}>
+                  <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{item.position ?? '—'}</span></td>
                   <td className="px-5 py-4">
                     <p className="font-semibold leading-snug">{item.title}</p>
                     {item.excerpt && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{item.excerpt}</p>}
@@ -187,7 +189,6 @@ export default function MalfuzatPage() {
                       ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
                       : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
                   </td>
-                  <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{item.position ?? '—'}</span></td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/malfuzat/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
