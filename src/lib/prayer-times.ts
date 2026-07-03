@@ -205,7 +205,7 @@ const BANGLA_STARTS: [number, number][] = [
   [10, 16], [11, 15], [12, 15], [1, 14], [2, 13], [3, 14],
 ]
 
-export function toBanglaDate(date: Date): { day: number; monthBn: string; year: number } {
+export function toBanglaDate(date: Date): { day: number; monthBn: string; year: number; monthIdx: number } {
   const y = date.getFullYear()
   const m = date.getMonth() + 1
   const d = date.getDate()
@@ -228,7 +228,7 @@ export function toBanglaDate(date: Date): { day: number; monthBn: string; year: 
   }
 
   const banglaYear = m >= 4 ? y - 593 : y - 594
-  return { day: banglaDay, monthBn: BANGLA_MONTHS_BN[banglaMonthIdx], year: banglaYear }
+  return { day: banglaDay, monthBn: BANGLA_MONTHS_BN[banglaMonthIdx], year: banglaYear, monthIdx: banglaMonthIdx }
 }
 
 export function countdownText(target: Date, now: Date): string {

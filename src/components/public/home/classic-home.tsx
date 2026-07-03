@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { BookOpen, Mic, ScrollText, Newspaper, Loader2 } from 'lucide-react'
+import { BookOpen, Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin } from 'lucide-react'
 import {
   calcPrayerSlots, findActiveSlot, findNextSlot,
   toHijri, toBanglaDate, toBnNum, formatTimeBn,
@@ -29,24 +29,30 @@ const SECTIONS = [
 
 const BN_DAYS   = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার']
 const BN_MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর']
+const BN_SEASONS = ['গ্রীষ্মকাল','গ্রীষ্মকাল','বর্ষাকাল','বর্ষাকাল','শরৎকাল','শরৎকাল','হেমন্তকাল','হেমন্তকাল','শীতকাল','শীতকাল','বসন্তকাল','বসন্তকাল']
 
 // ── Prayer card ───────────────────────────────────────────────────────────────
 
 function PrayerCard() {
-  const [state, setState] = useState<{ slots: PrayerSlot[]; activeKey: string | null; now: Date } | null>(null)
+  const [state, setState] = useState<{
+    slots: PrayerSlot[]
+    activeKey: string | null
+    now: Date
+    locationName: string
+  } | null>(null)
 
-  const init = useCallback((lat: number, lng: number) => {
+  const init = useCallback((lat: number, lng: number, locationName: string) => {
     const now = new Date()
     const slots = calcPrayerSlots(lat, lng, now)
-    setState({ slots, activeKey: findActiveSlot(slots, now), now })
+    setState({ slots, activeKey: findActiveSlot(slots, now), now, locationName })
   }, [])
 
   useEffect(() => {
     const dk = [23.8103, 90.4125] as const
-    if (!navigator.geolocation) { init(...dk); return }
+    if (!navigator.geolocation) { init(...dk, 'ঢাকা, বাংলাদেশ'); return }
     navigator.geolocation.getCurrentPosition(
-      p => init(p.coords.latitude, p.coords.longitude),
-      () => init(...dk),
+      p => init(p.coords.latitude, p.coords.longitude, 'আপনার অবস্থান'),
+      () => init(...dk, 'ঢাকা, বাংলাদেশ'),
       { timeout: 5000 }
     )
   }, [init])
@@ -67,42 +73,59 @@ function PrayerCard() {
     </div>
   )
 
-  const { slots, activeKey, now } = state
+  const { slots, activeKey, now, locationName } = state
   const hijri  = toHijri(now)
   const bangla = toBanglaDate(now)
   const active = slots.find(s => s.key === activeKey)
   const next   = findNextSlot(slots, now)
+  const season = BN_SEASONS[bangla.monthIdx] ?? ''
 
   return (
-    <Link href="/namaz-times" className="block rounded-2xl bg-card border border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all px-5 py-4 shrink-0">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <Link href="/namaz-times" className="block rounded-2xl bg-card border border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all p-4 shrink-0">
+      {/* Dates */}
+      <div className="space-y-1.5 mb-3">
+        <div className="flex items-center gap-2">
           <p className="text-base font-bold text-foreground leading-snug">
-            {toBnNum(hijri.day)} {hijri.monthBn}, {toBnNum(hijri.year)} হিজরি
+            {toBnNum(hijri.day)} {hijri.monthBn}, {toBnNum(hijri.year)} হিজরী
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} বঙ্গাব্দ
-          </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        </div>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">
             {BN_DAYS[now.getDay()]}, {toBnNum(now.getDate())} {BN_MONTHS[now.getMonth()]} {toBnNum(now.getFullYear())}
           </p>
+          <Calendar className="w-3 h-3 text-muted-foreground/50 shrink-0" />
         </div>
-        <div className="text-right shrink-0">
-          {active && (
+        <p className="text-sm text-muted-foreground">
+          {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} — {season}
+        </p>
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+          <p className="text-xs text-muted-foreground">{locationName}</p>
+        </div>
+      </div>
+
+      {/* Prayer times */}
+      <div className="rounded-xl bg-muted/40 border border-border/30 px-3.5 py-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">চলমান</p>
+          {active ? (
             <>
-              <p className="text-lg font-bold text-primary leading-tight">{active.nameBn}</p>
-              <p className="text-sm text-muted-foreground tabular-nums">{formatTimeBn(active.start)} – {formatTimeBn(active.end)}</p>
-              {next && <p className="text-sm text-muted-foreground/70 mt-1">পরবর্তী: {next.nameBn} {formatTimeBn(next.start)}</p>}
+              <p className="text-base font-bold text-primary leading-tight">{active.nameBn}</p>
+              <p className="text-xs text-foreground/70 mt-1.5">শুরু {formatTimeBn(active.start)}</p>
+              <p className="text-xs text-foreground/70 mt-0.5">শেষ {formatTimeBn(active.end)}</p>
             </>
-          )}
-          {!active && next && (
-            <>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">পরবর্তী</p>
-              <p className="text-lg font-bold text-primary leading-tight">{next.nameBn}</p>
-              <p className="text-sm text-muted-foreground tabular-nums">{formatTimeBn(next.start)}</p>
-            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">—</p>
           )}
         </div>
+        {next && (
+          <div className="text-right">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">পরবর্তী</p>
+            <p className="text-base font-bold text-foreground/80 leading-tight">{next.nameBn}</p>
+            <p className="text-xs text-foreground/70 mt-1.5">শুরু {formatTimeBn(next.start)}</p>
+          </div>
+        )}
       </div>
     </Link>
   )
@@ -178,7 +201,6 @@ const TABS: { key: Tab; label: string; href: string }[] = [
 export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) {
   const [tab, setTab] = useState<Tab>('books')
 
-
   const currentTabHref = TABS.find(t => t.key === tab)?.href ?? '/'
 
   const bayansForList   = bayans.map(b   => ({ id: b.id, title: b.title, subtitle: b.author?.name }))
@@ -195,14 +217,14 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
         <div className="w-full lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-4 gap-3 lg:overflow-hidden">
           <PrayerCard />
 
-          <nav className="flex-1 min-h-0 grid grid-cols-4 lg:grid-cols-3 auto-rows-fr gap-1">
+          <nav className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-1.5">
             {SECTIONS.map(({ label, href, icon }) => (
               <Link
                 key={href}
                 href={href}
                 className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl hover:bg-muted/50 transition-colors text-center"
               >
-                <div className="w-14 h-14 sm:w-20 sm:h-20 lg:w-28 lg:h-28 rounded-2xl lg:rounded-3xl bg-card border border-border/40 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/30 transition-all p-3 sm:p-3.5 lg:p-5">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-28 lg:h-28 rounded-2xl lg:rounded-3xl bg-card border border-border/40 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/30 transition-all p-3 sm:p-3.5 lg:p-5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={icon} alt={label} className="w-full h-full object-contain" />
                 </div>
@@ -212,8 +234,8 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
           </nav>
         </div>
 
-        {/* ── RIGHT: full-width on mobile ─────────────────────────── */}
-        <div className="flex-1 min-w-0 flex flex-col lg:overflow-hidden lg:border lg:border-border/40 lg:rounded-2xl">
+        {/* ── RIGHT: hidden on mobile, shown on desktop ───────────── */}
+        <div className="hidden lg:flex flex-1 min-w-0 flex-col lg:overflow-hidden lg:border lg:border-border/40 lg:rounded-2xl">
 
           {/* Tab bar */}
           <div className="shrink-0 flex items-center justify-between gap-2 px-4 lg:px-5 pt-4 pb-3 border-b border-border/30">
