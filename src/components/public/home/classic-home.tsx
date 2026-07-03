@@ -91,24 +91,24 @@ function PrayerCard() {
           <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </div>
         <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground/65">
             {BN_DAYS[now.getDay()]}, {toBnNum(now.getDate())} {BN_MONTHS[now.getMonth()]} {toBnNum(now.getFullYear())}
           </p>
           <Calendar className="w-3 h-3 text-muted-foreground/50 shrink-0" />
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-foreground/65">
           {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} — {season}
         </p>
         <div className="flex items-center gap-1.5">
           <MapPin className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-          <p className="text-xs text-muted-foreground">{locationName}</p>
+          <p className="text-xs text-foreground/60">{locationName}</p>
         </div>
       </div>
 
       {/* Prayer times */}
       <div className="rounded-xl bg-muted/40 border border-border/30 px-3.5 py-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">চলমান</p>
+          <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-0.5">চলমান</p>
           {active ? (
             <>
               <p className="text-base font-bold text-primary leading-tight">{active.nameBn}</p>
@@ -121,7 +121,7 @@ function PrayerCard() {
         </div>
         {next && (
           <div className="text-right">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">পরবর্তী</p>
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-0.5">পরবর্তী</p>
             <p className="text-base font-bold text-foreground/80 leading-tight">{next.nameBn}</p>
             <p className="text-xs text-foreground/70 mt-1.5">শুরু {formatTimeBn(next.start)}</p>
           </div>
@@ -149,7 +149,7 @@ function BooksGrid({ books }: { books: Book[] }) {
           <div className="flex-1 min-w-0 py-1">
             <p className="font-semibold text-primary leading-snug line-clamp-2">{b.title}</p>
             {b.authors[0] && <p className="text-sm text-foreground/70 mt-1">{b.authors[0].name}</p>}
-            {b.excerpt && <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{b.excerpt}</p>}
+            {b.excerpt && <p className="text-sm text-foreground/60 mt-1.5 line-clamp-2 leading-relaxed">{b.excerpt}</p>}
           </div>
         </Link>
       ))}
@@ -171,7 +171,7 @@ function CompactList({ items, href, icon: Icon }: {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium line-clamp-1 group-hover:text-primary transition-colors">{item.title}</p>
-            {item.subtitle && <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>}
+            {item.subtitle && <p className="text-xs text-foreground/60 truncate">{item.subtitle}</p>}
           </div>
         </Link>
       ))}
@@ -248,7 +248,7 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
                     'px-2.5 lg:px-3 py-1.5 rounded-lg text-[12px] lg:text-[13px] font-medium transition-all whitespace-nowrap',
                     tab === key
                       ? 'bg-background text-primary shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                      : 'text-foreground/55 hover:text-foreground'
                   )}
                 >
                   {label}
@@ -258,7 +258,7 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
             <div className="flex items-center gap-2 shrink-0">
               <Link href={currentTabHref} className="text-xs text-primary font-medium hover:underline whitespace-nowrap">সব দেখুন →</Link>
               <span className="text-border/60 text-xs hidden sm:block">|</span>
-              <Link href="/explore" className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:block whitespace-nowrap">নতুন লেআউট →</Link>
+              <Link href="/explore" className="text-xs text-foreground/60 hover:text-primary transition-colors hidden sm:block whitespace-nowrap">নতুন লেআউট →</Link>
             </div>
           </div>
 
@@ -282,7 +282,7 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
           {news.map((n, i) => (
             <span key={n.id} className="flex items-center gap-4 shrink-0">
               {i > 0 && <span className="text-border/60 text-xs">·</span>}
-              <Link href={`/news/${n.id}`} className="text-xs text-foreground/70 hover:text-primary transition-colors whitespace-nowrap">
+              <Link href={`/news/${n.id}`} className="text-sm text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
                 {n.title}
               </Link>
             </span>
