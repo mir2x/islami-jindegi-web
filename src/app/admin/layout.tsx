@@ -27,10 +27,12 @@ const nav = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  // Admin always uses dark theme; restore user preference when leaving
+  // Admin always uses its own dark dashboard theme (scoped via the `admin` class,
+  // independent of the public site's dark theme); restore user preference when leaving
   useEffect(() => {
-    document.documentElement.classList.add('dark')
+    document.documentElement.classList.add('dark', 'admin')
     return () => {
+      document.documentElement.classList.remove('admin')
       document.documentElement.classList.remove('dark')
       try {
         if (localStorage.getItem('ij-theme') === 'dark') {

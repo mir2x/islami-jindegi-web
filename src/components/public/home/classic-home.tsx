@@ -74,7 +74,9 @@ const BN_SEASONS = ['গ্রীষ্মকাল','গ্রীষ্মক�
 
 // ── Prayer card ───────────────────────────────────────────────────────────────
 
-function PrayerCard() {
+function PrayerCard({ width }: { width: number | null }) {
+  const style = width ? { width } : undefined
+
   const [state, setState] = useState<{
     slots: PrayerSlot[]
     activeKey: string | null
@@ -108,7 +110,7 @@ function PrayerCard() {
   }, [state?.slots]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!state) return (
-    <div className="rounded-2xl bg-card border border-border shadow-sm px-5 py-4 flex items-center gap-3 text-muted-foreground shrink-0">
+    <div className="mx-auto rounded-2xl bg-card dark:bg-[#163f4f] border border-foreground/15 shadow-sm px-5 py-4 flex items-center gap-3 text-muted-foreground shrink-0" style={style}>
       <Loader2 className="w-4 h-4 animate-spin shrink-0 text-primary" />
       <span className="text-sm">লোড হচ্ছে...</span>
     </div>
@@ -122,27 +124,27 @@ function PrayerCard() {
   const season = BN_SEASONS[bangla.monthIdx] ?? ''
 
   return (
-    <Link href="/namaz-times" className="block rounded-2xl bg-card border border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all p-4 shrink-0">
+    <Link href="/namaz-times" className="mx-auto block rounded-2xl bg-card dark:bg-[#163f4f] border border-foreground/15 shadow-sm hover:border-primary/50 hover:bg-primary/5 hover:shadow-md transition-all p-4 shrink-0" style={style}>
       {/* Dates */}
       <div className="space-y-1.5 mb-3">
         <div className="flex items-center gap-2">
-          <p className="text-base font-bold text-foreground leading-snug">
+          <p className="text-lg font-bold text-foreground leading-snug">
             {toBnNum(hijri.day)} {hijri.monthBn}, {toBnNum(hijri.year)} হিজরী
           </p>
           <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </div>
         <div className="flex items-center gap-2">
-          <p className="text-sm text-foreground/65">
+          <p className="text-base text-foreground/65">
             {BN_DAYS[now.getDay()]}, {toBnNum(now.getDate())} {BN_MONTHS[now.getMonth()]} {toBnNum(now.getFullYear())}
           </p>
           <Calendar className="w-3 h-3 text-muted-foreground/50 shrink-0" />
         </div>
-        <p className="text-sm text-foreground/65">
+        <p className="text-base text-foreground/65">
           {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} — {season}
         </p>
         <div className="flex items-center gap-1.5">
           <MapPin className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-          <p className="text-xs text-foreground/60">{locationName}</p>
+          <p className="text-sm text-foreground/60">{locationName}</p>
         </div>
       </div>
 
@@ -152,9 +154,9 @@ function PrayerCard() {
           <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-0.5">চলমান</p>
           {active ? (
             <>
-              <p className="text-base font-bold text-primary leading-tight">{active.nameBn}</p>
-              <p className="text-xs text-foreground/70 mt-1.5">শুরু {formatTimeBn(active.start)}</p>
-              <p className="text-xs text-foreground/70 mt-0.5">শেষ {formatTimeBn(active.end)}</p>
+              <p className="text-lg font-bold text-primary leading-tight">{active.nameBn}</p>
+              <p className="text-sm text-foreground/70 mt-1.5">শুরু {formatTimeBn(active.start)}</p>
+              <p className="text-sm text-foreground/70 mt-0.5">শেষ {formatTimeBn(active.end)}</p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">—</p>
@@ -163,12 +165,39 @@ function PrayerCard() {
         {next && (
           <div className="text-right">
             <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-0.5">পরবর্তী</p>
-            <p className="text-base font-bold text-foreground/80 leading-tight">{next.nameBn}</p>
-            <p className="text-xs text-foreground/70 mt-1.5">শুরু {formatTimeBn(next.start)}</p>
+            <p className="text-lg font-bold text-foreground/80 leading-tight">{next.nameBn}</p>
+            <p className="text-sm text-foreground/70 mt-1.5">শুরু {formatTimeBn(next.start)}</p>
           </div>
         )}
       </div>
     </Link>
+  )
+}
+
+// ── News card ─────────────────────────────────────────────────────────────────
+
+function NewsCard({ news, width }: { news: NewsListItem[]; width: number | null }) {
+  if (news.length === 0) return null
+  const latest = news[0]
+
+  return (
+    <div
+      className="mx-auto shrink-0 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-primary/12 to-primary/5 border border-primary/25 shadow-sm hover:shadow-md transition-all"
+      style={width ? { width } : undefined}
+    >
+      <Link href={`/news/${latest.id}`} className="group flex items-center gap-3 flex-1 min-w-0">
+        <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+          <Newspaper className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">সর্বশেষ সংবাদ</p>
+          <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</p>
+        </div>
+      </Link>
+      <Link href="/news" className="text-xs text-primary font-medium hover:underline whitespace-nowrap shrink-0">
+        সব দেখুন →
+      </Link>
+    </div>
   )
 }
 
@@ -280,6 +309,30 @@ export function ClassicHome({
     return () => io.disconnect()
   }, [tab, activeLoadMore])
 
+  // Size the prayer/news cards to match the icon row exactly (first icon's left
+  // edge to the third icon's right edge) — the icons sit centered inside wider,
+  // equal-width grid cells, so this can't be expressed as a fixed CSS width.
+  // Re-measured via ResizeObserver on the nav itself (not just window resize),
+  // since the nav's width — and therefore the icons' positions — can also shift
+  // from layout causes that aren't a viewport resize (e.g. a scrollbar appearing
+  // once the prayer card finishes loading and grows taller).
+  const navRef = useRef<HTMLElement>(null)
+  const iconRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [cardWidth, setCardWidth] = useState<number | null>(null)
+
+  useEffect(() => {
+    function measure() {
+      const first = iconRefs.current[0]
+      const third = iconRefs.current[2]
+      if (!first || !third) return
+      setCardWidth(Math.round(third.getBoundingClientRect().right - first.getBoundingClientRect().left))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (navRef.current) ro.observe(navRef.current)
+    return () => ro.disconnect()
+  }, [])
+
   const currentTabHref = TABS.find(t => t.key === tab)?.href ?? '/'
 
   const bayansForList   = bayansList.items.map(b   => ({ id: b.id, title: b.title, subtitle: b.author?.name }))
@@ -294,16 +347,19 @@ export function ClassicHome({
 
         {/* ── LEFT: full-width on mobile, 50% on desktop ─────────── */}
         <div className="w-full lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-4 gap-3 lg:overflow-hidden">
-          <PrayerCard />
+          <PrayerCard width={cardWidth} />
 
-          <nav className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-1.5">
-            {SECTIONS.map(({ label, href, icon }) => (
+          <nav ref={navRef} className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-1.5 mb-3">
+            {SECTIONS.map(({ label, href, icon }, i) => (
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl hover:bg-muted/50 transition-colors text-center"
+                className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl hover:bg-primary/10 transition-colors text-center"
               >
-                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-28 lg:h-28 rounded-2xl lg:rounded-3xl bg-card border border-border/40 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/30 transition-all p-3 sm:p-3.5 lg:p-5">
+                <div
+                  ref={el => { iconRefs.current[i] = el }}
+                  className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl lg:rounded-2xl bg-card dark:bg-[#fdfdfd] border border-foreground/20 dark:border-black/10 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/60 transition-all p-2.5 sm:p-3 lg:p-4"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={icon} alt={label} className="w-full h-full object-contain" />
                 </div>
@@ -311,6 +367,8 @@ export function ClassicHome({
               </Link>
             ))}
           </nav>
+
+          <NewsCard news={news} width={cardWidth} />
         </div>
 
         {/* ── RIGHT: hidden on mobile, shown on desktop ───────────── */}
@@ -355,24 +413,6 @@ export function ClassicHome({
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* ── Bottom news strip ─────────────────────────────────────────── */}
-      <div className="shrink-0 h-9 border-t border-border/40 bg-muted/30 flex items-center gap-3 px-4 lg:px-5">
-        <span className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0 whitespace-nowrap hidden sm:block">
-          সর্বশেষ সংবাদ
-        </span>
-        <div className="hidden sm:block w-px h-3.5 bg-border shrink-0" />
-        <div className="flex-1 flex items-center gap-4 overflow-x-auto min-w-0">
-          {news.map((n, i) => (
-            <span key={n.id} className="flex items-center gap-4 shrink-0">
-              {i > 0 && <span className="text-border/60 text-xs">·</span>}
-              <Link href={`/news/${n.id}`} className="text-sm text-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
-                {n.title}
-              </Link>
-            </span>
-          ))}
         </div>
       </div>
     </div>

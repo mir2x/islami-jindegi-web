@@ -101,7 +101,10 @@
   --sidebar-ring: oklch(0.62 0.172 163);
 }
 
-.dark {
+/* Admin CMS dark dashboard theme — always-on, independent of the public site's
+   light/dark toggle below. Scoped to `.admin.dark` (set by admin/layout.tsx)
+   so it doesn't leak into the public site's `.dark`. */
+.admin.dark {
   /* near-neutral charcoal — barely warm, classic dark dashboard base */
   --background: oklch(0.115 0.005 55);
   --foreground: oklch(0.94 0.005 55);
@@ -136,6 +139,36 @@
   --sidebar-accent-foreground: oklch(0.92 0.022 155);
   --sidebar-border: oklch(0.22 0.050 155 / 45%);
   --sidebar-ring: oklch(0.64 0.22 150);
+}
+
+/* Public site dark theme — Islami Jindegi's brand teal, carried over from the
+   legacy site's palette (islamic-jindegi-web/app/styles/settings/colors.css). */
+.dark {
+  --background: #163f4f;
+  --foreground: #ebebeb;
+  /* --card intentionally stays in the dark teal family (not white): --foreground
+     is light everywhere on this site, and `bg-card` wraps ordinary content rows
+     (list items, sidebar panels) whose text uses `text-foreground`/`text-muted-
+     foreground`, not a card-specific token. A white --card here would make that
+     text unreadable. The one white-tile look from the reference design (home
+     page icon grid) is applied as a targeted `dark:` override on that component
+     instead of changing this global token. */
+  --card: #19546c;
+  --card-foreground: #ebebeb;
+  --popover: #19546c;
+  --popover-foreground: #ebebeb;
+  --primary: #7ec7b2;
+  --primary-foreground: #0a3a3a;
+  --secondary: #19546c;
+  --secondary-foreground: #ebebeb;
+  --muted: #2d6d84;
+  --muted-foreground: #bedbd7;
+  --accent: #085053;
+  --accent-foreground: #daf5f2;
+  --destructive: #a12f1f;
+  --border: oklch(1 0 0 / 12%);
+  --input: #2d6d84;
+  --ring: #7ec7b2;
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────── */

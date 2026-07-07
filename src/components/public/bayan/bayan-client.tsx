@@ -151,7 +151,7 @@ export function BayanClient({
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="বয়ান খুঁজুন..."
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
             />
             {search && (
               <button
@@ -169,7 +169,7 @@ export function BayanClient({
               'lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all shrink-0',
               mobileFiltersOpen || selectedAuthor || selectedCategory
                 ? 'border-primary bg-primary/8 text-primary'
-                : 'border-border bg-background text-muted-foreground hover:text-foreground hover:border-border/80'
+                : 'border-border bg-muted text-muted-foreground hover:text-foreground hover:border-border/80'
             )}
           >
             <SlidersHorizontal className="w-4 h-4" />

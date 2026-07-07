@@ -175,7 +175,7 @@ export function DuaClient({
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
               placeholder="দু'আ খুঁজুন..."
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
             />
             {search && (
               <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -189,7 +189,7 @@ export function DuaClient({
               'lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all shrink-0',
               mobileFiltersOpen || selectedCategory
                 ? 'border-primary bg-primary/8 text-primary'
-                : 'border-border bg-background text-muted-foreground hover:text-foreground'
+                : 'border-border bg-muted text-muted-foreground hover:text-foreground'
             )}
           >
             <SlidersHorizontal className="w-4 h-4" />

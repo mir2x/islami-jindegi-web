@@ -267,7 +267,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
               onChange={e => setPageInputValue(e.target.value)}
               onBlur={commitPageInput}
               onKeyDown={e => { if (e.key === 'Enter') commitPageInput() }}
-              className="w-10 text-center rounded-md border border-border bg-background text-foreground text-xs py-1 focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-10 text-center rounded-md border border-border bg-muted text-foreground text-xs py-1 focus:outline-none focus:ring-1 focus:ring-ring"
               aria-label="পাতা নম্বর"
             />
             <span className="text-muted-foreground text-xs whitespace-nowrap">/ {numPages || '—'}</span>

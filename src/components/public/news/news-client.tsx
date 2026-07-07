@@ -85,7 +85,7 @@ export function NewsClient({ initialItems, initialTotal, initialSearch }: Props)
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1) }}
           placeholder="সংবাদ খুঁজুন..."
-          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
+          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
         />
         {search && (
           <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">

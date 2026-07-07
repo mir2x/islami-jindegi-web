@@ -31,7 +31,7 @@ export function SidebarOptionList({ title, items, search, onSearch, selected, on
             value={search}
             onChange={e => onSearch(e.target.value)}
             placeholder="খুঁজুন..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>

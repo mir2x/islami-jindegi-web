@@ -191,7 +191,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
                       'px-3 py-1.5 rounded-lg text-sm transition-colors',
                       translator === t.key
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-background border border-border text-muted-foreground hover:text-foreground'
+                        : 'bg-muted border border-border text-muted-foreground hover:text-foreground'
                     )}
                   >
                     {t.label}
@@ -253,7 +253,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
                         value={surahSearch}
                         onChange={e => setSurahSearch(e.target.value)}
                         placeholder="সূরা খুঁজুন..."
-                        className="w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
                   </div>
@@ -377,7 +377,7 @@ export function SurahReader({ surah, allSurahs }: Props) {
                       value={pageInput}
                       onChange={e => setPageInput(e.target.value)}
                       placeholder="পৃষ্ঠা নম্বর"
-                      className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="flex-1 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
                       যান
@@ -607,7 +607,7 @@ const AyahCard = forwardRef<HTMLDivElement, {
       {showWords && ayah.words.length > 0 && (
         <div className="flex flex-wrap gap-2 justify-end mb-4 p-3 rounded-xl bg-muted/40" dir="rtl">
           {ayah.words.map(w => (
-            <div key={w.id} className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg bg-background border border-border">
+            <div key={w.id} className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg bg-muted border border-border">
               <span className="text-base text-foreground" style={{ fontFamily: 'serif' }}>{w.arabic}</span>
               <span className="text-[11px] text-muted-foreground">{w.bengali}</span>
             </div>
