@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { BookOpen, Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin } from 'lucide-react'
@@ -10,7 +10,48 @@ import {
 } from '@/lib/prayer-times'
 import type { PrayerSlot } from '@/lib/prayer-times'
 import { cn } from '@/lib/utils'
-import type { Book, BayanListItem, MalfuzatListItem, ArticleListItem, NewsListItem } from '@/types'
+import type { Book, BayanListItem, MalfuzatListItem, ArticleListItem, NewsListItem, PagedResult } from '@/types'
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+const HOME_PAGE_SIZE = 8
+
+async function fetchNextPage<T>(path: string, page: number, extra: Record<string, string> = {}): Promise<{ data: T[]; total: number }> {
+  const q = new URLSearchParams({ published: 'true', page: String(page), pageSize: String(HOME_PAGE_SIZE), ...extra })
+  try {
+    const res = await fetch(`${API_BASE}${path}?${q}`)
+    if (!res.ok) return { data: [], total: 0 }
+    const r: PagedResult<T> = await res.json()
+    return { data: r.data, total: r.total }
+  } catch { return { data: [], total: 0 } }
+}
+
+// Loads page 1 upfront (from the server), then fetches subsequent pages as the
+// user scrolls the tab panel — one instance per home-page tab.
+function useInfiniteList<T>(initialItems: T[], initialTotal: number, path: string, extra?: Record<string, string>) {
+  const [items, setItems] = useState(initialItems)
+  const [total, setTotal] = useState(initialTotal)
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const loadingRef = useRef(false)
+
+  const hasMore = items.length < total
+
+  const loadMore = useCallback(async () => {
+    if (loadingRef.current || items.length >= total) return
+    loadingRef.current = true
+    setLoading(true)
+    const nextPage = page + 1
+    const res = await fetchNextPage<T>(path, nextPage, extra)
+    setItems(prev => [...prev, ...res.data])
+    setTotal(res.total)
+    setPage(nextPage)
+    setLoading(false)
+    loadingRef.current = false
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, items.length, total, path])
+
+  return { items, hasMore, loading, loadMore }
+}
 
 const SECTIONS = [
   { label: 'কুরআন',        href: '/quran',       icon: '/icons/quran.svg'      },
@@ -136,7 +177,7 @@ function PrayerCard() {
 function BooksGrid({ books }: { books: Book[] }) {
   return (
     <div className="divide-y divide-border/50">
-      {books.slice(0, 8).map(b => (
+      {books.map(b => (
         <Link key={b.id} href={`/books/${b.id}`} className="group flex gap-4 py-4 first:pt-0 -mx-4 px-4 hover:bg-muted/30 transition-colors rounded-xl">
           {/* Cover */}
           <div className="relative w-20 sm:w-24 shrink-0 rounded-lg overflow-hidden bg-muted shadow-sm group-hover:shadow-md transition-shadow" style={{ aspectRatio: '3/4' }}>
@@ -183,9 +224,13 @@ function CompactList({ items, href, icon: Icon }: {
 
 interface Props {
   books: Book[]
+  booksTotal: number
   bayans: BayanListItem[]
+  bayansTotal: number
   malfuzat: MalfuzatListItem[]
+  malfuzatTotal: number
   articles: ArticleListItem[]
+  articlesTotal: number
   news: NewsListItem[]
 }
 
@@ -198,14 +243,48 @@ const TABS: { key: Tab; label: string; href: string }[] = [
   { key: 'articles', label: 'নতুন প্রবন্ধ',  href: '/articles' },
 ]
 
-export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) {
+export function ClassicHome({
+  books, booksTotal, bayans, bayansTotal, malfuzat, malfuzatTotal,
+  articles, articlesTotal, news,
+}: Props) {
   const [tab, setTab] = useState<Tab>('books')
+
+  const booksList    = useInfiniteList<Book>(books, booksTotal, '/api/books')
+  const bayansList   = useInfiniteList<BayanListItem>(bayans, bayansTotal, '/api/bayan', { sort: 'date' })
+  const malfuzatList = useInfiniteList<MalfuzatListItem>(malfuzat, malfuzatTotal, '/api/malfuzat')
+  const articlesList = useInfiniteList<ArticleListItem>(articles, articlesTotal, '/api/articles')
+
+  const activeLoadMore =
+    tab === 'books' ? booksList.loadMore :
+    tab === 'bayans' ? bayansList.loadMore :
+    tab === 'malfuzat' ? malfuzatList.loadMore :
+    articlesList.loadMore
+
+  const activeLoading =
+    tab === 'books' ? booksList.loading :
+    tab === 'bayans' ? bayansList.loading :
+    tab === 'malfuzat' ? malfuzatList.loading :
+    articlesList.loading
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const root = containerRef.current
+    const el = sentinelRef.current
+    if (!root || !el) return
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) activeLoadMore()
+    }, { root, rootMargin: '200px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [tab, activeLoadMore])
 
   const currentTabHref = TABS.find(t => t.key === tab)?.href ?? '/'
 
-  const bayansForList   = bayans.map(b   => ({ id: b.id, title: b.title, subtitle: b.author?.name }))
-  const malfuzatForList = malfuzat.map(m => ({ id: m.id, title: m.title, subtitle: m.author?.name }))
-  const articlesForList = articles.map(a => ({ id: a.id, title: a.title, subtitle: a.author?.name ?? null }))
+  const bayansForList   = bayansList.items.map(b   => ({ id: b.id, title: b.title, subtitle: b.author?.name }))
+  const malfuzatForList = malfuzatList.items.map(m => ({ id: m.id, title: m.title, subtitle: m.author?.name }))
+  const articlesForList = articlesList.items.map(a => ({ id: a.id, title: a.title, subtitle: a.author?.name ?? null }))
 
   return (
     <div className="flex flex-col bg-background lg:h-[calc(100vh-68px)] lg:overflow-hidden">
@@ -263,11 +342,18 @@ export function ClassicHome({ books, bayans, malfuzat, articles, news }: Props) 
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5">
-            {tab === 'books'    && <BooksGrid books={books} />}
+          <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5">
+            {tab === 'books'    && <BooksGrid books={booksList.items} />}
             {tab === 'bayans'   && <CompactList items={bayansForList}   href="/bayan"    icon={Mic}       />}
             {tab === 'malfuzat' && <CompactList items={malfuzatForList} href="/malfuzat" icon={ScrollText} />}
             {tab === 'articles' && <CompactList items={articlesForList} href="/articles" icon={Newspaper}  />}
+
+            <div ref={sentinelRef} />
+            {activeLoading && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              </div>
+            )}
           </div>
         </div>
       </div>
