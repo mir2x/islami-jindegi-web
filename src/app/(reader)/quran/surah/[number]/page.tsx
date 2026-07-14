@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getQuranSurah, getQuranSurahs } from '@/lib/public-api'
+import { getQuranSurah, getQuranSurahs, getQuranReciters, getQuranTranslators } from '@/lib/public-api'
 import { SurahReader } from '@/components/public/quran/surah-reader'
 
 interface Props {
   params: Promise<{ number: string }>
-  searchParams: Promise<{ translator?: string }>
+  searchParams: Promise<{ ayah?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,15 +21,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SurahPage({ params, searchParams }: Props) {
   const { number } = await params
-  const { translator } = await searchParams
+  const { ayah } = await searchParams
   const n = parseInt(number)
   if (isNaN(n) || n < 1 || n > 114) notFound()
 
-  const [surahs, surah] = await Promise.all([
+  const [surahs, surah, reciters, translators] = await Promise.all([
     getQuranSurahs(),
-    getQuranSurah(n, translator),
+    getQuranSurah(n),
+    getQuranReciters(),
+    getQuranTranslators(),
   ])
   if (!surah) notFound()
 
-  return <SurahReader surah={surah} allSurahs={surahs} />
+  const initialAyah = ayah ? parseInt(ayah) : null
+
+  return (
+    <SurahReader
+      surah={surah}
+      allSurahs={surahs}
+      reciters={reciters}
+      translators={translators}
+      initialAyah={initialAyah && !isNaN(initialAyah) ? initialAyah : null}
+    />
+  )
 }

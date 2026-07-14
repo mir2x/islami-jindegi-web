@@ -1,0 +1,39 @@
+// Mirrors the font choices in islami-jindegi-app's font_change_dialog.dart, backed by the
+// same font files (copied into public/fonts/, declared in globals.css).
+
+export interface FontOption {
+  key: string
+  label: string
+  family: string
+}
+
+export const ARABIC_FONTS: FontOption[] = [
+  { key: 'noorehuda', label: 'Noorehuda (ডিফল্ট)', family: '"Noorehuda", serif' },
+  { key: 'al-mushaf', label: 'Al Mushaf Quran', family: '"AlMushafQuran", serif' },
+  { key: 'al-qalam-kolkatta', label: 'Al Qalam Kolkatta Quranic', family: '"AlQalamKolkatta", serif' },
+  { key: 'al-qalam-quran', label: 'Al Qalam Quran', family: '"AlQalamQuran", serif' },
+  { key: 'al-qalam-quran-majeed', label: 'Al Qalam Quran Majeed', family: '"AlQalamQuranMajeed", serif' },
+  { key: 'uthman', label: 'Uthman', family: '"Uthman", serif' },
+  { key: 'uthmani', label: 'Uthmani', family: '"Uthmani", serif' },
+  { key: 'me-quran', label: 'Me-Quran', family: '"MeQuran", serif' },
+  { key: 'kitab', label: 'Kitab', family: '"Kitab", serif' },
+]
+
+export const BENGALI_FONTS: FontOption[] = [
+  { key: 'solaimanlipi', label: 'SolaimanLipi (ডিফল্ট)', family: '"SolaimanLipi", sans-serif' },
+  { key: 'kalpurush', label: 'Kalpurush', family: '"Kalpurush", sans-serif' },
+  { key: 'noto-sans-bengali', label: 'Noto Sans Bengali', family: '"NotoSansBengali", sans-serif' },
+  { key: 'siyamrupali', label: 'Siyam Rupali', family: '"SiyamRupali", sans-serif' },
+  { key: 'bensenhandwriting', label: 'Ben Sen Handwriting', family: '"BenSenHandwriting", sans-serif' },
+]
+
+export const DEFAULT_ARABIC_FONT = ARABIC_FONTS[0].family
+export const DEFAULT_BENGALI_FONT = BENGALI_FONTS[0].family
+
+export function arabicFontFamily(key: string): string {
+  return ARABIC_FONTS.find(f => f.key === key)?.family ?? DEFAULT_ARABIC_FONT
+}
+
+export function bengaliFontFamily(key: string): string {
+  return BENGALI_FONTS.find(f => f.key === key)?.family ?? DEFAULT_BENGALI_FONT
+}

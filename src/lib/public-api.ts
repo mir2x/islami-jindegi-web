@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, NamazTimeDetail, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, NamazTimeDetail, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail, QuranReciter } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -269,7 +269,19 @@ export async function getQuranSurahs(): Promise<QuranSurah[]> {
   return r ?? []
 }
 
-export async function getQuranSurah(number: number, translator?: string): Promise<QuranSurahDetail | null> {
-  const q = translator ? `?translator=${encodeURIComponent(translator)}` : ''
-  return get<QuranSurahDetail>(`/api/quran/surahs/${number}/ayahs${q}`, 86400)
+// Always fetches all translations (default server-side behavior) so the reader can offer
+// multi-translation selection client-side without refetching on every toggle. Tafsirs are
+// deliberately not requested here — fetched on demand per-ayah when a tafsir panel opens.
+export async function getQuranSurah(number: number): Promise<QuranSurahDetail | null> {
+  return get<QuranSurahDetail>(`/api/quran/surahs/${number}/ayahs`, 86400)
+}
+
+export async function getQuranReciters(): Promise<QuranReciter[]> {
+  const r = await get<QuranReciter[]>('/api/quran/reciters', 3600)
+  return r ?? []
+}
+
+export async function getQuranTranslators(): Promise<string[]> {
+  const r = await get<string[]>('/api/quran/translators', 3600)
+  return r ?? []
 }

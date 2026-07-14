@@ -22,6 +22,96 @@
   unicode-range: U+0980-U+09FF, U+200C-U+200D, U+25CC;
 }
 
+/* ── Quran Arabic fonts (mirrored from islami-jindegi-app's assets/fonts) ── */
+@font-face {
+  font-family: 'Noorehuda';
+  src: url('/fonts/Noorehuda.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'AlMushafQuran';
+  src: url('/fonts/AlMushafQuran.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'AlQalamKolkatta';
+  src: url('/fonts/AlQalamKolkatta.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'AlQalamQuran';
+  src: url('/fonts/AlQalamQuran.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'AlQalamQuranMajeed';
+  src: url('/fonts/AlQalamQuranMajeed.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'Uthman';
+  src: url('/fonts/Uthman.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'Uthmani';
+  src: url('/fonts/Uthmani.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'MeQuran';
+  src: url('/fonts/MeQuran.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'Kitab';
+  src: url('/fonts/Kitab.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+/* ── Bengali fonts (mirrored from islami-jindegi-app's assets/fonts) ── */
+@font-face {
+  font-family: 'Kalpurush';
+  src: url('/fonts/Kalpurush.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0980-U+09FF, U+200C-U+200D, U+25CC;
+}
+@font-face {
+  font-family: 'NotoSansBengali';
+  src: url('/fonts/NotoSansBengali-Regular.ttf') format('truetype');
+  font-weight: 400 500;
+  font-display: swap;
+  unicode-range: U+0980-U+09FF, U+200C-U+200D, U+25CC;
+}
+@font-face {
+  font-family: 'NotoSansBengali';
+  src: url('/fonts/NotoSansBengali-Bold.ttf') format('truetype');
+  font-weight: 600 700;
+  font-display: swap;
+  unicode-range: U+0980-U+09FF, U+200C-U+200D, U+25CC;
+}
+@font-face {
+  font-family: 'SiyamRupali';
+  src: url('/fonts/SiyamRupali.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0980-U+09FF, U+200C-U+200D, U+25CC;
+}
+@font-face {
+  font-family: 'BenSenHandwriting';
+  src: url('/fonts/BenSenHandwriting.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0980-U+09FF, U+200C-U+200D, U+25CC;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

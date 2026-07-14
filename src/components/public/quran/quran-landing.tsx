@@ -1,32 +1,78 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { BookOpen, AlignLeft, ArrowRight, Search } from 'lucide-react'
+import { BookOpen, AlignLeft, AlignJustify, ArrowRight, Search, BookMarked, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MushafEdition, QuranSurah } from '@/types'
+import { QuranSearchModal } from './quran-search-modal'
+import { BookmarksModal } from './bookmarks-modal'
+import { getLastRead, type QuranLastRead } from '@/lib/quran-last-read'
+import { DEFAULT_ARABIC_FONT } from '@/lib/quran-fonts'
+import { bn } from '@/lib/bengali-numerals'
 
-type Mode = 'mushaf' | 'text'
+type Mode = 'mushaf' | 'text' | 'tilawat'
 
 export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; surahs: QuranSurah[] }) {
   const [mode, setMode] = useState<Mode>('mushaf')
   const [search, setSearch] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [bookmarksOpen, setBookmarksOpen] = useState(false)
+  const [lastRead, setLastReadState] = useState<QuranLastRead | null>(null)
+
+  useEffect(() => { setLastReadState(getLastRead()) }, [])
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
 
       {/* ── Hero ── */}
       <div className="text-center mb-10">
-        <p className="text-3xl text-muted-foreground mb-2" style={{ fontFamily: 'serif' }}>
+        <p className="text-3xl text-muted-foreground mb-2" style={{ fontFamily: DEFAULT_ARABIC_FONT }}>
           القرآن الكريم
         </p>
         <h1 className="text-4xl sm:text-5xl font-bold text-foreground mt-1">কুরআন মাজীদ</h1>
         <p className="text-muted-foreground mt-3 text-base">পবিত্র কুরআন পড়ুন — মুসহাফ বা পাঠ্য আকারে</p>
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-sm text-muted-foreground hover:text-primary transition-all"
+          >
+            <Search className="w-4 h-4" />
+            সম্পূর্ণ কুরআনে অনুসন্ধান করুন
+          </button>
+          <button
+            onClick={() => setBookmarksOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-sm text-muted-foreground hover:text-primary transition-all"
+          >
+            <BookMarked className="w-4 h-4" />
+            বুকমার্ক
+          </button>
+        </div>
       </div>
 
+      {/* ── Continue reading ── */}
+      {lastRead && (
+        <Link
+          href={`/quran/surah/${lastRead.surahNumber}?ayah=${lastRead.ayahNumber}`}
+          className="flex items-center gap-3 max-w-lg mx-auto mb-8 p-4 rounded-2xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+            <History className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">চালিয়ে যান</p>
+            <p className="text-sm font-semibold text-foreground truncate">{lastRead.surahName} · আয়াত {bn(lastRead.ayahNumber)}</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-primary shrink-0" />
+        </Link>
+      )}
+
+      {searchOpen && <QuranSearchModal onClose={() => setSearchOpen(false)} />}
+      {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
+
       {/* ── Mode selector ── */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-lg mx-auto mb-12">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto mb-12">
         <ModeCard
           active={mode === 'mushaf'}
           onClick={() => setMode('mushaf')}
@@ -42,11 +88,20 @@ export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; 
           sub="সূরা ও আয়াত"
           disabled={surahs.length === 0}
         />
+        <ModeCard
+          active={mode === 'tilawat'}
+          onClick={() => setMode('tilawat')}
+          icon={AlignJustify}
+          label="তিলাওয়াত"
+          sub="ধারাবাহিক পাঠ"
+          disabled={surahs.length === 0}
+        />
       </div>
 
       {/* ── Content ── */}
-      {mode === 'mushaf' && <MushafSection editions={editions} />}
-      {mode === 'text'   && <TextSection surahs={surahs} search={search} onSearch={setSearch} />}
+      {mode === 'mushaf'  && <MushafSection editions={editions} />}
+      {mode === 'text'    && <TextSection surahs={surahs} search={search} onSearch={setSearch} hrefPrefix="/quran/surah" />}
+      {mode === 'tilawat' && <TextSection surahs={surahs} search={search} onSearch={setSearch} hrefPrefix="/quran/tilawat" />}
     </div>
   )
 }
@@ -127,7 +182,7 @@ function EditionCard({ edition }: { edition: MushafEdition }) {
           sizes="(max-width: 640px) 50vw, 33vw"
         />
         <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
-          {edition.totalPages} পৃষ্ঠা
+          {bn(edition.totalPages)} পৃষ্ঠা
         </div>
       </div>
       <div className="p-3.5 flex items-start justify-between gap-2">
@@ -140,17 +195,18 @@ function EditionCard({ edition }: { edition: MushafEdition }) {
   )
 }
 
-// ─── Text / Surah list section ────────────────────────────────────────────────
+// ─── Text / Surah list section (also reused for tilawat mode's surah picker) ──
 
 const REVELATION_LABEL: Record<string, string> = {
   Meccan: 'মক্কী',
   Medinan: 'মাদানী',
 }
 
-function TextSection({ surahs, search, onSearch }: {
+function TextSection({ surahs, search, onSearch, hrefPrefix }: {
   surahs: QuranSurah[]
   search: string
   onSearch: (v: string) => void
+  hrefPrefix: string
 }) {
   const filtered = search.trim()
     ? surahs.filter(s =>
@@ -180,24 +236,24 @@ function TextSection({ surahs, search, onSearch }: {
         {filtered.map(surah => (
           <Link
             key={surah.number}
-            href={`/quran/surah/${surah.number}`}
+            href={`${hrefPrefix}/${surah.number}`}
             className="group flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all"
           >
             {/* Number badge */}
             <div className="w-9 h-9 shrink-0 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors tabular-nums">
-              {surah.number}
+              {bn(surah.number)}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1">
                 <p className="text-sm font-semibold text-foreground truncate">{surah.nameBengali}</p>
-                <p className="text-base text-muted-foreground shrink-0" style={{ fontFamily: 'serif', direction: 'rtl' }}>
+                <p className="text-base text-muted-foreground shrink-0" style={{ fontFamily: DEFAULT_ARABIC_FONT, direction: 'rtl' }}>
                   {surah.nameArabic}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {surah.totalAyahs} আয়াত · {REVELATION_LABEL[surah.revelationType] ?? surah.revelationType} · পারা {surah.paraNumber}
+                {bn(surah.totalAyahs)} আয়াত · {REVELATION_LABEL[surah.revelationType] ?? surah.revelationType} · পারা {bn(surah.paraNumber)}
               </p>
             </div>
           </Link>

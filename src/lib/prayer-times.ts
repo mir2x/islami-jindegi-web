@@ -215,17 +215,30 @@ export function toBanglaDate(date: Date): { day: number; monthBn: string; year: 
   const seqM = seq(m)
 
   let banglaMonthIdx = 0
-  let banglaDay = 1
+  let startYear = y
+  let startMonth = 4
+  let startDay = 14
 
   for (let i = BANGLA_STARTS.length - 1; i >= 0; i--) {
     const [sm, sd] = BANGLA_STARTS[i]
     const seqSM = seq(sm)
     if (seqM > seqSM || (seqM === seqSM && d >= sd)) {
       banglaMonthIdx = i
-      banglaDay = d - sd + 1
+      // The matched start month can fall in the previous Gregorian year (e.g. today
+      // is Jan 5, but the active Bangla month পৌষ started the previous December).
+      startYear = sm > m ? y - 1 : y
+      startMonth = sm
+      startDay = sd
       break
     }
   }
+
+  // Day-of-month subtraction (d - sd) only works when today and the start date
+  // share a Gregorian month; otherwise it crosses a month boundary and goes
+  // negative. Diff actual dates instead so the month length is accounted for.
+  const banglaDay = Math.round(
+    (Date.UTC(y, m - 1, d) - Date.UTC(startYear, startMonth - 1, startDay)) / 86400000
+  ) + 1
 
   const banglaYear = m >= 4 ? y - 593 : y - 594
   return { day: banglaDay, monthBn: BANGLA_MONTHS_BN[banglaMonthIdx], year: banglaYear, monthIdx: banglaMonthIdx }

@@ -149,24 +149,41 @@ function PrayerCard({ width }: { width: number | null }) {
       </div>
 
       {/* Prayer times */}
-      <div className="rounded-xl bg-muted/40 border border-border/30 px-3.5 py-3 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-0.5">চলমান</p>
+      <div className="flex items-stretch gap-3">
+        <div className="flex-1 rounded-xl dark:rounded-2xl bg-muted/40 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] border border-border/30 dark:border-white/10 px-3.5 py-3 dark:p-4 dark:pb-5">
+          <div className="flex items-center justify-between mb-0.5 dark:mb-3">
+            <p className="text-xs dark:text-2xl font-semibold text-foreground/60 dark:text-amber-200 uppercase tracking-wider">বর্তমান</p>
+            {/* <Moon className="hidden dark:block w-5 h-5 text-amber-100" /> */}
+          </div>
           {active ? (
             <>
-              <p className="text-lg font-bold text-primary leading-tight">{active.nameBn}</p>
-              <p className="text-sm text-foreground/70 mt-1.5">শুরু {formatTimeBn(active.start)}</p>
-              <p className="text-sm text-foreground/70 mt-0.5">শেষ {formatTimeBn(active.end)}</p>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <p className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-primary dark:text-white leading-tight whitespace-nowrap">{active.nameBn}</p>
+                <p className="flex items-baseline gap-1">
+                  <span className="text-sm font-normal text-foreground/70 dark:text-white/80">শুরু</span>
+                  <span className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-primary dark:text-white leading-tight whitespace-nowrap">{formatTimeBn(active.start)}</span>
+                </p>
+              </div>
+              <p className="flex items-baseline gap-1 mt-1.5 dark:mt-2">
+                <span className="text-sm font-normal text-foreground/70 dark:text-white/80">শেষ</span>
+                <span className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-primary dark:text-white leading-tight whitespace-nowrap">{formatTimeBn(active.end)}</span>
+              </p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">—</p>
           )}
         </div>
         {next && (
-          <div className="text-right">
-            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-0.5">পরবর্তী</p>
-            <p className="text-lg font-bold text-foreground/80 leading-tight">{next.nameBn}</p>
-            <p className="text-sm text-foreground/70 mt-1.5">শুরু {formatTimeBn(next.start)}</p>
+          <div className="flex-1 rounded-xl dark:rounded-2xl bg-muted/40 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] border border-border/30 dark:border-white/10 px-3.5 py-3 dark:p-4 dark:pb-5">
+            <div className="flex items-center justify-between mb-0.5 dark:mb-3">
+              <p className="text-xs dark:text-2xl font-semibold text-foreground/60 dark:text-amber-200 uppercase tracking-wider">পরবর্তী</p>
+              {/* <Sunrise className="hidden dark:block w-5 h-5 text-amber-100" /> */}
+            </div>
+            <p className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-foreground/80 dark:text-white leading-tight whitespace-nowrap">{next.nameBn}</p>
+            <p className="flex items-baseline gap-1 mt-1.5 dark:mt-2">
+              <span className="text-sm font-normal text-foreground/70 dark:text-white/80">শুরু</span>
+              <span className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-foreground dark:text-white leading-tight whitespace-nowrap">{formatTimeBn(next.start)}</span>
+            </p>
           </div>
         )}
       </div>
@@ -340,7 +357,7 @@ export function ClassicHome({
   const articlesForList = articlesList.items.map(a => ({ id: a.id, title: a.title, subtitle: a.author?.name ?? null }))
 
   return (
-    <div className="flex flex-col bg-background lg:h-[calc(100vh-68px)] lg:overflow-hidden">
+    <div className="flex flex-col bg-background h-[calc(100vh-68px)] overflow-y-auto lg:overflow-hidden">
 
       {/* ── Main row: stacked on mobile, side-by-side on desktop ─── */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 lg:p-4">
@@ -354,11 +371,11 @@ export function ClassicHome({
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl hover:bg-primary/10 transition-colors text-center"
+                className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl transition-colors text-center"
               >
                 <div
                   ref={el => { iconRefs.current[i] = el }}
-                  className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl lg:rounded-2xl bg-card dark:bg-[#fdfdfd] border border-foreground/20 dark:border-black/10 shadow-sm flex items-center justify-center group-hover:shadow-md group-hover:border-primary/60 transition-all p-2.5 sm:p-3 lg:p-4"
+                  className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl lg:rounded-2xl bg-card dark:bg-white/10 border border-foreground/20 dark:border-transparent shadow-sm dark:shadow-none flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-white/20 group-hover:shadow-md dark:group-hover:shadow-none group-hover:border-primary/60 dark:group-hover:border-transparent transition-all p-3 sm:p-3.5 lg:p-4"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={icon} alt={label} className="w-full h-full object-contain" />

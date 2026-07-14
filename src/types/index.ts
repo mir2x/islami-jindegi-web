@@ -321,6 +321,19 @@ export interface NewsDetail extends NewsListItem {
   body: string
 }
 
+export interface PageListItem {
+  id: string
+  title: string
+  slug: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PageDetail extends PageListItem {
+  body: string
+  imageUrl: string | null
+}
+
 
 export interface MadrasahInfoItem {
   id: string | null
@@ -401,15 +414,54 @@ export interface QuranTranslation {
   text: string
 }
 
+export interface QuranTafsir {
+  id: string
+  name: string
+  text: string
+}
+
 export interface QuranAyah {
   number: number
   arabic: string
   translations: QuranTranslation[]
   words: QuranWord[]
+  tafsirs: QuranTafsir[]
 }
 
-export interface QuranSurahDetail extends QuranSurah {
+// The surah-detail endpoint (`/api/quran/surahs/{n}/ayahs`) returns `surahNumber`, not `number`
+// like the surah-list endpoint — Omit + explicit field keeps this type honest about that.
+export interface QuranSurahDetail extends Omit<QuranSurah, 'number'> {
+  surahNumber: number
   ayahs: QuranAyah[]
+}
+
+export interface QuranAyahDetail {
+  surahNumber: number
+  ayahNumber: number
+  arabic: string
+  translations: QuranTranslation[]
+  words: QuranWord[]
+  tafsirs: QuranTafsir[]
+}
+
+export interface QuranReciter {
+  id: string
+  name: string
+}
+
+export interface QuranSearchHit {
+  surahNumber: number
+  surahName: string
+  ayahNumber: number
+  arabic: string
+  translations: QuranTranslation[]
+}
+
+export interface SuraAudioUrls {
+  urls: string[]
+  totalAyahs: number
+  totalDownloadSizeBytes: number
+  totalDownloadSizeMB: number
 }
 
 export interface HijriMonthSighting {

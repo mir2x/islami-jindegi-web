@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MushafEdition, AyahBox } from '@/types'
+import { bn } from '@/lib/bengali-numerals'
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
@@ -237,7 +238,7 @@ function MushafReaderInner({ edition, initialPage }: Props) {
   return (
     <div
       ref={containerRef}
-      className="relative h-dvh w-full bg-neutral-950 overflow-hidden select-none"
+      className="relative h-dvh w-full bg-background overflow-hidden select-none"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -260,7 +261,7 @@ function MushafReaderInner({ edition, initialPage }: Props) {
           <img
             key={pageUrl}
             src={pageUrl}
-            alt={`পৃষ্ঠা ${page}`}
+            alt={`পৃষ্ঠা ${bn(page)}`}
             className="w-full h-full block"
             draggable={false}
           />
@@ -315,7 +316,7 @@ function MushafReaderInner({ edition, initialPage }: Props) {
           <ZoomOut className="w-4.5 h-4.5" />
         </button>
         <span className="text-white/60 text-xs w-9 text-center tabular-nums">
-          {Math.round(scale * 100)}%
+          {bn(Math.round(scale * 100))}%
         </span>
         <button
           onClick={zoomIn}
@@ -368,9 +369,9 @@ function MushafReaderInner({ edition, initialPage }: Props) {
             />
           ) : (
             <span className="text-white/80 text-sm tabular-nums hover:text-white transition-colors">
-              <span className="font-semibold text-white">{page}</span>
+              <span className="font-semibold text-white">{bn(page)}</span>
               <span className="mx-1">/</span>
-              {edition.totalPages}
+              {bn(edition.totalPages)}
             </span>
           )}
         </button>
@@ -396,10 +397,10 @@ function MushafReaderInner({ edition, initialPage }: Props) {
           <div className="bg-background/95 backdrop-blur-md border border-border rounded-2xl p-4 shadow-xl flex items-start justify-between gap-3">
             <div>
               <p className="text-xs text-muted-foreground font-medium mb-0.5">
-                সূরা {selectedAyah.sura} — {SURA_NAMES[selectedAyah.sura - 1]}
+                সূরা {bn(selectedAyah.sura)} — {SURA_NAMES[selectedAyah.sura - 1]}
               </p>
               <p className="text-base font-semibold text-foreground">
-                আয়াত {selectedAyah.ayah}
+                আয়াত {bn(selectedAyah.ayah)}
               </p>
             </div>
             <button
@@ -460,12 +461,12 @@ function MushafReaderInner({ edition, initialPage }: Props) {
                       'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
                       isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                     )}>
-                      {suraNum}
+                      {bn(suraNum)}
                     </span>
                     <span className="text-sm font-medium">{name}</span>
                   </div>
                   {suraPage && (
-                    <span className="text-xs text-muted-foreground tabular-nums">পৃ. {suraPage}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">পৃ. {bn(suraPage)}</span>
                   )}
                 </button>
               )
