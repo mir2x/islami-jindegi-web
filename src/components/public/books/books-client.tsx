@@ -5,12 +5,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
-  Search, BookOpen, X, SlidersHorizontal,
-  ChevronLeft, ChevronRight, FileText,
+  BookOpen, X, FileText,
 } from 'lucide-react'
 import type { Book, BookAuthorOption, BookCategoryOption, PagedResult } from '@/types'
-import { cn } from '@/lib/utils'
 import { SidebarOptionList } from '@/components/public/filter-sidebar'
+import { SearchInput } from '@/components/public/search-input'
+import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
+import { Pagination } from '@/components/public/pagination'
+import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 const PAGE_SIZE = 24
@@ -55,7 +57,8 @@ export function BooksClient({
   const [categorySearch, setCategorySearch] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [authorSheetOpen, setAuthorSheetOpen] = useState(false)
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mounted = useRef(false)
@@ -97,7 +100,7 @@ export function BooksClient({
 
   const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id); setPage(1) }
   const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id); setPage(1) }
-  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setPage(1); setMobileFiltersOpen(false) }
+  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setPage(1) }
 
   const filteredAuthors = authorSearch.trim()
     ? authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()))
@@ -138,66 +141,43 @@ export function BooksClient({
 
       {/* ── Main column ─────────────────────────────────────────── */}
       <div className="min-w-0">
-        {/* Toolbar */}
-        <div className="flex gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1) }}
-              placeholder="কিতাব খুঁজুন..."
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
-            />
-            {search && (
-              <button
-                onClick={() => { setSearch(''); setPage(1) }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          <button
-            onClick={() => setMobileFiltersOpen(o => !o)}
-            className={cn(
-              'lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all shrink-0',
-              mobileFiltersOpen || selectedAuthor || selectedCategory
-                ? 'border-primary bg-primary/8 text-primary'
-                : 'border-border bg-muted text-muted-foreground hover:text-foreground hover:border-border/80'
-            )}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span className="hidden sm:inline">ফিল্টার</span>
-          </button>
+        {/* Mobile filter row (author / category selects) */}
+        <div className="flex lg:hidden gap-2 mb-2.5">
+          <MobileFilterTrigger label="লেখক" activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
+          {categories.length > 0 && (
+            <MobileFilterTrigger label="শ্রেণীবিভাগ" activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
+          )}
         </div>
 
-        {/* Mobile filter panel */}
-        {mobileFiltersOpen && (
-          <div className="lg:hidden mb-5 space-y-4">
-            <SidebarOptionList
-              title="লেখক"
-              items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
-              search={authorSearch}
-              onSearch={setAuthorSearch}
-              selected={selectedAuthor}
-              onSelect={setAuthor}
-              emptyText="কোনো লেখক পাওয়া যায়নি"
-            />
-            {categories.length > 0 && (
-              <SidebarOptionList
-                title="শ্রেণীবিভাগ"
-                items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
-                search={categorySearch}
-                onSearch={setCategorySearch}
-                selected={selectedCategory}
-                onSelect={setCategory}
-                emptyText="কোনো বিষয় পাওয়া যায়নি"
-              />
-            )}
-          </div>
-        )}
+        {/* Search */}
+        <div className="mb-4">
+          <SearchInput
+            value={search}
+            onChange={v => { setSearch(v); setPage(1) }}
+            placeholder="কিতাব খুঁজুন..."
+          />
+        </div>
+
+        <MobileFilterSheet
+          open={authorSheetOpen}
+          onClose={() => setAuthorSheetOpen(false)}
+          title="লেখক"
+          options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
+          fetchOptions={q => fetchNamedOptions('/api/books/authors', q)}
+          selected={selectedAuthor}
+          onSelect={setAuthor}
+          emptyText="কোনো লেখক পাওয়া যায়নি"
+        />
+        <MobileFilterSheet
+          open={categorySheetOpen}
+          onClose={() => setCategorySheetOpen(false)}
+          title="শ্রেণীবিভাগ"
+          options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
+          fetchOptions={q => fetchTitledOptions('/api/books/categories', q)}
+          selected={selectedCategory}
+          onSelect={setCategory}
+          emptyText="কোনো বিষয় পাওয়া যায়নি"
+        />
 
         {/* Active filter chips */}
         {(activeCategoryName || activeAuthorName) && (
@@ -258,48 +238,7 @@ export function BooksClient({
         )}
 
         {/* ── Pagination ───────────────────────────────────────── */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-12">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1 || loading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" /> আগের
-            </button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                const p = totalPages <= 7 ? i + 1
-                  : page <= 4 ? i + 1
-                  : page >= totalPages - 3 ? totalPages - 6 + i
-                  : page - 3 + i
-                return p >= 1 && p <= totalPages ? (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={cn(
-                      'w-9 h-9 rounded-lg text-sm font-medium transition-colors',
-                      p === page
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    )}
-                  >
-                    {p}
-                  </button>
-                ) : null
-              })}
-            </div>
-
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages || loading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
-            >
-              পরের <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} disabled={loading} />
       </div>
     </div>
   )

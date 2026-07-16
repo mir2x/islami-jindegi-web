@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Search, Newspaper, X,
-  ChevronDown, ChevronLeft, ChevronRight,
+  Newspaper,
+  ChevronDown,
 } from 'lucide-react'
 import type { NewsListItem, NewsDetail, PagedResult } from '@/types'
 import { cn } from '@/lib/utils'
+import { SearchInput } from '@/components/public/search-input'
+import { Pagination } from '@/components/public/pagination'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 const PAGE_SIZE = 20
@@ -78,20 +80,12 @@ export function NewsClient({ initialItems, initialTotal, initialSearch }: Props)
   return (
     <div className="max-w-3xl mx-auto">
       {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
+      <div className="mb-4">
+        <SearchInput
           value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
+          onChange={v => { setSearch(v); setPage(1) }}
           placeholder="সংবাদ খুঁজুন..."
-          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-base"
         />
-        {search && (
-          <button onClick={() => { setSearch(''); setPage(1) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        )}
       </div>
 
       <p className="text-sm text-muted-foreground mb-4">
@@ -135,44 +129,7 @@ export function NewsClient({ initialItems, initialTotal, initialSearch }: Props)
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-10">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1 || loading}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" /> আগের
-          </button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const p = totalPages <= 7 ? i + 1
-                : page <= 4 ? i + 1
-                : page >= totalPages - 3 ? totalPages - 6 + i
-                : page - 3 + i
-              return p >= 1 && p <= totalPages ? (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={cn(
-                    'w-9 h-9 rounded-lg text-sm font-medium transition-colors',
-                    p === page ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  {p}
-                </button>
-              ) : null
-            })}
-          </div>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || loading}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium disabled:opacity-40 hover:bg-muted transition-colors"
-          >
-            পরের <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} disabled={loading} />
     </div>
   )
 }
