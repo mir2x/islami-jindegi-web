@@ -1,4 +1,4 @@
-import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, NamazTimeDetail, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail, QuranReciter } from '@/types'
+import type { Book, BookDetail, BookAuthorOption, BookCategoryOption, BayanListItem, BayanDetail, BayanAuthorOption, BayanCategoryOption, ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, NewsListItem, NewsDetail, MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCategoryOption, MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, DuaListItem, DuaDetail, DuaCategoryOption, MadrasahListItem, MadrasahDetail, NamazTimeListItem, NamazTimeDetail, PagedResult, MushafEdition, QuranSurah, QuranSurahDetail, QuranReciter, PageDetail } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -41,6 +41,11 @@ export async function getBooks(opts: {
 
 export async function getBook(id: string) {
   return get<BookDetail>(`/api/books/${id}`, 300)
+}
+
+/** CMS-managed static pages, addressed by slug (e.g. 'donation'). */
+export async function getPageBySlug(slug: string) {
+  return get<PageDetail>(`/api/pages/by-slug/${slug}`, 600)
 }
 
 export async function getBookAuthors() {

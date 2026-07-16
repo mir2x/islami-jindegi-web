@@ -9,6 +9,7 @@ import {
   toHijri, toBanglaDate, toBnNum, formatTimeBn,
 } from '@/lib/prayer-times'
 import type { PrayerSlot } from '@/lib/prayer-times'
+import { getHijriToday, type HijriDisplayDate } from '@/lib/hijri'
 import { cn } from '@/lib/utils'
 import type { Book, BayanListItem, MalfuzatListItem, ArticleListItem, NewsListItem, PagedResult } from '@/types'
 
@@ -82,20 +83,31 @@ function PrayerCard({ width }: { width: number | null }) {
     activeKey: string | null
     now: Date
     locationName: string
+    hijri: HijriDisplayDate | null
   } | null>(null)
 
-  const init = useCallback((lat: number, lng: number, locationName: string) => {
+  const hijriReq = useRef(0)
+
+  const init = useCallback((lat: number, lng: number, locationName: string, country?: string) => {
     const now = new Date()
     const slots = calcPrayerSlots(lat, lng, now)
-    setState({ slots, activeKey: findActiveSlot(slots, now), now, locationName })
+    setState({ slots, activeKey: findActiveSlot(slots, now), now, locationName, hijri: null })
+    // Sighting-aware date from the API; the local tabular date renders meanwhile.
+    // The request counter stops a slow default-location response from
+    // overwriting a later geolocated one.
+    const req = ++hijriReq.current
+    getHijriToday(lat, lng, country).then(hijri =>
+      setState(s => s && hijriReq.current === req ? { ...s, hijri } : s))
   }, [])
 
   useEffect(() => {
+    // Render the Dhaka default immediately — geolocation refines it if/when granted.
     const dk = [23.8103, 90.4125] as const
-    if (!navigator.geolocation) { init(...dk, 'ঢাকা, বাংলাদেশ'); return }
+    init(...dk, 'ঢাকা, বাংলাদেশ', 'BD')
+    if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
       p => init(p.coords.latitude, p.coords.longitude, 'আপনার অবস্থান'),
-      () => init(...dk, 'ঢাকা, বাংলাদেশ'),
+      () => { /* keep the Dhaka default */ },
       { timeout: 5000 }
     )
   }, [init])
@@ -117,73 +129,55 @@ function PrayerCard({ width }: { width: number | null }) {
   )
 
   const { slots, activeKey, now, locationName } = state
-  const hijri  = toHijri(now)
+  const hijri  = state.hijri ?? { ...toHijri(now), source: 'local' as const }
   const bangla = toBanglaDate(now)
   const active = slots.find(s => s.key === activeKey)
   const next   = findNextSlot(slots, now)
   const season = BN_SEASONS[bangla.monthIdx] ?? ''
 
   return (
-    <Link href="/namaz-times" className="mx-auto block rounded-2xl bg-card dark:bg-[#163f4f] border border-foreground/15 shadow-sm hover:border-primary/50 hover:bg-primary/5 hover:shadow-md transition-all p-4 shrink-0" style={style}>
-      {/* Dates */}
-      <div className="space-y-1.5 mb-3">
-        <div className="flex items-center gap-2">
-          <p className="text-lg font-bold text-foreground leading-snug">
+    <Link href="/namaz-times" className="mx-auto block bg-card dark:bg-[#163f4f] p-[clamp(0.625rem,2vh,1.5rem)] rounded-2xl shadow-sm border border-border/60 dark:border-foreground/15 hover:border-primary/50 hover:shadow-md transition-all shrink-0" style={style}>
+      {/* Header: dates + calendar */}
+      <div className="flex justify-between items-start mb-[clamp(0.5rem,1.8vh,1.5rem)]">
+        <div>
+          <h2 className="text-[clamp(1rem,2.5vh,1.5rem)] font-bold text-primary dark:text-white mb-1 leading-snug">
             {toBnNum(hijri.day)} {hijri.monthBn}, {toBnNum(hijri.year)} হিজরী
-          </p>
-          <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-        </div>
-        <div className="flex items-center gap-2">
-          <p className="text-base text-foreground/65">
+          </h2>
+          <p className="text-[clamp(0.75rem,1.8vh,1rem)] text-foreground/70 dark:text-white/80 font-semibold">
             {BN_DAYS[now.getDay()]}, {toBnNum(now.getDate())} {BN_MONTHS[now.getMonth()]} {toBnNum(now.getFullYear())}
           </p>
-          <Calendar className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+          <p className="text-[clamp(0.75rem,1.8vh,1rem)] text-foreground/70 dark:text-white/70">
+            {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} — {season}
+          </p>
+          <div className="flex items-center text-foreground/70 dark:text-white/70 mt-[clamp(0.25rem,0.7vh,0.5rem)] text-[clamp(0.65rem,1.5vh,0.875rem)]">
+            <MapPin className="w-[1.1em] h-[1.1em] mr-1 shrink-0" />
+            {locationName}
+          </div>
         </div>
-        <p className="text-base text-foreground/65">
-          {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} — {season}
-        </p>
-        <div className="flex items-center gap-1.5">
-          <MapPin className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-          <p className="text-sm text-foreground/60">{locationName}</p>
-        </div>
+        <Calendar className="w-[clamp(1.1rem,2.4vh,1.5rem)] h-[clamp(1.1rem,2.4vh,1.5rem)] text-foreground/60 dark:text-white/70 shrink-0" />
       </div>
 
       {/* Prayer times */}
-      <div className="flex items-stretch gap-3">
-        <div className="flex-1 rounded-xl dark:rounded-2xl bg-muted/40 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] border border-border/30 dark:border-white/10 px-3.5 py-3 dark:p-4 dark:pb-5">
-          <div className="flex items-center justify-between mb-0.5 dark:mb-3">
-            <p className="text-xs dark:text-2xl font-semibold text-foreground/60 dark:text-amber-200 uppercase tracking-wider">বর্তমান</p>
-            {/* <Moon className="hidden dark:block w-5 h-5 text-amber-100" /> */}
-          </div>
+      <div className="grid grid-cols-2 gap-[clamp(0.5rem,1.4vh,1rem)]">
+        {/* Current */}
+        <div className="bg-emerald-50 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] p-[clamp(0.5rem,1.5vh,1rem)] rounded-xl border border-emerald-100 dark:border-white/10">
+          <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-primary dark:text-amber-200">বর্তমান</span>
           {active ? (
             <>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <p className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-primary dark:text-white leading-tight whitespace-nowrap">{active.nameBn}</p>
-                <p className="flex items-baseline gap-1">
-                  <span className="text-sm font-normal text-foreground/70 dark:text-white/80">শুরু</span>
-                  <span className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-primary dark:text-white leading-tight whitespace-nowrap">{formatTimeBn(active.start)}</span>
-                </p>
-              </div>
-              <p className="flex items-baseline gap-1 mt-1.5 dark:mt-2">
-                <span className="text-sm font-normal text-foreground/70 dark:text-white/80">শেষ</span>
-                <span className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-primary dark:text-white leading-tight whitespace-nowrap">{formatTimeBn(active.end)}</span>
-              </p>
+              <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-primary dark:text-white">{active.nameBn}</h3>
+              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">শুরু <span className="font-bold text-primary dark:text-white">{formatTimeBn(active.start)}</span></p>
+              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">শেষ <span className="font-bold text-primary dark:text-white">{formatTimeBn(active.end)}</span></p>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">—</p>
+            <p className="text-sm text-muted-foreground mt-1">—</p>
           )}
         </div>
+        {/* Next */}
         {next && (
-          <div className="flex-1 rounded-xl dark:rounded-2xl bg-muted/40 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] border border-border/30 dark:border-white/10 px-3.5 py-3 dark:p-4 dark:pb-5">
-            <div className="flex items-center justify-between mb-0.5 dark:mb-3">
-              <p className="text-xs dark:text-2xl font-semibold text-foreground/60 dark:text-amber-200 uppercase tracking-wider">পরবর্তী</p>
-              {/* <Sunrise className="hidden dark:block w-5 h-5 text-amber-100" /> */}
-            </div>
-            <p className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-foreground/80 dark:text-white leading-tight whitespace-nowrap">{next.nameBn}</p>
-            <p className="flex items-baseline gap-1 mt-1.5 dark:mt-2">
-              <span className="text-sm font-normal text-foreground/70 dark:text-white/80">শুরু</span>
-              <span className="text-lg dark:text-lg sm:dark:text-xl lg:dark:text-2xl font-bold text-foreground dark:text-white leading-tight whitespace-nowrap">{formatTimeBn(next.start)}</span>
-            </p>
+          <div className="bg-gray-50 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] p-[clamp(0.5rem,1.5vh,1rem)] rounded-xl border border-gray-200 dark:border-white/10">
+            <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-foreground/70 dark:text-amber-200">পরবর্তী</span>
+            <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-foreground/80 dark:text-white">{next.nameBn}</h3>
+            <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">শুরু <span className="font-bold text-foreground dark:text-white">{formatTimeBn(next.start)}</span></p>
           </div>
         )}
       </div>
@@ -199,19 +193,19 @@ function NewsCard({ news, width }: { news: NewsListItem[]; width: number | null 
 
   return (
     <div
-      className="mx-auto shrink-0 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-primary/12 to-primary/5 border border-primary/25 shadow-sm hover:shadow-md transition-all"
+      className="mx-auto shrink-0 flex items-center gap-[clamp(0.5rem,1.2vh,0.75rem)] px-[clamp(0.625rem,1.6vh,1rem)] py-[clamp(0.375rem,1.2vh,0.75rem)] rounded-2xl bg-gradient-to-r from-primary/12 to-primary/5 border border-primary/25 shadow-sm hover:shadow-md transition-all"
       style={width ? { width } : undefined}
     >
-      <Link href={`/news/${latest.id}`} className="group flex items-center gap-3 flex-1 min-w-0">
-        <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-          <Newspaper className="w-4 h-4" />
+      <Link href={`/news/${latest.id}`} className="group flex items-center gap-[clamp(0.5rem,1.2vh,0.75rem)] flex-1 min-w-0">
+        <div className="w-[clamp(1.6rem,3.4vh,2.25rem)] h-[clamp(1.6rem,3.4vh,2.25rem)] rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+          <Newspaper className="w-[45%] h-[45%]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">সর্বশেষ সংবাদ</p>
-          <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</p>
+          <p className="text-[clamp(0.5rem,1.1vh,0.625rem)] font-bold text-primary uppercase tracking-wider mb-0.5">সর্বশেষ সংবাদ</p>
+          <p className="text-[clamp(0.7rem,1.5vh,0.875rem)] font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</p>
         </div>
       </Link>
-      <Link href="/news" className="text-xs text-primary font-medium hover:underline whitespace-nowrap shrink-0">
+      <Link href="/news" className="text-[clamp(0.6rem,1.3vh,0.75rem)] text-primary font-medium hover:underline whitespace-nowrap shrink-0">
         সব দেখুন →
       </Link>
     </div>
@@ -234,7 +228,7 @@ function BooksGrid({ books }: { books: Book[] }) {
           </div>
           {/* Info */}
           <div className="flex-1 min-w-0 py-1">
-            <p className="font-semibold text-primary leading-snug line-clamp-2">{b.title}</p>
+            <p className="font-semibold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">{b.title}</p>
             {b.authors[0] && <p className="text-sm text-foreground/70 mt-1">{b.authors[0].name}</p>}
             {b.excerpt && <p className="text-sm text-foreground/60 mt-1.5 line-clamp-2 leading-relaxed">{b.excerpt}</p>}
           </div>
@@ -363,24 +357,28 @@ export function ClassicHome({
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 lg:p-4">
 
         {/* ── LEFT: full-width on mobile, 50% on desktop ─────────── */}
-        <div className="w-full lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-4 gap-3 lg:overflow-hidden">
+        <div className="w-full flex-1 min-h-0 lg:flex-none lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-[clamp(0.5rem,1.6vh,1rem)] gap-[clamp(0.375rem,1.2vh,0.75rem)] lg:overflow-hidden">
           <PrayerCard width={cardWidth} />
 
-          <nav ref={navRef} className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-1.5 mb-3">
+          <nav ref={navRef} className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-[clamp(0.25rem,1vh,0.5rem)] mb-[clamp(0.375rem,1.2vh,0.75rem)]">
             {SECTIONS.map(({ label, href, icon }, i) => (
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col items-center justify-center gap-1.5 lg:gap-3 px-1 rounded-2xl transition-colors text-center"
+                className="group flex flex-col items-center justify-center min-h-0 gap-[clamp(0.2rem,0.8vh,0.75rem)] px-1 rounded-2xl transition-colors text-center"
               >
-                <div
-                  ref={el => { iconRefs.current[i] = el }}
-                  className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl lg:rounded-2xl bg-card dark:bg-white/10 border border-foreground/20 dark:border-transparent shadow-sm dark:shadow-none flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-white/20 group-hover:shadow-md dark:group-hover:shadow-none group-hover:border-primary/60 dark:group-hover:border-transparent transition-all p-3 sm:p-3.5 lg:p-4"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={icon} alt={label} className="w-full h-full object-contain" />
+                {/* The square sizes itself to whatever height the row can spare (capped at
+                    the old 96px look), so the grid can never overflow its column. */}
+                <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+                  <div
+                    ref={el => { iconRefs.current[i] = el }}
+                    className="h-full max-h-24 aspect-square max-w-full rounded-xl lg:rounded-2xl bg-primary/5 dark:bg-white/10 border border-primary/25 dark:border-transparent shadow-sm dark:shadow-none flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-white/20 group-hover:shadow-md dark:group-hover:shadow-none group-hover:border-primary/60 dark:group-hover:border-transparent transition-all"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={icon} alt={label} className="w-[66%] h-[66%] object-contain" />
+                  </div>
                 </div>
-                <span className="text-[10px] sm:text-xs lg:text-base font-semibold text-foreground leading-tight">{label}</span>
+                <span className="shrink-0 text-[clamp(0.55rem,1.5vh,1rem)] font-semibold text-primary dark:text-foreground leading-tight">{label}</span>
               </Link>
             ))}
           </nav>

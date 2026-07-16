@@ -17,7 +17,7 @@ import { QuranSearchModal } from './quran-search-modal'
 import { BookmarksModal } from './bookmarks-modal'
 import { isBookmarked, toggleBookmark } from '@/lib/quran-bookmarks'
 import { setLastRead } from '@/lib/quran-last-read'
-import { ARABIC_FONTS, BENGALI_FONTS, arabicFontFamily as resolveArabicFont, bengaliFontFamily as resolveBengaliFont } from '@/lib/quran-fonts'
+import { ARABIC_FONTS, BENGALI_FONTS, ARABIC_FONT_KEY, BENGALI_FONT_KEY, arabicFontFamily as resolveArabicFont, bengaliFontFamily as resolveBengaliFont } from '@/lib/quran-fonts'
 import { bn } from '@/lib/bengali-numerals'
 
 const DEFAULT_TRANSLATOR = 'মুফতী তাকী উসমানী'
@@ -26,8 +26,6 @@ const TRANSLATORS_KEY = 'quran_selected_translators'
 const RECITER_KEY = 'quran_selected_reciter'
 const ARABIC_SIZE_KEY = 'quran_arabic_font_size'
 const BENGALI_SIZE_KEY = 'quran_bengali_font_size'
-const ARABIC_FONT_KEY = 'quran_arabic_font_family'
-const BENGALI_FONT_KEY = 'quran_bengali_font_family'
 
 const ARABIC_SIZE_MIN = 22
 const ARABIC_SIZE_MAX = 48
@@ -148,9 +146,10 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
   }, [autoScroll, autoScrollSpeed])
 
   // ── Audio range + repeat ────────────────────────────────────────────────────
-  const [rangeOpen, setRangeOpen] = useState(false)
+  const [tilawatOpen, setTilawatOpen] = useState(false)
   const [rangeStart, setRangeStart] = useState(1)
-  const [rangeEnd, setRangeEnd] = useState(surah.totalAyahs)
+  const [rangeEnd, setRangeEnd] = useState(1)
+  const [fullSurah, setFullSurah] = useState(false)
   const [repeatCount, setRepeatCount] = useState(1)
   const [activeRange, setActiveRange] = useState<{ start: number; end: number; repeatsLeft: number } | null>(null)
 
@@ -269,16 +268,28 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
   }, [activeAyah, activeRange, surah.totalAyahs, playAyah])
 
   function startRangePlayback() {
-    const start = Math.max(1, Math.min(rangeStart, rangeEnd))
-    const end = Math.min(surah.totalAyahs, Math.max(rangeStart, rangeEnd))
+    const start = fullSurah ? 1 : Math.max(1, Math.min(rangeStart, rangeEnd))
+    const end = fullSurah ? surah.totalAyahs : Math.min(surah.totalAyahs, Math.max(rangeStart, rangeEnd))
     const repeats = Math.max(1, repeatCount)
     setActiveRange({ start, end, repeatsLeft: repeats })
-    setRangeOpen(false)
+    setTilawatOpen(false)
     playAyah(start)
   }
 
   function stopRangePlayback() {
     setActiveRange(null)
+  }
+
+  const playSingleAyah = useCallback((ayahNum: number) => {
+    setActiveRange({ start: ayahNum, end: ayahNum, repeatsLeft: 1 })
+    playAyah(ayahNum)
+  }, [playAyah])
+
+  function stopPlayback() {
+    audioRef.current?.pause()
+    setIsPlaying(false)
+    setActiveRange(null)
+    setActiveAyah(null)
   }
 
   const togglePlay = () => {
@@ -307,12 +318,20 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'SELECT' || tilawatOpen) return
       if (e.key === ' ') { e.preventDefault(); togglePlay() }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
+
+  useEffect(() => {
+    if (!tilawatOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setTilawatOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [tilawatOpen])
 
   // ── Deep-link to a specific ayah (e.g. from search results) ────────────────
   useEffect(() => {
@@ -796,6 +815,13 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
             <p className="text-sm text-muted-foreground mt-1">
               {bn(surah.totalAyahs)} আয়াত · {surah.revelationType === 'Meccan' ? 'মক্কী' : 'মাদানী'} · পারা {bn(surah.paraNumber)}
             </p>
+            <button
+              onClick={() => setTilawatOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Play className="w-4 h-4" />
+              তিলাওয়াত শুনুন
+            </button>
             {surah.surahNumber !== 1 && surah.surahNumber !== 9 && (
               <p className="mt-4 text-xl text-foreground" style={{ fontFamily: 'var(--quran-arabic-font)', direction: 'rtl' }}>
                 بِسۡمِ اللّٰہِ الرَّحۡمٰنِ الرَّحِیۡمِ
@@ -815,6 +841,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                 showWords={showWords}
                 isActive={activeAyah === ayah.number}
                 onPlay={() => playAyah(ayah.number)}
+                onPlaySingle={() => playSingleAyah(ayah.number)}
                 onOpenTafsir={() => setTafsirAyah(ayah.number)}
                 ref={el => { ayahRefs.current[i] = el }}
               />
@@ -852,118 +879,190 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         </div>
       </div>
 
-      {/* ── Audio player — pinned to bottom of flex column ── */}
-      <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur px-4 py-3">
-        {rangeOpen && (
-          <div className="max-w-2xl mx-auto mb-3 p-3 rounded-xl border border-border bg-muted/40 flex flex-wrap items-end gap-3">
-            <div>
-              <p className="text-[11px] text-muted-foreground mb-1">শুরু</p>
-              <input
-                type="number"
-                min={1}
-                max={surah.totalAyahs}
-                value={rangeStart}
-                onChange={e => setRangeStart(Number(e.target.value))}
-                className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+      {/* ── Audio player — pinned to bottom, visible only while an audio session is active ── */}
+      {activeAyah !== null && (
+        <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur px-4 py-3">
+          {activeRange && (activeRange.end > activeRange.start || activeRange.repeatsLeft > 1) && (
+            <div className="max-w-2xl mx-auto mb-2 flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-xs">
+              <span className="text-primary font-medium">
+                আয়াত {bn(activeRange.start)}–{bn(activeRange.end)} পুনরাবৃত্তি চলছে ({bn(activeRange.repeatsLeft)} বাকি)
+              </span>
+              <button onClick={stopRangePlayback} className="text-muted-foreground hover:text-foreground transition-colors">বন্ধ করুন</button>
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground mb-1">শেষ</p>
-              <input
-                type="number"
-                min={1}
-                max={surah.totalAyahs}
-                value={rangeEnd}
-                onChange={e => setRangeEnd(Number(e.target.value))}
-                className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground mb-1">পুনরাবৃত্তি</p>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={repeatCount}
-                onChange={e => setRepeatCount(Number(e.target.value))}
-                className="w-16 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <button
-              onClick={startRangePlayback}
-              className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              শুরু করুন
-            </button>
-            <button
-              onClick={() => setRangeOpen(false)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+          )}
 
-        {activeRange && (
-          <div className="max-w-2xl mx-auto mb-2 flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-xs">
-            <span className="text-primary font-medium">
-              আয়াত {bn(activeRange.start)}–{bn(activeRange.end)} পুনরাবৃত্তি চলছে ({bn(activeRange.repeatsLeft)} বাকি)
-            </span>
-            <button onClick={stopRangePlayback} className="text-muted-foreground hover:text-foreground transition-colors">বন্ধ করুন</button>
-          </div>
-        )}
-
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            {activeAyah !== null ? (
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <div className="flex-1 min-w-0">
               <p className="text-sm text-muted-foreground truncate">
                 {surah.nameBengali} · আয়াত {bn(activeAyah)}
               </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">অডিও বাজান</p>
-            )}
-            {audioError && <p className="text-xs text-destructive">অডিও পাওয়া যায়নি, আবার চেষ্টা করুন</p>}
-          </div>
+              {audioError && <p className="text-xs text-destructive">অডিও পাওয়া যায়নি, আবার চেষ্টা করুন</p>}
+            </div>
 
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setRangeOpen(v => !v)}
-              className={cn('p-2 rounded-lg transition-colors', rangeOpen || activeRange ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
-              title="আয়াত রেঞ্জ ও পুনরাবৃত্তি"
-            >
-              <Repeat className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setTilawatOpen(true)}
+                className={cn('p-2 rounded-lg transition-colors', activeRange ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+                title="আয়াত রেঞ্জ ও পুনরাবৃত্তি"
+              >
+                <Repeat className="w-4 h-4" />
+              </button>
 
-            <button
-              onClick={skipBack}
-              disabled={!activeAyah || activeAyah <= 1}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
-            >
-              <SkipBack className="w-4 h-4" />
-            </button>
+              <button
+                onClick={skipBack}
+                disabled={activeAyah <= 1}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+              >
+                <SkipBack className="w-4 h-4" />
+              </button>
 
-            <button
-              onClick={togglePlay}
-              disabled={audioLoading}
-              className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {audioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-            </button>
+              <button
+                onClick={togglePlay}
+                disabled={audioLoading}
+                className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {audioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+              </button>
 
-            <button
-              onClick={skipForward}
-              disabled={!activeAyah || activeAyah >= surah.totalAyahs}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
-            >
-              <SkipForward className="w-4 h-4" />
-            </button>
-          </div>
+              <button
+                onClick={skipForward}
+                disabled={activeAyah >= surah.totalAyahs}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+              >
+                <SkipForward className="w-4 h-4" />
+              </button>
+            </div>
 
-          <div className="flex items-center gap-1">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center gap-1">
+              <Volume2 className="w-4 h-4 text-muted-foreground" />
+              <button
+                onClick={stopPlayback}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title="বন্ধ করুন"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Tilawat popup ── */}
+      {tilawatOpen && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" onClick={() => setTilawatOpen(false)} />
+
+          <div className="relative w-full sm:max-w-md sm:mx-4 bg-background rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3.5 border-b border-border">
+              <p className="text-sm font-bold text-foreground">তিলাওয়াত শুনুন</p>
+              <button
+                onClick={() => setTilawatOpen(false)}
+                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-4 py-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">সূরা:</p>
+                <select
+                  value={surah.surahNumber}
+                  onChange={e => router.push(`/quran/surah/${e.target.value}`)}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {allSurahs.map(s => (
+                    <option key={s.number} value={s.number}>{bn(s.number)}. {s.nameBengali}</option>
+                  ))}
+                </select>
+              </div>
+
+              {reciters.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <p className="w-24 shrink-0 text-sm font-semibold text-foreground">ক্বারী:</p>
+                  <select
+                    value={selectedReciter}
+                    onChange={e => setSelectedReciter(e.target.value)}
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {reciters.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">শুরু আয়াত:</p>
+                <select
+                  value={rangeStart}
+                  disabled={fullSurah}
+                  onChange={e => {
+                    const n = Number(e.target.value)
+                    setRangeStart(n)
+                    if (n > rangeEnd) setRangeEnd(n)
+                  }}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  {Array.from({ length: surah.totalAyahs }, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n}>{bn(n)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">শেষ আয়াত:</p>
+                <select
+                  value={rangeEnd}
+                  disabled={fullSurah}
+                  onChange={e => {
+                    const n = Number(e.target.value)
+                    setRangeEnd(n)
+                    if (n < rangeStart) setRangeStart(n)
+                  }}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  {Array.from({ length: surah.totalAyahs }, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n}>{bn(n)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-muted/40 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={fullSurah}
+                  onChange={e => setFullSurah(e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <span className="text-sm font-medium text-foreground">সম্পূর্ণ সূরা</span>
+              </label>
+
+              <div className="flex items-center justify-center gap-3 px-3 py-2 rounded-lg border border-border bg-muted/40">
+                <span className="text-sm font-medium text-foreground">আয়াতের পুনরাবৃত্তি</span>
+                <button
+                  onClick={() => setRepeatCount(c => Math.max(1, c - 1))}
+                  className="w-7 h-7 rounded-full border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                >−</button>
+                <span className="text-sm text-muted-foreground w-6 text-center tabular-nums">{bn(repeatCount)}</span>
+                <button
+                  onClick={() => setRepeatCount(c => Math.min(20, c + 1))}
+                  className="w-7 h-7 rounded-full border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                >+</button>
+              </div>
+
+              <button
+                onClick={startRangePlayback}
+                disabled={audioLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {audioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                অডিও শুনুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {searchOpen && <QuranSearchModal onClose={() => setSearchOpen(false)} />}
       {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
@@ -989,8 +1088,9 @@ const AyahCard = forwardRef<HTMLDivElement, {
   showWords: boolean
   isActive: boolean
   onPlay: () => void
+  onPlaySingle: () => void
   onOpenTafsir: () => void
-}>(function AyahCard({ ayah, surahNumber, surahName, selectedTranslators, showWords, isActive, onPlay, onOpenTafsir }, ref) {
+}>(function AyahCard({ ayah, surahNumber, surahName, selectedTranslators, showWords, isActive, onPlay, onPlaySingle, onOpenTafsir }, ref) {
   const shownTranslations = ayah.translations.filter(t => selectedTranslators.includes(t.translator))
   const [bookmarked, setBookmarked] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -1051,6 +1151,13 @@ const AyahCard = forwardRef<HTMLDivElement, {
               ))}
             </div>
           )}
+          <button
+            onClick={onPlaySingle}
+            title="এই আয়াতটি শুনুন"
+            className={cn('p-1.5 rounded-md transition-colors', isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+          >
+            <Play className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={handleCopy}
             title="কপি করুন"

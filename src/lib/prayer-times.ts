@@ -5,6 +5,8 @@ import {
   Madhab,
   Prayer,
 } from 'adhan'
+import umalqura from '@umalqura/core'
+import { getSettings } from './settings'
 
 export interface PrayerSlot {
   key: string
@@ -19,16 +21,19 @@ export interface PrayerSlot {
   aliases?: string[]
 }
 
-const OFFSETS = {
-  fajrAdjust: 5,
-  maghribAdjust: 3,
-}
+type MethodKey = keyof typeof CalculationMethod
 
 function buildParams() {
-  const p = CalculationMethod.Karachi()
-  p.madhab = Madhab.Hanafi
-  p.adjustments.fajr = OFFSETS.fajrAdjust
-  p.adjustments.maghrib = OFFSETS.maghribAdjust
+  const s = getSettings()
+  const factory = CalculationMethod[s.method as MethodKey] ?? CalculationMethod.Karachi
+  const p = factory()
+  p.madhab = s.madhab === 'shafi' ? Madhab.Shafi : Madhab.Hanafi
+  p.adjustments.fajr = s.fajr
+  p.adjustments.sunrise = s.sunrise
+  p.adjustments.dhuhr = s.dhuhr
+  p.adjustments.asr = s.asr
+  p.adjustments.maghrib = s.maghrib
+  p.adjustments.isha = s.isha
   return p
 }
 
@@ -145,6 +150,13 @@ export function findActiveSlot(slots: PrayerSlot[], now: Date): string | null {
   for (const s of slots) {
     if (now >= s.start && now < s.end) return s.key
   }
+  // Slots are built per calendar day, so before Sehri end the running slot is
+  // *yesterday's* Isha (it spans midnight) and isn't in the list.
+  const first = slots[0]
+  if (first && now < first.start) return 'isha'
+  // Between Sehri end (the zero-width tahajjud marker) and Fajr.
+  const fajr = slots.find(s => s.key === 'fajr')
+  if (fajr && now < fajr.start) return 'tahajjud'
   return null
 }
 
@@ -157,28 +169,25 @@ export function findNextSlot(slots: PrayerSlot[], now: Date): PrayerSlot | null 
 
 // ── Hijri date ────────────────────────────────────────────────────────────────
 const HIJRI_MONTHS_BN = [
-  'মুহাররম', 'সফর', 'রবিউল আউয়াল', 'রবিউল আখির',
-  'জমাদিউল আউয়াল', 'জমাদিউল আখির', 'রজব', 'শাবান',
-  'রমজান', 'শাওয়াল', 'জিলকদ', 'জিলহজ',
+  // Canonical Bangla spellings, shared 1:1 with the dotnet API's
+  // HijriService.MonthNames and the app's l10n — keep all three in sync.
+  'মুহাররম', 'সফর', 'রবিউল আউয়াল', 'রবিউস সানি',
+  'জুমাদাল উলা', 'জুমাদাল উখরা', 'রজব', 'শাবান',
+  'রমাযান', 'শাউয়াল', 'যিলক্বদ', 'যিলহাজ্জ',
 ]
 
 export function toHijri(date: Date): { day: number; month: number; year: number; monthBn: string } {
-  const jd = Math.floor(date.getTime() / 86400000) + 2440588
-  const L = jd - 1948440 + 10632
-  const N = Math.floor((L - 1) / 10631)
-  const L2 = L - 10631 * N + 354
-  const J =
-    Math.floor((10985 - L2) / 5316) * Math.floor((50 * L2) / 17719) +
-    Math.floor(L2 / 5670) * Math.floor((43 * L2) / 15238)
-  const L3 =
-    L2 -
-    Math.floor((30 - J) / 15) * Math.floor((17719 * J) / 50) -
-    Math.floor(J / 16) * Math.floor((15238 * J) / 43) +
-    29
-  const month = Math.floor((24 * L3) / 709)
-  const day = L3 - Math.floor((709 * month) / 24)
-  const year = 30 * N + J - 30
-  return { day, month, year, monthBn: HIJRI_MONTHS_BN[month - 1] ?? '' }
+  // Umm al-Qura shifted one day back — Bangladesh's default relationship to the
+  // Saudi calendar (mirrors the dotnet API's default_offset=+1 on month starts) —
+  // plus the user's manual adjustment. This is the instant-render/offline value;
+  // the sighting-aware backend date (src/lib/hijri.ts) replaces it when available,
+  // and matches it exactly whenever no per-month override exists.
+  const shifted = new Date(
+    date.getFullYear(), date.getMonth(),
+    date.getDate() + getSettings().hijriAdjustment - 1,
+  )
+  const u = umalqura(shifted)
+  return { day: u.hd, month: u.hm, year: u.hy, monthBn: HIJRI_MONTHS_BN[u.hm - 1] ?? '' }
 }
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯']

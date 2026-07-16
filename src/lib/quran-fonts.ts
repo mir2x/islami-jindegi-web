@@ -30,6 +30,21 @@ export const BENGALI_FONTS: FontOption[] = [
 export const DEFAULT_ARABIC_FONT = ARABIC_FONTS[0].family
 export const DEFAULT_BENGALI_FONT = BENGALI_FONTS[0].family
 
+// Font choices are stored per-family under these keys, shared by the Quran readers
+// and the /settings page — keep reads/writes going through here so they stay in sync.
+export const ARABIC_FONT_KEY = 'quran_arabic_font_family'
+export const BENGALI_FONT_KEY = 'quran_bengali_font_family'
+
+export function getArabicFontKey(): string {
+  if (typeof window === 'undefined') return ARABIC_FONTS[0].key
+  return localStorage.getItem(ARABIC_FONT_KEY) || ARABIC_FONTS[0].key
+}
+
+export function getBengaliFontKey(): string {
+  if (typeof window === 'undefined') return BENGALI_FONTS[0].key
+  return localStorage.getItem(BENGALI_FONT_KEY) || BENGALI_FONTS[0].key
+}
+
 export function arabicFontFamily(key: string): string {
   return ARABIC_FONTS.find(f => f.key === key)?.family ?? DEFAULT_ARABIC_FONT
 }

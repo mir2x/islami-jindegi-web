@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   MapPin, Moon, Sunrise, Sun, Sunset,
@@ -11,6 +11,7 @@ import {
   toHijri, toBnNum, formatTimeBn, countdownText,
 } from '@/lib/prayer-times'
 import type { PrayerSlot } from '@/lib/prayer-times'
+import { getHijriToday, type HijriDisplayDate } from '@/lib/hijri'
 import type { NamazTimeListItem } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,7 @@ export function NamazTimesClient({ namazTimes }: Props) {
   const [now, setNow] = useState<Date>(new Date())
   const [location, setLocation] = useState<string>('ঢাকা')
   const [loadingGeo, setLoadingGeo] = useState(true)
+  const [hijriState, setHijriState] = useState<HijriDisplayDate | null>(null)
 
   // Map English title → NamazTime entry
   const namazMap = Object.fromEntries(
@@ -56,17 +58,27 @@ export function NamazTimesClient({ namazTimes }: Props) {
     return partial?.id ?? null
   }
 
-  const recalc = useCallback((lat: number, lng: number, d = new Date()) => {
+  const hijriReq = useRef(0)
+
+  const recalc = useCallback((lat: number, lng: number, d = new Date(), country?: string) => {
     const s = calcPrayerSlots(lat, lng, d)
     setSlots(s)
     setNow(d)
     setActiveKey(findActiveSlot(s, d))
+    // Sighting-aware date from the API; the local tabular date renders meanwhile.
+    // The request counter stops a slow default-location response from
+    // overwriting a later geolocated one.
+    const req = ++hijriReq.current
+    getHijriToday(lat, lng, country).then(h => {
+      if (hijriReq.current === req) setHijriState(h)
+    })
   }, [])
 
   useEffect(() => {
+    // Render the Dhaka default immediately — geolocation refines it if/when granted.
     const dhaka = { lat: 23.8103, lng: 90.4125 }
+    recalc(dhaka.lat, dhaka.lng, new Date(), 'BD')
     if (!navigator.geolocation) {
-      recalc(dhaka.lat, dhaka.lng)
       setLoadingGeo(false)
       return
     }
@@ -83,7 +95,6 @@ export function NamazTimesClient({ namazTimes }: Props) {
         setLoadingGeo(false)
       },
       () => {
-        recalc(dhaka.lat, dhaka.lng)
         setLoadingGeo(false)
       },
       { timeout: 6000 }
@@ -100,7 +111,7 @@ export function NamazTimesClient({ namazTimes }: Props) {
     return () => clearInterval(id)
   }, [slots])
 
-  const hijri = toHijri(now)
+  const hijri = hijriState ?? { ...toHijri(now), source: 'local' as const }
 
   return (
     <div className="max-w-2xl mx-auto">

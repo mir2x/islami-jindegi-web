@@ -8,11 +8,9 @@ import type { QuranSurahDetail, QuranSurah } from '@/types'
 import { TafsirModal } from './tafsir-modal'
 import { isBookmarked, toggleBookmark } from '@/lib/quran-bookmarks'
 import { setLastRead } from '@/lib/quran-last-read'
-import { ARABIC_FONTS, arabicFontFamily as resolveArabicFont } from '@/lib/quran-fonts'
+import { ARABIC_FONTS, ARABIC_FONT_KEY, arabicFontFamily as resolveArabicFont } from '@/lib/quran-fonts'
 import { bn } from '@/lib/bengali-numerals'
 
-// Shared keys with surah-reader.tsx so font preference stays consistent across reading modes.
-const ARABIC_FONT_KEY = 'quran_arabic_font_family'
 const ARABIC_SIZE_KEY = 'quran_arabic_font_size'
 const ARABIC_SIZE_MIN = 22
 const ARABIC_SIZE_MAX = 48
