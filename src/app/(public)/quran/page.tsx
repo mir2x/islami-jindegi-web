@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { getMushafs, getQuranSurahs } from '@/lib/public-api'
 import { QuranLanding } from '@/components/public/quran/quran-landing'
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 
 export default async function QuranPage() {
   const [editions, surahs] = await Promise.all([getMushafs(), getQuranSurahs()])
-  return <QuranLanding editions={editions} surahs={surahs} />
+  return (
+    <Suspense>
+      <QuranLanding editions={editions} surahs={surahs} />
+    </Suspense>
+  )
 }

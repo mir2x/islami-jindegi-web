@@ -326,7 +326,7 @@ export default function MediaPage() {
 
       {/* Detail panel */}
       <div className={cn(
-        'w-72 shrink-0 border-l bg-card flex flex-col transition-all duration-200',
+        'w-[36rem] shrink-0 border-l bg-card flex flex-col transition-all duration-200',
         selected ? 'translate-x-0' : 'translate-x-full absolute right-0 inset-y-0 pointer-events-none opacity-0'
       )}>
         {selected && (

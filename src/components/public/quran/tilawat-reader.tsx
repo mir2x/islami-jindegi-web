@@ -76,7 +76,7 @@ export function TilawatReader({ surah, allSurahs }: Props) {
     <div className="flex flex-col bg-background h-svh">
       {/* Top bar */}
       <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border bg-background z-10">
-        <Link href="/quran" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <Link href="/quran?mode=tilawat" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1 min-w-0">

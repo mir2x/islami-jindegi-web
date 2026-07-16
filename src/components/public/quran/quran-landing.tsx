@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { BookOpen, AlignLeft, AlignJustify, ArrowRight, Search, BookMarked, History } from 'lucide-react'
@@ -14,8 +15,27 @@ import { bn } from '@/lib/bengali-numerals'
 
 type Mode = 'mushaf' | 'text' | 'tilawat'
 
+const MODES: Mode[] = ['mushaf', 'text', 'tilawat']
+
 export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; surahs: QuranSurah[] }) {
-  const [mode, setMode] = useState<Mode>('mushaf')
+  const searchParams = useSearchParams()
+  const initialMode = ((): Mode => {
+    const m = searchParams.get('mode')
+    return m && (MODES as string[]).includes(m) ? (m as Mode) : 'mushaf'
+  })()
+  const [mode, setModeState] = useState<Mode>(initialMode)
+
+  // Persist the active tab in the URL so the browser Back button restores it
+  // when returning from a surah/tilawat/mushaf reader.
+  const setMode = (next: Mode) => {
+    setModeState(next)
+    const params = new URLSearchParams(window.location.search)
+    if (next === 'mushaf') params.delete('mode')
+    else params.set('mode', next)
+    const qs = params.toString()
+    window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname)
+  }
+
   const [search, setSearch] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [bookmarksOpen, setBookmarksOpen] = useState(false)
