@@ -4,12 +4,13 @@ import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, ZoomIn, ZoomOut, X,
-  ChevronLeft, ChevronRight, List,
-  Star, Play, Pause, Copy, Check, Share2, Maximize, Loader2, Trash2,
+  ChevronLeft, ChevronRight, ChevronDown,
+  Star, Play, Pause, Copy, Check, Share2, Maximize, Minimize, Loader2, Trash2,
+  Repeat, SkipBack, SkipForward,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
-import type { MushafEdition, AyahBox, SuraAudioUrls, QuranAyahDetail } from '@/types'
+import type { MushafEdition, AyahBox, SuraAudioUrls, QuranAyahDetail, QuranReciter } from '@/types'
 import { bn } from '@/lib/bengali-numerals'
 import { getBookmarks, toggleBookmark, removeBookmark, BOOKMARKS_CHANGED_EVENT, type QuranBookmark } from '@/lib/quran-bookmarks'
 import { getPageBookmarks, togglePageBookmark, removePageBookmark, type MushafPageBookmark } from '@/lib/mushaf-bookmarks'
@@ -79,6 +80,11 @@ const PARA_STARTS: [number, number][] = [
 const DEFAULT_RECITER = 'qari-maher-al-muaiqly'
 const RECITER_KEY = 'quran_selected_reciter'
 
+// Reserved space (px) so the page image never renders underneath the top/bottom bars —
+// tightened to the bars' actual measured height (no extra padding) to maximize page size
+const TOP_BAR_SAFE = 60
+const BOTTOM_BAR_SAFE = 72
+
 function paraOfSuraAyah(sura: number, ayah: number): number {
   let para = 1
   PARA_STARTS.forEach(([s, a], i) => {
@@ -100,9 +106,10 @@ type DrawerTab = typeof DRAWER_TABS[number]['id']
 interface Props {
   edition: MushafEdition
   initialPage: number
+  reciters: QuranReciter[]
 }
 
-function MushafReaderInner({ edition, initialPage }: Props) {
+function MushafReaderInner({ edition, initialPage, reciters }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -125,16 +132,38 @@ function MushafReaderInner({ edition, initialPage }: Props) {
   const [navPara, setNavPara] = useState(1)
   const [bookmarkTab, setBookmarkTab] = useState<'ayah' | 'page'>('ayah')
   const [ayahBookmarks, setAyahBookmarks] = useState<QuranBookmark[]>([])
-  const [pageBookmarks, setPageBookmarks] = useState<MushafPageBookmark[]>([])
+  const [pageBookmarks, setPageBookmarks] = useState<MushafPageBookmark[]>(() => getPageBookmarks(edition.id))
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
   const [editingPage, setEditingPage] = useState(false)
   const [pageInput, setPageInput] = useState('')
 
   // Ayah menu action state
-  const [playingAyah, setPlayingAyah] = useState<{ sura: number; ayah: number } | null>(null)
-  const [audioLoading, setAudioLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [actionBusy, setActionBusy] = useState(false)
+
+  // ── Tilawat (recitation) playback state — mirrors the surah text reader ────
+  const [selectedReciter, setSelectedReciter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(RECITER_KEY)
+      if (saved && reciters.some(r => r.id === saved)) return saved
+    }
+    return reciters.some(r => r.id === DEFAULT_RECITER) ? DEFAULT_RECITER : (reciters[0]?.id ?? DEFAULT_RECITER)
+  })
+  const [tilawatOpen, setTilawatOpen] = useState(false)
+  const [tilawatSura, setTilawatSura] = useState(1)
+  const [rangeStart, setRangeStart] = useState(1)
+  const [rangeEnd, setRangeEnd] = useState(1)
+  const [fullSurah, setFullSurah] = useState(false)
+  const [repeatCount, setRepeatCount] = useState(1)
+  const [activeRange, setActiveRange] = useState<{ sura: number; start: number; end: number; repeatsLeft: number } | null>(null)
+  const [activeAyah, setActiveAyah] = useState<{ sura: number; ayah: number } | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioLoading, setAudioLoading] = useState(false)
+  const [audioError, setAudioError] = useState(false)
+
+  useEffect(() => {
+    if (selectedReciter) localStorage.setItem(RECITER_KEY, selectedReciter)
+  }, [selectedReciter])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const pageInputRef = useRef<HTMLInputElement>(null)
@@ -158,20 +187,24 @@ function MushafReaderInner({ edition, initialPage }: Props) {
   const imgBounds = useMemo(() => {
     const { w: cW, h: cH } = containerSize
     if (!cW || !cH) return null
+    // Bars hidden (fullscreen) — nothing to avoid, use the full container
+    const topSafe = barsVisible ? TOP_BAR_SAFE : 0
+    const bottomSafe = barsVisible ? BOTTOM_BAR_SAFE : 0
+    const availH = Math.max(0, cH - topSafe - bottomSafe)
+    if (!availH) return null
     const imageAR = edition.width / edition.height
-    const containerAR = cW / cH
+    const containerAR = cW / availH
     let imgW: number, imgH: number
     if (containerAR > imageAR) {
-      imgH = cH; imgW = cH * imageAR
+      imgH = availH; imgW = availH * imageAR
     } else {
       imgW = cW; imgH = cW / imageAR
     }
-    return { w: imgW, h: imgH, x: (cW - imgW) / 2, y: (cH - imgH) / 2 }
-  }, [containerSize, edition.width, edition.height])
+    return { w: imgW, h: imgH, x: (cW - imgW) / 2, y: topSafe + (availH - imgH) / 2 }
+  }, [containerSize, edition.width, edition.height, barsVisible])
 
   // ── Load ayah boxes via same-origin proxy (avoids CDN CORS issues) ────────
   useEffect(() => {
-    setBoxesLoading(true)
     fetch(`/api/quran/mushaf/${edition.id}/ayah-boxes`)
       .then(r => r.json())
       .then((data: AyahBox[]) => { setAllBoxes(data); setBoxesLoading(false) })
@@ -185,10 +218,6 @@ function MushafReaderInner({ edition, initialPage }: Props) {
     window.addEventListener(BOOKMARKS_CHANGED_EVENT, load)
     return () => window.removeEventListener(BOOKMARKS_CHANGED_EVENT, load)
   }, [])
-
-  useEffect(() => {
-    setPageBookmarks(getPageBookmarks(edition.id))
-  }, [edition.id])
 
   // ── Mappings derived from ayah boxes (mirrors the mobile app's logic) ──────
   const boxesByPage = useMemo(() => {
@@ -281,6 +310,11 @@ function MushafReaderInner({ edition, initialPage }: Props) {
     setDrawerOpen(true)
   }
 
+  function toggleDrawer() {
+    if (drawerOpen) setDrawerOpen(false)
+    else openDrawer()
+  }
+
   // ── Preload adjacent pages ─────────────────────────────────────────────────
   useEffect(() => {
     [-2, -1, 1, 2].forEach(offset => {
@@ -334,12 +368,11 @@ function MushafReaderInner({ edition, initialPage }: Props) {
     )
 
     if (hit) {
-      // Toggle: tap same ayah again to deselect
+      // Toggle: tap same ayah again to deselect — doesn't disturb fullscreen either way
       if (selectedAyah?.sura === hit.sura_number && selectedAyah?.ayah === hit.ayah_number) {
         setSelectedAyah(null)
       } else {
         setSelectedAyah({ sura: hit.sura_number, ayah: hit.ayah_number })
-        setBarsVisible(true)
       }
     } else if (selectedAyah) {
       setSelectedAyah(null)
@@ -371,36 +404,110 @@ function MushafReaderInner({ edition, initialPage }: Props) {
     setActionBusy(false)
   }
 
-  async function handlePlayAyah() {
-    if (!selectedAyah) return
-    const { sura, ayah } = selectedAyah
-    if (playingAyah?.sura === sura && playingAyah?.ayah === ayah) {
-      audioRef.current?.pause()
-      return
+  // ── Tilawat playback engine ─────────────────────────────────────────────────
+  const getAudioUrls = useCallback(async (sura: number): Promise<string[]> => {
+    const reciterId = selectedReciter || DEFAULT_RECITER
+    const cacheKey = `${reciterId}:${sura}`
+    // Presigned URLs expire after 5 min — reuse for 4
+    if (audioUrlCache.current?.key === cacheKey && Date.now() - audioUrlCache.current.at < 4 * 60_000) {
+      return audioUrlCache.current.urls
     }
+    const res = await api.post<SuraAudioUrls>('/api/quran/sura-audio-urls', { reciterId, sura })
+    audioUrlCache.current = { key: cacheKey, urls: res.urls, at: Date.now() }
+    return res.urls
+  }, [selectedReciter])
+
+  const playAyah = useCallback(async (sura: number, ayah: number) => {
+    setActiveAyah({ sura, ayah })
+    setAudioError(false)
+    // Follow playback: turn the page if this ayah isn't on the one currently shown
+    const target = ayahFirstPage.get(`${sura}:${ayah}`)
+    if (target !== undefined && target !== page) goTo(target)
+
     setAudioLoading(true)
     try {
-      const reciterId = localStorage.getItem(RECITER_KEY) || DEFAULT_RECITER
-      const cacheKey = `${reciterId}:${sura}`
-      let urls: string[]
-      // Presigned URLs expire after 5 min — reuse for 4
-      if (audioUrlCache.current?.key === cacheKey && Date.now() - audioUrlCache.current.at < 4 * 60_000) {
-        urls = audioUrlCache.current.urls
-      } else {
-        const res = await api.post<SuraAudioUrls>('/api/quran/sura-audio-urls', { reciterId, sura })
-        urls = res.urls
-        audioUrlCache.current = { key: cacheKey, urls, at: Date.now() }
-      }
+      const urls = await getAudioUrls(sura)
       const url = urls[ayah - 1]
       if (!url || !audioRef.current) throw new Error('audio url missing')
+      audioRef.current.pause()
       audioRef.current.src = url
       await audioRef.current.play()
-      setPlayingAyah({ sura, ayah })
     } catch {
-      setPlayingAyah(null)
+      setAudioError(true)
+      setIsPlaying(false)
     } finally {
       setAudioLoading(false)
     }
+  }, [ayahFirstPage, page, goTo, getAudioUrls])
+
+  const handleEnded = useCallback(() => {
+    if (!activeAyah || !activeRange) return
+    const next = activeAyah.ayah + 1
+    if (next <= activeRange.end) {
+      playAyah(activeRange.sura, next)
+      return
+    }
+    if (activeRange.repeatsLeft > 1) {
+      setActiveRange(r => r ? { ...r, repeatsLeft: r.repeatsLeft - 1 } : null)
+      playAyah(activeRange.sura, activeRange.start)
+      return
+    }
+    setActiveRange(null)
+    setIsPlaying(false)
+    setActiveAyah(null)
+  }, [activeAyah, activeRange, playAyah])
+
+  const playSingleAyah = useCallback((sura: number, ayah: number) => {
+    setActiveRange({ sura, start: ayah, end: ayah, repeatsLeft: 1 })
+    playAyah(sura, ayah)
+  }, [playAyah])
+
+  function handleMenuPlay() {
+    if (!selectedAyah) return
+    const { sura, ayah } = selectedAyah
+    setSelectedAyah(null) // dismiss the tap menu — the highlight continues via activeAyah
+    playSingleAyah(sura, ayah)
+  }
+
+  function startRangePlayback() {
+    const maxAyah = AYAH_COUNTS[tilawatSura - 1]
+    const start = fullSurah ? 1 : Math.max(1, Math.min(rangeStart, rangeEnd))
+    const end = fullSurah ? maxAyah : Math.min(maxAyah, Math.max(rangeStart, rangeEnd))
+    const repeats = Math.max(1, repeatCount)
+    setActiveRange({ sura: tilawatSura, start, end, repeatsLeft: repeats })
+    setTilawatOpen(false)
+    playAyah(tilawatSura, start)
+  }
+
+  function stopPlayback() {
+    audioRef.current?.pause()
+    setActiveRange(null)
+    setActiveAyah(null)
+  }
+
+  function togglePlayback() {
+    if (!audioRef.current || !activeAyah) return
+    if (isPlaying) audioRef.current.pause()
+    else audioRef.current.play().catch(() => setAudioError(true))
+  }
+
+  function skipBack() {
+    if (!activeAyah) return
+    playAyah(activeAyah.sura, Math.max(1, activeAyah.ayah - 1))
+  }
+
+  function skipForward() {
+    if (!activeAyah) return
+    const maxAyah = AYAH_COUNTS[activeAyah.sura - 1]
+    if (activeAyah.ayah < maxAyah) playAyah(activeAyah.sura, activeAyah.ayah + 1)
+  }
+
+  function openTilawatPopup() {
+    const sura = boxesByPage.get(page)?.[0]?.sura_number ?? 1
+    setTilawatSura(sura)
+    setRangeStart(1)
+    setRangeEnd(AYAH_COUNTS[sura - 1])
+    setTilawatOpen(true)
   }
 
   async function handleCopyAyah() {
@@ -466,34 +573,41 @@ function MushafReaderInner({ edition, initialPage }: Props) {
   const pageBoxes = boxesByPage.get(page) ?? []
   const currentSura = pageBoxes[0]?.sura_number
 
-  // All boxes for the selected ayah on this page (may span multiple lines)
-  const highlightBoxes = selectedAyah
+  // Boxes for the manually-selected ayah (drives the action menu + its highlight)
+  const selectedBoxes = selectedAyah
     ? pageBoxes.filter(b => b.sura_number === selectedAyah.sura && b.ayah_number === selectedAyah.ayah)
     : []
+  // Boxes for the ayah currently being recited (highlight only, no menu)
+  const playingBoxesOnPage = activeAyah
+    ? pageBoxes.filter(b => b.sura_number === activeAyah.sura && b.ayah_number === activeAyah.ayah)
+    : []
+  const sameAyahSelectedAndPlaying = !!(selectedAyah && activeAyah
+    && selectedAyah.sura === activeAyah.sura && selectedAyah.ayah === activeAyah.ayah)
+  const highlightBoxes = sameAyahSelectedAndPlaying
+    ? selectedBoxes
+    : [...selectedBoxes, ...playingBoxesOnPage]
 
-  // Ayah menu anchor: just above the top-most highlight box, in rendered coordinates
+  // Ayah menu anchor: just above the top-most selected box, in rendered coordinates
   let menuTop: number | null = null
-  if (selectedAyah && imgBounds && highlightBoxes.length > 0) {
-    const minY = Math.min(...highlightBoxes.map(b => b.min_y))
+  if (selectedAyah && imgBounds && selectedBoxes.length > 0) {
+    const minY = Math.min(...selectedBoxes.map(b => b.min_y))
     const fy = minY / edition.height
     const rendered = imgBounds.y + imgBounds.h / 2 + (fy - 0.5) * imgBounds.h * scale
     menuTop = Math.min(Math.max(110, rendered - 10), containerSize.h - 16)
   }
 
-  const selectedIsPlaying = !!(selectedAyah && playingAyah
-    && playingAyah.sura === selectedAyah.sura && playingAyah.ayah === selectedAyah.ayah)
-
   return (
     <div
       ref={containerRef}
-      className="relative h-dvh w-full bg-neutral-200 dark:bg-neutral-900 overflow-hidden select-none"
+      className="relative h-dvh w-full overflow-hidden select-none bg-gradient-to-b from-neutral-200 via-neutral-300 to-neutral-400 dark:from-neutral-800 dark:via-neutral-900 dark:to-neutral-950"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       <audio
         ref={audioRef}
-        onEnded={() => setPlayingAyah(null)}
-        onPause={() => setPlayingAyah(null)}
+        onEnded={handleEnded}
+        onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
       />
 
       {/* ── Page image + highlight ── */}
@@ -540,75 +654,132 @@ function MushafReaderInner({ edition, initialPage }: Props) {
       {/* ── Top toolbar ── */}
       <div className={cn(
         'absolute top-0 inset-x-0 z-30 flex items-center gap-3 px-3 py-2.5',
-        'bg-gradient-to-b from-black/70 to-transparent',
+        'bg-background border-b border-border',
         'transition-all duration-300',
         barsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none -translate-y-2'
       )}>
         <button
           onClick={() => router.push('/quran')}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm truncate">{edition.title}</p>
-          {currentSura && (
-            <p className="text-white/60 text-xs">{SURA_NAMES[currentSura - 1]}</p>
-          )}
-        </div>
+        <button onClick={toggleDrawer} className="flex-1 min-w-0 flex items-center gap-1 text-left">
+          <div className="min-w-0">
+            <p className="text-foreground font-semibold text-sm truncate">{edition.title}</p>
+            {currentSura && (
+              <p className="text-muted-foreground text-xs truncate">{SURA_NAMES[currentSura - 1]}</p>
+            )}
+          </div>
+          <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0', drawerOpen && 'rotate-180')} />
+        </button>
+
+        {/* Tilawat (recitation) */}
+        <button
+          onClick={openTilawatPopup}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
+        >
+          <Play className="w-3.5 h-3.5" />
+          তিলাওয়াত শুনুন
+        </button>
 
         {/* Zoom */}
         <button
           onClick={zoomOut}
           disabled={scale <= 0.75}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-white/80 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
           aria-label="Zoom out"
         >
           <ZoomOut className="w-4.5 h-4.5" />
         </button>
-        <span className="text-white/60 text-xs w-9 text-center tabular-nums">
+        <span className="text-muted-foreground text-xs w-9 text-center tabular-nums">
           {bn(Math.round(scale * 100))}%
         </span>
         <button
           onClick={zoomIn}
           disabled={scale >= 3}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-white/80 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
           aria-label="Zoom in"
         >
           <ZoomIn className="w-4.5 h-4.5" />
         </button>
-
-        {/* Navigation drawer */}
-        <button
-          onClick={openDrawer}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="Navigation"
-        >
-          <List className="w-5 h-5" />
-        </button>
       </div>
 
-      {/* ── Bottom nav bar — RTL: next on the left, prev on the right ── */}
+      {/* ── Bottom bars — nav pill + tilawat audio pill, side by side, centered as one group ── */}
       <div className={cn(
-        'absolute bottom-0 inset-x-0 z-30 flex items-center justify-between gap-4 px-4 py-3',
-        'bg-gradient-to-t from-black/70 to-transparent',
+        'absolute bottom-4 inset-x-0 z-30 flex items-center justify-center flex-wrap gap-3 px-3',
         'transition-all duration-300',
         barsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none translate-y-2'
       )}>
-        <button
-          onClick={next}
-          disabled={page >= edition.totalPages}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 transition-colors text-sm font-medium"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          পরে
-        </button>
+        {/* Tilawat audio pill — visible while a recitation session is active */}
+        {activeAyah && (
+          <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/95 backdrop-blur-md border border-border shadow-xl">
+            <div className="min-w-0 pl-2 pr-1">
+              <p className="text-xs font-medium text-foreground truncate max-w-[9rem]">
+                {SURA_NAMES[activeAyah.sura - 1]} · {bn(activeAyah.ayah)}
+              </p>
+              {audioError && <p className="text-[10px] text-destructive">অডিও পাওয়া যায়নি</p>}
+            </div>
 
-        {/* Page indicator + page bookmark */}
-        <div className="flex-1 flex items-center justify-center gap-2">
-          <button onClick={startEditingPage}>
+            <button
+              onClick={openTilawatPopup}
+              className={cn('p-1.5 rounded-full transition-colors', activeRange ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+              title="আয়াত রেঞ্জ ও পুনরাবৃত্তি"
+            >
+              <Repeat className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={skipForward}
+              disabled={activeAyah.ayah >= AYAH_COUNTS[activeAyah.sura - 1]}
+              className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+            >
+              <SkipBack className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={togglePlayback}
+              disabled={audioLoading}
+              className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {audioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+            </button>
+
+            <button
+              onClick={skipBack}
+              disabled={activeAyah.ayah <= 1}
+              className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+            >
+              <SkipForward className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={stopPlayback}
+              className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="বন্ধ করুন"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Page nav pill — RTL: next on the left, prev on the right */}
+        <div className="flex items-center gap-0.5 px-1.5 py-1.5 rounded-full bg-background/95 backdrop-blur-md border border-border shadow-xl">
+          <button
+            onClick={next}
+            disabled={page >= edition.totalPages}
+            className="flex items-center gap-1 pl-3 pr-3.5 py-2 rounded-full text-foreground hover:bg-muted disabled:opacity-30 transition-colors text-sm font-medium"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            পরে
+          </button>
+
+          <div className="w-px h-5 bg-border" />
+
+          {/* Page indicator + page bookmark */}
+          <button onClick={startEditingPage} className="px-2">
             {editingPage ? (
               <input
                 ref={pageInputRef}
@@ -616,14 +787,14 @@ function MushafReaderInner({ edition, initialPage }: Props) {
                 onChange={e => setPageInput(e.target.value)}
                 onBlur={commitPageInput}
                 onKeyDown={e => { if (e.key === 'Enter') commitPageInput() }}
-                className="w-24 text-center text-white bg-white/10 border border-white/30 rounded-lg px-2 py-1.5 text-sm tabular-nums outline-none focus:border-white/60"
+                className="w-20 text-center text-foreground bg-muted border border-border rounded-lg px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
                 type="number"
                 min={1}
                 max={edition.totalPages}
               />
             ) : (
-              <span className="text-white/80 text-sm tabular-nums hover:text-white transition-colors">
-                <span className="font-semibold text-white">{bn(page)}</span>
+              <span className="text-muted-foreground text-sm tabular-nums hover:text-foreground transition-colors">
+                <span className="font-semibold text-foreground">{bn(page)}</span>
                 <span className="mx-1">/</span>
                 {bn(edition.totalPages)}
               </span>
@@ -632,24 +803,37 @@ function MushafReaderInner({ edition, initialPage }: Props) {
           <button
             onClick={handleTogglePageBookmark}
             className={cn(
-              'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
-              currentPageBookmarked ? 'text-amber-400' : 'text-white/60 hover:text-white hover:bg-white/10'
+              'flex items-center justify-center w-8 h-8 rounded-full transition-colors',
+              currentPageBookmarked ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             )}
             title="পৃষ্ঠা বুকমার্ক"
           >
             <Star className={cn('w-4 h-4', currentPageBookmarked && 'fill-current')} />
           </button>
-        </div>
 
-        <button
-          onClick={prev}
-          disabled={page <= 1}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 transition-colors text-sm font-medium"
-        >
-          আগে
-          <ChevronRight className="w-4 h-4" />
-        </button>
+          <div className="w-px h-5 bg-border" />
+
+          <button
+            onClick={prev}
+            disabled={page <= 1}
+            className="flex items-center gap-1 pl-3.5 pr-3 py-2 rounded-full text-foreground hover:bg-muted disabled:opacity-30 transition-colors text-sm font-medium"
+          >
+            আগে
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
+
+      {/* ── Exit fullscreen — floating, bottom-right, visible only while bars are hidden ── */}
+      {!barsVisible && (
+        <button
+          onClick={() => setBarsVisible(true)}
+          className="absolute bottom-4 right-4 z-30 flex items-center justify-center w-11 h-11 rounded-full bg-background/95 backdrop-blur-md border border-border shadow-xl text-foreground hover:bg-muted transition-colors"
+          title="ফুলস্ক্রিন থেকে বের হন"
+        >
+          <Minimize className="w-4.5 h-4.5" />
+        </button>
+      )}
 
       {/* ── Ayah menu — centered, floating just above the selected ayah ── */}
       {selectedAyah && menuTop !== null && (
@@ -675,16 +859,11 @@ function MushafReaderInner({ edition, initialPage }: Props) {
             </button>
 
             <button
-              onClick={handlePlayAyah}
-              disabled={audioLoading}
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              onClick={handleMenuPlay}
+              className="flex items-center justify-center w-9 h-9 rounded-xl text-foreground hover:bg-muted transition-colors"
               title="আয়াতটি শুনুন"
             >
-              {audioLoading
-                ? <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                : selectedIsPlaying
-                  ? <Pause className="w-4.5 h-4.5" />
-                  : <Play className="w-4.5 h-4.5" />}
+              <Play className="w-4.5 h-4.5" />
             </button>
 
             <button
@@ -709,7 +888,7 @@ function MushafReaderInner({ edition, initialPage }: Props) {
             </button>
 
             <button
-              onClick={() => { setBarsVisible(false); setSelectedAyah(null) }}
+              onClick={() => { setBarsVisible(false); setSelectedAyah(null); setDrawerOpen(false) }}
               className="flex items-center justify-center w-9 h-9 rounded-xl text-foreground hover:bg-muted transition-colors"
               title="ফুলস্ক্রিন"
             >
@@ -719,13 +898,16 @@ function MushafReaderInner({ edition, initialPage }: Props) {
         </div>
       )}
 
-      {/* ── Navigation drawer (left, like the text reader) ── */}
-      <div className={cn(
-        'absolute inset-y-0 left-0 z-50 w-80 max-w-[85vw] flex flex-col bg-background border-r border-border shadow-2xl',
-        'transition-transform duration-300',
-        drawerOpen ? 'translate-x-0' : '-translate-x-full'
-      )}>
-        {/* Tabs + X in one row */}
+      {/* ── Navigation drawer (left, like the text reader) — sits below the top bar, never covers it ── */}
+      <div
+        className={cn(
+          'absolute bottom-0 left-0 z-50 w-80 max-w-[85vw] flex flex-col bg-background border-r border-border shadow-2xl',
+          'transition-transform duration-300',
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+        style={{ top: TOP_BAR_SAFE }}
+      >
+        {/* Tabs */}
         <div className="flex items-center border-b border-border shrink-0">
           {DRAWER_TABS.map(tab => (
             <button
@@ -741,12 +923,6 @@ function MushafReaderInner({ edition, initialPage }: Props) {
               {tab.label}
             </button>
           ))}
-          <button
-            onClick={() => setDrawerOpen(false)}
-            className="px-3 py-3 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {boxesLoading ? (
@@ -950,12 +1126,126 @@ function MushafReaderInner({ edition, initialPage }: Props) {
         )}
       </div>
 
-      {/* Drawer backdrop */}
-      {drawerOpen && (
-        <div
-          className="absolute inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
-          onClick={() => setDrawerOpen(false)}
-        />
+      {/* ── Tilawat popup — surah/reciter/range picker, same UI as the text reader ── */}
+      {tilawatOpen && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" onClick={() => setTilawatOpen(false)} />
+
+          <div className="relative w-full sm:max-w-md sm:mx-4 bg-background rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3.5 border-b border-border">
+              <p className="text-sm font-bold text-foreground">তিলাওয়াত শুনুন</p>
+              <button
+                onClick={() => setTilawatOpen(false)}
+                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-4 py-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">সূরা:</p>
+                <select
+                  value={tilawatSura}
+                  onChange={e => {
+                    const n = Number(e.target.value)
+                    setTilawatSura(n)
+                    setRangeStart(1)
+                    setRangeEnd(AYAH_COUNTS[n - 1])
+                  }}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {SURA_NAMES.map((name, i) => (
+                    <option key={i + 1} value={i + 1}>{bn(i + 1)}. {name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {reciters.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <p className="w-24 shrink-0 text-sm font-semibold text-foreground">ক্বারী:</p>
+                  <select
+                    value={selectedReciter}
+                    onChange={e => setSelectedReciter(e.target.value)}
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {reciters.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">শুরু আয়াত:</p>
+                <select
+                  value={rangeStart}
+                  disabled={fullSurah}
+                  onChange={e => {
+                    const n = Number(e.target.value)
+                    setRangeStart(n)
+                    if (n > rangeEnd) setRangeEnd(n)
+                  }}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  {Array.from({ length: AYAH_COUNTS[tilawatSura - 1] }, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n}>{bn(n)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">শেষ আয়াত:</p>
+                <select
+                  value={rangeEnd}
+                  disabled={fullSurah}
+                  onChange={e => {
+                    const n = Number(e.target.value)
+                    setRangeEnd(n)
+                    if (n < rangeStart) setRangeStart(n)
+                  }}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  {Array.from({ length: AYAH_COUNTS[tilawatSura - 1] }, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n}>{bn(n)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-muted/40 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={fullSurah}
+                  onChange={e => setFullSurah(e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <span className="text-sm font-medium text-foreground">সম্পূর্ণ সূরা</span>
+              </label>
+
+              <div className="flex items-center justify-center gap-3 px-3 py-2 rounded-lg border border-border bg-muted/40">
+                <span className="text-sm font-medium text-foreground">আয়াতের পুনরাবৃত্তি</span>
+                <button
+                  onClick={() => setRepeatCount(c => Math.max(1, c - 1))}
+                  className="w-7 h-7 rounded-full border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                >−</button>
+                <span className="text-sm text-muted-foreground w-6 text-center tabular-nums">{bn(repeatCount)}</span>
+                <button
+                  onClick={() => setRepeatCount(c => Math.min(20, c + 1))}
+                  className="w-7 h-7 rounded-full border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                >+</button>
+              </div>
+
+              <button
+                onClick={startRangePlayback}
+                disabled={audioLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {audioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                অডিও শুনুন
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

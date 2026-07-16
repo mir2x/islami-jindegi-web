@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getMushafs } from '@/lib/public-api'
+import { getMushafs, getQuranReciters } from '@/lib/public-api'
 import { MushafReader } from '@/components/public/quran/mushaf-reader'
 
 interface Props {
@@ -22,11 +22,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function MushafViewerPage({ params, searchParams }: Props) {
   const { editionId } = await params
   const sp = await searchParams
-  const editions = await getMushafs()
+  const [editions, reciters] = await Promise.all([getMushafs(), getQuranReciters()])
   const edition = editions.find(e => e.id === editionId)
   if (!edition) notFound()
 
   const initialPage = Math.max(1, Math.min(edition.totalPages, Number(sp.page ?? 1) || 1))
 
-  return <MushafReader edition={edition} initialPage={initialPage} />
+  return <MushafReader edition={edition} initialPage={initialPage} reciters={reciters} />
 }
