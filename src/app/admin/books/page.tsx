@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Plus, Search, Pencil, Trash2, BookOpen, Check, ChevronsUpDown, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBookStore } from '@/store/book-store'
@@ -118,15 +119,15 @@ export default function BooksPage() {
     <div ref={scrollRef} className="min-h-full flex flex-col">
 
       {/* ── Top section ── */}
-      <div className="shrink-0 px-8 pt-8 bg-background">
-        <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="shrink-0 px-4 sm:px-8 pt-8 bg-background">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-6">
           <h1 className="text-2xl font-bold tracking-tight">
             Books
             {totalCount !== undefined && <span className="ml-2 font-semibold text-muted-foreground">({totalCount.toLocaleString()})</span>}
           </h1>
-          {tab === 'books' && <Button onClick={() => router.push('/admin/books/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Book</Button>}
-          {tab === 'chapters' && <Button onClick={() => router.push('/admin/chapters/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Chapter</Button>}
-          {tab === 'subchapters' && <Button onClick={() => router.push('/admin/subchapters/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Subchapter</Button>}
+          {tab === 'books' && <Button render={<Link href="/admin/books/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Book</Button>}
+          {tab === 'chapters' && <Button render={<Link href="/admin/chapters/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Chapter</Button>}
+          {tab === 'subchapters' && <Button render={<Link href="/admin/subchapters/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Subchapter</Button>}
         </div>
 
         <div className="flex items-center gap-1 border-b border-border">
@@ -213,13 +214,14 @@ export default function BooksPage() {
       </div>
 
       {/* ── Table area ── */}
-      <div className="flex-1 px-8 pb-4">
+      <div className="flex-1 px-4 sm:px-8 pb-4">
 
         {tab === 'books' && (
           <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
+          <div className="overflow-x-auto">
             {/* table-fixed + colgroup: keeps column widths identical across sorts, so
                 re-sorting can't re-measure columns and shift the layout. */}
-            <table className="w-full table-fixed">
+            <table className="w-full min-w-[960px] table-fixed">
               <colgroup>
                 <col className="w-32" />
                 <col />
@@ -276,7 +278,7 @@ export default function BooksPage() {
                         : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/books/${book.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting({ id: book.id, title: book.title, type: 'books' }) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
@@ -286,13 +288,15 @@ export default function BooksPage() {
               </tbody>
             </table>
           </div>
+          </div>
         )}
 
         {tab === 'chapters' && (
           <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
+          <div className="overflow-x-auto">
             {/* table-fixed + colgroup: keeps column widths identical across sorts, so
                 re-sorting can't re-measure columns and shift the layout. */}
-            <table className="w-full table-fixed">
+            <table className="w-full min-w-[840px] table-fixed">
               <colgroup>
                 <col className="w-32" />
                 <col />
@@ -329,7 +333,7 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{c.bookTitle}</p></td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{c.subChapterCount || '—'}</span></td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/chapters/${c.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleting({ id: c.id, title: c.title, type: 'chapters' })} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
@@ -339,13 +343,15 @@ export default function BooksPage() {
               </tbody>
             </table>
           </div>
+          </div>
         )}
 
         {tab === 'subchapters' && (
           <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
+          <div className="overflow-x-auto">
             {/* table-fixed + colgroup: keeps column widths identical across sorts, so
                 re-sorting can't re-measure columns and shift the layout. */}
-            <table className="w-full table-fixed">
+            <table className="w-full min-w-[960px] table-fixed">
               <colgroup>
                 <col className="w-32" />
                 <col />
@@ -382,7 +388,7 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{s.chapterTitle}</p></td>
                     <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{s.bookTitle}</p></td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/subchapters/${s.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleting({ id: s.id, title: s.title, type: 'subchapters' })} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
@@ -392,13 +398,14 @@ export default function BooksPage() {
               </tbody>
             </table>
           </div>
+          </div>
         )}
 
       </div>
 
       {/* ── Pagination: sticks to the viewport bottom while <main> scrolls ── */}
       {totalPages > 1 && (
-        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-8 py-2.5 backdrop-blur-sm">
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-4 sm:px-8 py-2.5 backdrop-blur-sm">
           <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} inline />
         </div>
       )}

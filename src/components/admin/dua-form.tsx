@@ -94,7 +94,7 @@ export function DuaForm({ item }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-8">
+    <div className="max-w-3xl mx-auto p-4 sm:p-8">
       <div className="mb-8">
         <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-4 h-4" />

@@ -69,7 +69,7 @@ export function NamazTimeForm({ namazTime }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="mb-6">
         <button
           onClick={() => router.back()}
@@ -85,7 +85,7 @@ export function NamazTimeForm({ namazTime }: Props) {
         <div className="bg-card border rounded-xl p-5 space-y-4">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Title (English) <span className="text-destructive">*</span></Label>
               <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Fajr" maxLength={100} />

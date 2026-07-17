@@ -143,7 +143,7 @@ export function BookForm({ book }: Props) {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-[1fr_260px] gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 items-start">
 
           {/* LEFT COLUMN */}
           <div className="space-y-4">
@@ -172,7 +172,7 @@ export function BookForm({ book }: Props) {
                 <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Language <span className="text-destructive">*</span></Label>
                   <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
@@ -188,7 +188,7 @@ export function BookForm({ book }: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Price</Label>
                   <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 250 BDT" maxLength={50} />

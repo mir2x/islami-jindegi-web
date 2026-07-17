@@ -210,8 +210,8 @@ export default function MediaPage() {
       {/* Main grid area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
-          <div className="flex items-start justify-between mb-6">
+        <div className="shrink-0 px-4 sm:px-8 pt-8 pb-4 bg-background">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Media Library</h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -239,7 +239,7 @@ export default function MediaPage() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-56 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -270,9 +270,9 @@ export default function MediaPage() {
         </div>
 
         {/* Grid */}
-        <div className="flex-1 overflow-y-auto px-8 pb-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-6">
           {loading && (
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {Array.from({ length: 36 }).map((_, i) => (
                 <Skeleton key={i} className="aspect-square rounded-xl" />
               ))}
@@ -290,7 +290,7 @@ export default function MediaPage() {
           )}
 
           {!loading && result && result.data.length > 0 && (
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {result.data.map(item => (
                 <button
                   key={item.id}
@@ -324,13 +324,23 @@ export default function MediaPage() {
         </div>
       </div>
 
-      {/* Detail panel */}
+      {/* Detail panel — a fixed full-screen overlay on mobile, a static side panel from sm: up */}
       <div className={cn(
-        'w-[36rem] shrink-0 border-l bg-card flex flex-col transition-all duration-200',
-        selected ? 'translate-x-0' : 'translate-x-full absolute right-0 inset-y-0 pointer-events-none opacity-0'
+        'w-full sm:w-[36rem] shrink-0 border-l bg-card flex flex-col transition-all duration-200',
+        selected
+          ? 'translate-x-0 fixed inset-0 z-30 sm:static sm:z-auto'
+          : 'translate-x-full absolute right-0 inset-y-0 pointer-events-none opacity-0'
       )}>
         {selected && (
           <>
+            {/* Mobile-only close bar — the panel covers the whole screen below sm: */}
+            <div className="sm:hidden flex items-center justify-between px-4 py-3 border-b shrink-0">
+              <span className="text-sm font-semibold">File details</span>
+              <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             {/* Preview */}
             <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden shrink-0">
               {selected.type === 'image' ? (

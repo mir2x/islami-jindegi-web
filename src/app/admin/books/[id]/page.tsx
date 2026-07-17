@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   ArrowLeft, BookOpen, ChevronDown, ChevronRight,
   ExternalLink, Pencil, Globe, BookMarked, Tag, Users, Plus, Trash2,
@@ -52,7 +53,7 @@ function SubChapterRow({
             )}
           </span>
         </button>
-        <div className="shrink-0 mt-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="shrink-0 mt-2 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => router.push(`/admin/subchapters/${sub.id}/edit`)}
             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -126,7 +127,7 @@ function ChapterRowControlled({
               : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
           </div>
         </button>
-        <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="shrink-0 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => router.push(`/admin/chapters/${chapter.id}/edit`)}
             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -215,7 +216,7 @@ export default function BookDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6">
         <Skeleton className="h-5 w-32" />
         <div className="flex gap-6">
           <Skeleton className="w-40 h-56 rounded-xl shrink-0" />
@@ -240,7 +241,7 @@ export default function BookDetailPage() {
 
   if (!book) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-4 sm:p-8 text-center">
         <p className="text-muted-foreground">Book not found.</p>
         <Button variant="outline" className="mt-4" onClick={() => router.back()}>Go back</Button>
       </div>
@@ -248,7 +249,7 @@ export default function BookDetailPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-8 max-w-5xl mx-auto">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
         <button
@@ -265,8 +266,8 @@ export default function BookDetailPage() {
       </div>
 
       {/* Book header */}
-      <div className="flex gap-8 mb-8">
-        <div className="shrink-0">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mb-8">
+        <div className="shrink-0 mx-auto sm:mx-0">
           {book.coverUrl ? (
             <img src={book.coverUrl} alt={book.title} className="w-40 rounded-xl shadow-md border object-cover" />
           ) : (
@@ -294,7 +295,7 @@ export default function BookDetailPage() {
             <p className="text-muted-foreground text-sm leading-relaxed mb-4 max-w-lg">{book.excerpt}</p>
           )}
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2.5 text-sm mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-sm mb-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Globe className="w-3.5 h-3.5 shrink-0" />
               <span className="font-medium text-foreground">{book.language}</span>
@@ -363,7 +364,7 @@ export default function BookDetailPage() {
 
       {/* Chapters */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold">Chapters</h2>
             <p className="text-sm text-muted-foreground">
@@ -371,11 +372,11 @@ export default function BookDetailPage() {
               {totalSubChapters > 0 && ` · ${totalSubChapters} subchapter${totalSubChapters !== 1 ? 's' : ''}`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.push(`/admin/subchapters/new?bookId=${id}`)} className="gap-1.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" render={<Link href={`/admin/subchapters/new?bookId=${id}`} />} className="gap-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> Add Subchapter
             </Button>
-            <Button variant="outline" size="sm" onClick={() => router.push(`/admin/chapters/new?bookId=${id}`)} className="gap-1.5 text-xs">
+            <Button variant="outline" size="sm" render={<Link href={`/admin/chapters/new?bookId=${id}`} />} className="gap-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> Add Chapter
             </Button>
             {book.chapters.length > 0 && (

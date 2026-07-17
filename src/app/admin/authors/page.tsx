@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthorStore } from '@/store/author-store'
@@ -59,8 +60,8 @@ export default function AuthorsPage() {
     <div className="min-h-full flex flex-col">
 
       {/* ── Fixed top section ── */}
-      <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
-        <div className="flex items-start justify-between mb-6">
+      <div className="shrink-0 px-4 sm:px-8 pt-8 pb-4 bg-background">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Authors</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -69,7 +70,7 @@ export default function AuthorsPage() {
                 : 'Loading...'}
             </p>
           </div>
-          <Button onClick={() => router.push('/admin/authors/new')} className="gap-2 shadow-sm">
+          <Button render={<Link href="/admin/authors/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Author
           </Button>
         </div>
@@ -86,11 +87,12 @@ export default function AuthorsPage() {
       </div>
 
       {/* ── Scrollable table area ── */}
-      <div className="flex-1 px-8 pb-4">
+      <div className="flex-1 px-4 sm:px-8 pb-4">
         <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
+          <div className="overflow-x-auto">
           {/* table-fixed + colgroup: keeps column widths identical across sorts, so
               re-sorting can't re-measure columns and shift the layout. */}
-          <table className="w-full table-fixed">
+          <table className="w-full min-w-[560px] table-fixed">
             <colgroup>
               <col />
               <col className="w-28" />
@@ -143,7 +145,7 @@ export default function AuthorsPage() {
                   </td>
                   <td className="px-5 py-4 text-sm text-muted-foreground">{author.position}</td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/authors/${author.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
@@ -156,13 +158,14 @@ export default function AuthorsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
       </div>
 
       {/* ── Pagination: sticks to the viewport bottom while <main> scrolls ── */}
       {totalPages > 1 && (
-        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-8 py-2.5 backdrop-blur-sm">
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-4 sm:px-8 py-2.5 backdrop-blur-sm">
           <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} inline />
         </div>
       )}

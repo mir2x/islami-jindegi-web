@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Plus, Search, Pencil, Trash2, School } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMadrasahStore } from '@/store/madrasah-store'
@@ -43,15 +44,15 @@ export default function MadrasahPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
-        <div className="flex items-start justify-between mb-6">
+      <div className="shrink-0 px-4 sm:px-8 pt-8 pb-4 bg-background">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Madrasah</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> madrasahs</> : 'Loading...'}
             </p>
           </div>
-          <Button onClick={() => router.push('/admin/madrasah/new')} className="gap-2 shadow-sm">
+          <Button render={<Link href="/admin/madrasah/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Madrasah
           </Button>
         </div>
@@ -64,9 +65,10 @@ export default function MadrasahPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-6">
         <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px]">
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm">
               <tr className="border-b">
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">Pos.</th>
@@ -103,7 +105,7 @@ export default function MadrasahPage() {
                   <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{item.infoCount}</span></td>
                   <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{item.photoCount}</span></td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/madrasah/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting(item) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
@@ -112,6 +114,7 @@ export default function MadrasahPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
         <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>

@@ -58,7 +58,7 @@ export function CategoryForm({ category, defaultParentId }: Props) {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-8">
+    <div className="max-w-xl mx-auto p-4 sm:p-8">
       <div className="mb-8">
         <button
           onClick={() => router.back()}

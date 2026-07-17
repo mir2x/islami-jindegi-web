@@ -91,12 +91,12 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
       <DialogContent className="max-w-5xl h-[82vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0">
+        <DialogHeader className="px-4 sm:px-6 pt-5 pb-4 border-b shrink-0">
           <DialogTitle>Media Library</DialogTitle>
         </DialogHeader>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b shrink-0 bg-muted/30">
+        <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b shrink-0 bg-muted/30">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -147,7 +147,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
 
         {/* Upload progress */}
         {(uploadProgress !== null || uploadError) && (
-          <div className="px-6 py-2.5 border-b bg-muted/20 shrink-0">
+          <div className="px-4 sm:px-6 py-2.5 border-b bg-muted/20 shrink-0">
             {uploadProgress !== null && (
               <div className="flex items-center gap-3">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
@@ -176,7 +176,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
         {/* Grid */}
         <div className="flex-1 overflow-y-auto p-5">
           {loading && (
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {Array.from({ length: 24 }).map((_, i) => (
                 <div key={i} className="aspect-square rounded-xl bg-muted animate-pulse" />
               ))}
@@ -191,7 +191,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
           )}
 
           {!loading && result && result.data.length > 0 && (
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {result.data.map(item => (
                 <button
                   key={item.id}
@@ -242,7 +242,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t shrink-0 flex items-center justify-between bg-muted/20">
+        <div className="px-4 sm:px-6 py-4 border-t shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-muted/20">
           <div className="text-sm text-muted-foreground">
             {result && <span>{result.total.toLocaleString()} file{result.total !== 1 ? 's' : ''}</span>}
             {selected && (

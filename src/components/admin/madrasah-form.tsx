@@ -113,7 +113,7 @@ export function MadrasahForm({ madrasah }: Props) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="mb-6">
         <button
           onClick={() => router.back()}
@@ -171,7 +171,7 @@ export function MadrasahForm({ madrasah }: Props) {
           {infos.map((info, idx) => (
             <div key={info.key} className="flex gap-2 items-start">
               <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-2.5 shrink-0" />
-              <div className="grid grid-cols-2 gap-2 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
                 <Input
                   value={info.label}
                   onChange={e => updateInfo(info.key, 'label', e.target.value)}
@@ -212,7 +212,7 @@ export function MadrasahForm({ madrasah }: Props) {
             <p className="text-sm text-muted-foreground text-center py-4">No photos yet.</p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {photos.map((photo) => (
               <div key={photo.key} className="bg-muted/20 border rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between">

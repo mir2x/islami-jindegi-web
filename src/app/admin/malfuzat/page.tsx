@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Plus, Search, Pencil, Trash2, ScrollText, Check, ChevronsUpDown, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMalfuzatStore } from '@/store/malfuzat-store'
@@ -77,15 +78,15 @@ export default function MalfuzatPage() {
     // No inner scroll container: the admin <main> is the only scroller, so the page
     // never shows a nested scrollbar. The pagination sticks to the viewport bottom instead.
     <div className="min-h-full flex flex-col">
-      <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
-        <div className="flex items-start justify-between mb-6">
+      <div className="shrink-0 px-4 sm:px-8 pt-8 pb-4 bg-background">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Malfuzat</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> entries</> : 'Loading...'}
             </p>
           </div>
-          <Button onClick={() => router.push('/admin/malfuzat/new')} className="gap-2 shadow-sm">
+          <Button render={<Link href="/admin/malfuzat/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Malfuzat
           </Button>
         </div>
@@ -148,11 +149,12 @@ export default function MalfuzatPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-8 pb-4">
+      <div className="flex-1 px-4 sm:px-8 pb-4">
         <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
+          <div className="overflow-x-auto">
           {/* table-fixed + colgroup: keeps column widths identical across sorts, so
               re-sorting can't re-measure columns and shift the layout. */}
-          <table className="w-full table-fixed">
+          <table className="w-full min-w-[1060px] table-fixed">
             <colgroup>
               <col className="w-32" />
               <col />
@@ -212,7 +214,7 @@ export default function MalfuzatPage() {
                       : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
                   </td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/malfuzat/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting(item) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
@@ -221,13 +223,14 @@ export default function MalfuzatPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
       </div>
 
       {/* ── Pagination: sticks to the viewport bottom while <main> scrolls ── */}
       {totalPages > 1 && (
-        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-8 py-2.5 backdrop-blur-sm">
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-4 sm:px-8 py-2.5 backdrop-blur-sm">
           <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} inline />
         </div>
       )}

@@ -191,10 +191,12 @@
   --sidebar-ring: oklch(0.62 0.172 163);
 }
 
-/* Admin CMS theme — single always-on mode that adopts the public site's dark
-   teal palette. admin/layout.tsx always sets both `dark` and `admin` on <html>,
-   so the shared tokens come from `.dark` below; this block only fills in the
-   tokens the public palette doesn't define, tuned to the same teal family. */
+/* Admin CMS dark theme. admin/layout.tsx keeps `admin` on <html> and toggles
+   `dark` for the light/dark preference; in dark mode the shared tokens come from
+   `.dark` below and this block only fills in the tokens the public palette
+   doesn't define (charts/sidebar), tuned to the same teal family. In light mode
+   (`admin` without `dark`) the `:root` palette applies: near-white content with
+   the same dark-teal sidebar. */
 .admin.dark {
   --chart-1: #7ec7b2;
   --chart-2: #52a793;
@@ -210,6 +212,21 @@
   --sidebar-accent-foreground: #daf5f2;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: #7ec7b2;
+}
+
+/* Admin CMS light theme — `admin` without `dark`. Content uses the :root light
+   palette as-is, but the :root `--sidebar-*` tokens are dark-teal (for the public
+   site), so the admin sidebar/topbar/drawer must be re-lit here. `:not(.dark)`
+   gives this higher specificity than :root and keeps it out of dark admin. */
+.admin:not(.dark) {
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2f4a50;
+  --sidebar-primary: #1f8a70;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e7f4ef;
+  --sidebar-accent-foreground: #14564a;
+  --sidebar-border: #e5eae8;
+  --sidebar-ring: #1f8a70;
 }
 
 /* Public site dark theme — Islami Jindegi's brand teal, carried over from the

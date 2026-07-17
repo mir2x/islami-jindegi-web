@@ -179,7 +179,7 @@ export function BookSheet({ open, onOpenChange, book, onSuccess }: Props) {
               <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Language <span className="text-destructive">*</span></Label>
                 <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
@@ -195,7 +195,7 @@ export function BookSheet({ open, onOpenChange, book, onSuccess }: Props) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Price</Label>
                 <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 250 BDT" maxLength={50} />
@@ -297,7 +297,7 @@ export function BookSheet({ open, onOpenChange, book, onSuccess }: Props) {
 
           {/* Settings */}
           <Section title="Settings" defaultOpen={false}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Published At</Label>
                 <Input type="date" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
