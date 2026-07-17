@@ -8,10 +8,9 @@ import {
   BookOpen, X, FileText,
 } from 'lucide-react'
 import type { Book, BookAuthorOption, BookCategoryOption, PagedResult } from '@/types'
-import { SidebarOptionList } from '@/components/public/filter-sidebar'
+import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
-import { Pagination } from '@/components/public/pagination'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -57,18 +56,22 @@ export function BooksClient({
   const [categorySearch, setCategorySearch] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [authorSheetOpen, setAuthorSheetOpen] = useState(false)
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mounted = useRef(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
+  const hasMore = books.length < total
   const hasFilters = !!(search || selectedCategory || selectedAuthor)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
 
-  // Fetch when filters change (skip initial render — server already sent data)
+  // Filters changed → reset to the first page and replace the list
+  // (skip initial render — server already sent data)
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return }
 
@@ -76,7 +79,6 @@ export function BooksClient({
     if (search) params.set('q', search)
     if (selectedCategory) params.set('category', selectedCategory)
     if (selectedAuthor) params.set('author', selectedAuthor)
-    if (page > 1) params.set('page', String(page))
     const qs = params.toString()
     router.replace(qs ? `/books?${qs}` : '/books', { scroll: false })
 
@@ -87,20 +89,61 @@ export function BooksClient({
         search: search || undefined,
         categoryId: selectedCategory || undefined,
         authorId: selectedAuthor || undefined,
-        page,
+        page: 1,
       })
       setBooks(result.data)
       setTotal(result.total)
+      setPage(1)
       setLoading(false)
+      scrollRef.current?.scrollTo({ top: 0 })
     }, search !== initialSearch ? 350 : 0)
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategory, selectedAuthor, page])
+  }, [search, selectedCategory, selectedAuthor])
 
-  const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id); setPage(1) }
-  const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id); setPage(1) }
-  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setPage(1) }
+  // Next page requested by the scroll sentinel → append
+  useEffect(() => {
+    if (page === 1) return
+    let cancelled = false
+    fetchBooks({
+      search: search || undefined,
+      categoryId: selectedCategory || undefined,
+      authorId: selectedAuthor || undefined,
+      page,
+    }).then(result => {
+      if (cancelled) return
+      // De-dupe defensively: a filter reset racing an append could re-send page 1 rows.
+      setBooks(prev => {
+        const seen = new Set(prev.map(b => b.id))
+        return [...prev, ...result.data.filter(b => !seen.has(b.id))]
+      })
+      setTotal(result.total)
+      setLoadingMore(false)
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
+  // Load more when the sentinel scrolls into view
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore || loading || loadingMore) return
+    const io = new IntersectionObserver(
+      entries => {
+        if (!entries[0].isIntersecting) return
+        setLoadingMore(true)
+        setPage(p => p + 1)
+      },
+      { rootMargin: '400px' }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [hasMore, loading, loadingMore])
+
+  const setCategory = (id: string) => setSelectedCategory(id === selectedCategory ? '' : id)
+  const setAuthor = (id: string) => setSelectedAuthor(id === selectedAuthor ? '' : id)
+  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
 
   const filteredAuthors = authorSearch.trim()
     ? authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()))
@@ -111,12 +154,12 @@ export function BooksClient({
     : categories
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
-      {/* ── Sidebar (desktop) ───────────────────────────────────── */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-[88px] space-y-5">
-          <SidebarOptionList
+      {/* ── Sidebar (desktop) — both filters share one card ─────── */}
+      <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:min-h-0">
+        <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
+          <SidebarOptionSection
             title="লেখক"
             items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
             search={authorSearch}
@@ -124,9 +167,11 @@ export function BooksClient({
             selected={selectedAuthor}
             onSelect={setAuthor}
             emptyText="কোনো লেখক পাওয়া যায়নি"
+            fill
+            inlineSearch
           />
           {categories.length > 0 && (
-            <SidebarOptionList
+            <SidebarOptionSection
               title="শ্রেণীবিভাগ"
               items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
               search={categorySearch}
@@ -134,13 +179,15 @@ export function BooksClient({
               selected={selectedCategory}
               onSelect={setCategory}
               emptyText="কোনো বিষয় পাওয়া যায়নি"
+              fill
+              inlineSearch
             />
           )}
         </div>
       </aside>
 
       {/* ── Main column ─────────────────────────────────────────── */}
-      <div className="min-w-0">
+      <div className="min-w-0 flex flex-col lg:flex-1 lg:min-h-0">
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
           <MobileFilterTrigger label="লেখক" activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
@@ -149,96 +196,107 @@ export function BooksClient({
           )}
         </div>
 
-        {/* Search */}
-        <div className="mb-4">
-          <SearchInput
-            value={search}
-            onChange={v => { setSearch(v); setPage(1) }}
-            placeholder="কিতাব খুঁজুন..."
+        {/* Everything below lives in one card, same height as the sidebar card */}
+        <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="shrink-0 p-4">
+            {/* Search */}
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="কিতাব খুঁজুন..."
+            />
+
+          <MobileFilterSheet
+            open={authorSheetOpen}
+            onClose={() => setAuthorSheetOpen(false)}
+            title="লেখক"
+            options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
+            fetchOptions={q => fetchNamedOptions('/api/books/authors', q)}
+            selected={selectedAuthor}
+            onSelect={setAuthor}
+            emptyText="কোনো লেখক পাওয়া যায়নি"
           />
-        </div>
+          <MobileFilterSheet
+            open={categorySheetOpen}
+            onClose={() => setCategorySheetOpen(false)}
+            title="শ্রেণীবিভাগ"
+            options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
+            fetchOptions={q => fetchTitledOptions('/api/books/categories', q)}
+            selected={selectedCategory}
+            onSelect={setCategory}
+            emptyText="কোনো বিষয় পাওয়া যায়নি"
+          />
 
-        <MobileFilterSheet
-          open={authorSheetOpen}
-          onClose={() => setAuthorSheetOpen(false)}
-          title="লেখক"
-          options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
-          fetchOptions={q => fetchNamedOptions('/api/books/authors', q)}
-          selected={selectedAuthor}
-          onSelect={setAuthor}
-          emptyText="কোনো লেখক পাওয়া যায়নি"
-        />
-        <MobileFilterSheet
-          open={categorySheetOpen}
-          onClose={() => setCategorySheetOpen(false)}
-          title="শ্রেণীবিভাগ"
-          options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
-          fetchOptions={q => fetchTitledOptions('/api/books/categories', q)}
-          selected={selectedCategory}
-          onSelect={setCategory}
-          emptyText="কোনো বিষয় পাওয়া যায়নি"
-        />
-
-        {/* Active filter chips */}
-        {(activeCategoryName || activeAuthorName) && (
-          <div className="flex items-center gap-1.5 flex-wrap mb-4">
-            {activeCategoryName && (
-              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                {activeCategoryName}
-                <button onClick={() => setCategory('')} className="hover:bg-primary/20 rounded-full p-0.5">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            {activeAuthorName && (
-              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                {activeAuthorName}
-                <button onClick={() => setAuthor('')} className="hover:bg-primary/20 rounded-full p-0.5">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )}
-            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">
-              সব মুছুন
-            </button>
-          </div>
-        )}
-
-        {/* ── Count row ────────────────────────────────────────── */}
-        <p className="text-sm text-muted-foreground mb-5">
-          {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি কিতাব`}
-        </p>
-
-        {/* ── Book grid ────────────────────────────────────────── */}
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-[3/4] rounded-xl bg-muted mb-3" />
-                <div className="h-4 bg-muted rounded mb-2" />
-                <div className="h-3 bg-muted rounded w-2/3" />
-              </div>
-            ))}
-          </div>
-        ) : books.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <BookOpen className="w-14 h-14 text-muted-foreground/25 mb-4" />
-            <p className="text-lg font-medium text-foreground">কোনো কিতাব পাওয়া যায়নি</p>
-            <p className="text-sm text-muted-foreground mt-1">ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন</p>
-            {hasFilters && (
-              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">
-                সব ফিল্টার মুছুন
+          {/* Active filter chips */}
+          {(activeCategoryName || activeAuthorName) && (
+            <div className="flex items-center gap-1.5 flex-wrap mt-4">
+              {activeCategoryName && (
+                <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  {activeCategoryName}
+                  <button onClick={() => setCategory('')} className="hover:bg-primary/20 rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {activeAuthorName && (
+                <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  {activeAuthorName}
+                  <button onClick={() => setAuthor('')} className="hover:bg-primary/20 rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">
+                সব মুছুন
               </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-            {books.map(book => <BookCard key={book.id} book={book} />)}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* ── Pagination ───────────────────────────────────────── */}
-        <Pagination page={page} totalPages={totalPages} onChange={setPage} disabled={loading} />
+            {/* ── Count row ──────────────────────────────────────── */}
+            <p className="text-sm text-muted-foreground mt-4">
+              {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি কিতাব`}
+            </p>
+          </div>
+
+          {/* ── Book grid — scrolls inside the card, loads more at the end ── */}
+          <div ref={scrollRef} className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto px-4 pb-4">
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] gap-4 sm:gap-5">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[3/4] rounded-xl bg-muted mb-3" />
+                  <div className="h-4 bg-muted rounded mb-2" />
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+          ) : books.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <BookOpen className="w-14 h-14 text-muted-foreground/25 mb-4" />
+              <p className="text-lg font-medium text-foreground">কোনো কিতাব পাওয়া যায়নি</p>
+              <p className="text-sm text-muted-foreground mt-1">ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন</p>
+              {hasFilters && (
+                <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">
+                  সব ফিল্টার মুছুন
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:[grid-template-columns:repeat(auto-fill,minmax(140px,1fr))] gap-4 sm:gap-5">
+                {books.map(book => <BookCard key={book.id} book={book} />)}
+              </div>
+
+              {/* Scroll sentinel — pulls in the next page */}
+              {hasMore && (
+                <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
+                  {loadingMore ? 'লোড হচ্ছে...' : ''}
+                </div>
+              )}
+            </>
+          )}
+          </div>
+        </div>
       </div>
     </div>
   )

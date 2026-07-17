@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { BookOpen } from 'lucide-react'
 import { getBooks, getBookCategories, getBookAuthors } from '@/lib/public-api'
 import { BooksClient } from '@/components/public/books/books-client'
 
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 export default async function BooksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; author?: string; page?: string }>
+  searchParams: Promise<{ q?: string; category?: string; author?: string }>
 }) {
   const sp = await searchParams
 
@@ -20,24 +19,14 @@ export default async function BooksPage({
       search: sp.q,
       categoryId: sp.category,
       authorId: sp.author,
-      page: Number(sp.page ?? 1),
+      page: 1,
     }),
     getBookCategories(),
     getBookAuthors(),
   ])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-          <BookOpen className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">কিতাব</h1>
-          <p className="text-sm text-muted-foreground">Islamic Books & Literature</p>
-        </div>
-      </div>
-
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8 lg:h-[calc(100vh-68px)] lg:flex lg:flex-col">
       <BooksClient
         initialBooks={booksResult?.data ?? []}
         initialTotal={booksResult?.total ?? 0}

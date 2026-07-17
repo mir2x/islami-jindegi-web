@@ -8,12 +8,13 @@ interface Props {
   totalPages: number
   onChange: (page: number) => void
   disabled?: boolean
+  className?: string
 }
 
 // Shared, mobile-safe pager. Prev/next collapse to icon-only below `sm`, and the page-number
 // window is narrower on mobile (5) than on larger screens (7) so the row never overflows the
 // viewport — page-level horizontal scroll on mobile breaks fixed-position centering elsewhere.
-export function Pagination({ page, totalPages, onChange, disabled }: Props) {
+export function Pagination({ page, totalPages, onChange, disabled, className }: Props) {
   if (totalPages <= 1) return null
 
   const windowed = (count: number) =>
@@ -38,7 +39,7 @@ export function Pagination({ page, totalPages, onChange, disabled }: Props) {
   )
 
   return (
-    <div className="flex items-center justify-center gap-1 sm:gap-2 mt-10">
+    <div className={cn('flex items-center justify-center gap-1 sm:gap-2 mt-10', className)}>
       <button
         onClick={() => onChange(Math.max(1, page - 1))}
         disabled={page === 1 || disabled}

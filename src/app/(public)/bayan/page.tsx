@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Mic } from 'lucide-react'
 import { getBayans, getBayanCategories, getBayanAuthors } from '@/lib/public-api'
 import { BayanClient } from '@/components/public/bayan/bayan-client'
 
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 export default async function BayanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; author?: string; page?: string }>
+  searchParams: Promise<{ q?: string; category?: string; author?: string }>
 }) {
   const sp = await searchParams
 
@@ -20,24 +19,14 @@ export default async function BayanPage({
       search: sp.q,
       categoryId: sp.category,
       authorId: sp.author,
-      page: Number(sp.page ?? 1),
+      page: 1,
     }),
     getBayanCategories(),
     getBayanAuthors(),
   ])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-          <Mic className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">বয়ান</h1>
-          <p className="text-sm text-muted-foreground">Islamic Sermons & Lectures</p>
-        </div>
-      </div>
-
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:h-[calc(100vh-68px)] lg:flex lg:flex-col">
       <BayanClient
         initialBayans={bayansResult?.data ?? []}
         initialTotal={bayansResult?.total ?? 0}

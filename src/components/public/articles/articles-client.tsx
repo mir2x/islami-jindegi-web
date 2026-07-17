@@ -8,10 +8,9 @@ import {
 } from 'lucide-react'
 import type { ArticleListItem, ArticleDetail, ArticleAuthorOption, ArticleCategoryOption, PagedResult } from '@/types'
 import { cn } from '@/lib/utils'
-import { SidebarOptionList } from '@/components/public/filter-sidebar'
+import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
-import { Pagination } from '@/components/public/pagination'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -65,14 +64,17 @@ export function ArticlesClient({
   const [categorySearch, setCategorySearch] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [authorSheetOpen, setAuthorSheetOpen] = useState(false)
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mounted = useRef(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
+  const hasMore = items.length < total
   const hasFilters = !!(search || selectedCategory || selectedAuthor)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
@@ -84,7 +86,6 @@ export function ArticlesClient({
     if (search) params.set('q', search)
     if (selectedCategory) params.set('category', selectedCategory)
     if (selectedAuthor) params.set('author', selectedAuthor)
-    if (page > 1) params.set('page', String(page))
     const qs = params.toString()
     router.replace(qs ? `/articles?${qs}` : '/articles', { scroll: false })
 
@@ -96,20 +97,61 @@ export function ArticlesClient({
         search: search || undefined,
         categoryId: selectedCategory || undefined,
         authorId: selectedAuthor || undefined,
-        page,
+        page: 1,
       })
       setItems(result.data)
       setTotal(result.total)
+      setPage(1)
       setLoading(false)
+      scrollRef.current?.scrollTo({ top: 0 })
     }, search !== initialSearch ? 350 : 0)
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategory, selectedAuthor, page])
+  }, [search, selectedCategory, selectedAuthor])
 
-  const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id); setPage(1) }
-  const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id); setPage(1) }
-  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setPage(1) }
+  // Next page requested by the scroll sentinel → append
+  useEffect(() => {
+    if (page === 1) return
+    let cancelled = false
+    fetchArticles({
+      search: search || undefined,
+      categoryId: selectedCategory || undefined,
+      authorId: selectedAuthor || undefined,
+      page,
+    }).then(result => {
+      if (cancelled) return
+      // De-dupe defensively: a filter reset racing an append could re-send page 1 rows.
+      setItems(prev => {
+        const seen = new Set(prev.map(i => i.id))
+        return [...prev, ...result.data.filter(i => !seen.has(i.id))]
+      })
+      setTotal(result.total)
+      setLoadingMore(false)
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
+  // Load more when the sentinel scrolls into view
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore || loading || loadingMore) return
+    const io = new IntersectionObserver(
+      entries => {
+        if (!entries[0].isIntersecting) return
+        setLoadingMore(true)
+        setPage(p => p + 1)
+      },
+      { rootMargin: '400px' }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [hasMore, loading, loadingMore])
+
+  const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id) }
+  const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id) }
+  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
 
   const filteredAuthors = authorSearch.trim()
     ? authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()))
@@ -119,13 +161,13 @@ export function ArticlesClient({
     : categories
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
-      {/* ── Sidebar ─────────────────────────────────────────────────── */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-[88px] space-y-5">
+      {/* ── Sidebar — both filters share one card ───────────────────── */}
+      <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:min-h-0">
+        <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           {authors.length > 0 && (
-            <SidebarOptionList
+            <SidebarOptionSection
               title="লেখক"
               items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
               search={authorSearch}
@@ -133,10 +175,12 @@ export function ArticlesClient({
               selected={selectedAuthor}
               onSelect={setAuthor}
               emptyText="কোনো লেখক পাওয়া যায়নি"
+              fill
+              inlineSearch
             />
           )}
           {categories.length > 0 && (
-            <SidebarOptionList
+            <SidebarOptionSection
               title="শ্রেণীবিভাগ"
               items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
               search={categorySearch}
@@ -144,13 +188,15 @@ export function ArticlesClient({
               selected={selectedCategory}
               onSelect={setCategory}
               emptyText="কোনো বিষয় পাওয়া যায়নি"
+              fill
+              inlineSearch
             />
           )}
         </div>
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────── */}
-      <div className="min-w-0">
+      <div className="min-w-0 flex flex-col lg:flex-1 lg:min-h-0">
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
           {authors.length > 0 && (
@@ -161,14 +207,15 @@ export function ArticlesClient({
           )}
         </div>
 
+        {/* Everything below lives in one card, same height as the sidebar card */}
+        <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="shrink-0 p-4">
         {/* Search */}
-        <div className="mb-4">
-          <SearchInput
-            value={search}
-            onChange={v => { setSearch(v); setPage(1) }}
-            placeholder="প্রবন্ধ খুঁজুন..."
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="প্রবন্ধ খুঁজুন..."
+        />
 
         {authors.length > 0 && (
           <MobileFilterSheet
@@ -197,7 +244,7 @@ export function ArticlesClient({
 
         {/* Active chips */}
         {(activeCategoryName || activeAuthorName) && (
-          <div className="flex items-center gap-1.5 flex-wrap mb-4">
+          <div className="flex items-center gap-1.5 flex-wrap mt-4">
             {activeCategoryName && (
               <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                 {activeCategoryName}
@@ -214,11 +261,13 @@ export function ArticlesClient({
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-muted-foreground mt-4">
           {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি প্রবন্ধ`}
         </p>
+        </div>
 
-        {/* List */}
+        {/* List — scrolls inside the card */}
+        <div ref={scrollRef} className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto px-4 pb-4">
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -253,8 +302,14 @@ export function ArticlesClient({
           </div>
         )}
 
-        {/* Pagination */}
-        <Pagination page={page} totalPages={totalPages} onChange={setPage} disabled={loading} />
+        {/* Scroll sentinel — pulls in the next page */}
+        {hasMore && !loading && (
+          <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
+            {loadingMore ? 'লোড হচ্ছে...' : ''}
+          </div>
+        )}
+        </div>
+        </div>
       </div>
     </div>
   )

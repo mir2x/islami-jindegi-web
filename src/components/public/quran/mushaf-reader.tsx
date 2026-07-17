@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, ZoomIn, ZoomOut, X,
-  ChevronLeft, ChevronRight, ChevronDown,
+  ChevronLeft, ChevronRight, ChevronDown, BookOpen,
   Star, Play, Pause, Copy, Check, Share2, Maximize, Minimize, Loader2, Trash2,
   Repeat, SkipBack, SkipForward,
 } from 'lucide-react'
@@ -79,6 +79,7 @@ const PARA_STARTS: [number, number][] = [
 
 const DEFAULT_RECITER = 'qari-maher-al-muaiqly'
 const RECITER_KEY = 'quran_selected_reciter'
+const SPREAD_MODE_KEY = 'mushaf_spread_mode'
 
 // Reserved space (px) so the page image never renders underneath the top/bottom bars —
 // tightened to the bars' actual measured height (no extra padding) to maximize page size
@@ -93,6 +94,15 @@ function paraOfSuraAyah(sura: number, ayah: number): number {
   return para
 }
 
+// Physical mushaf pairing: page 1 opens alone; from page 2 onward pages pair up as
+// (even=right, even+1=left) — matches how an RTL book actually opens.
+function getSpreadPair(p: number, totalPages: number): { right: number; left: number | null } {
+  if (p <= 1) return { right: 1, left: null }
+  const right = p % 2 === 0 ? p : p - 1
+  const left = right + 1
+  return { right, left: left <= totalPages ? left : null }
+}
+
 const DRAWER_TABS = [
   { id: 'surah', label: 'সূরা' },
   { id: 'juz', label: 'পারা' },
@@ -100,6 +110,45 @@ const DRAWER_TABS = [
 ] as const
 
 type DrawerTab = typeof DRAWER_TABS[number]['id']
+
+// ─── One page face (image + ayah highlights + tap target) ────────────────────
+
+function PageFace({ pageNum, url, highlightBoxes, editionWidth, editionHeight, onClick, className }: {
+  pageNum: number
+  url: string
+  highlightBoxes: AyahBox[]
+  editionWidth: number
+  editionHeight: number
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void
+  className?: string
+}) {
+  return (
+    <div className={cn('relative cursor-pointer', className)} onClick={onClick}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={url}
+        src={url}
+        alt={`পৃষ্ঠা ${bn(pageNum)}`}
+        className="w-full h-full block bg-white shadow-[0_4px_32px_rgba(0,0,0,0.25)]"
+        draggable={false}
+      />
+      {highlightBoxes.map(box => (
+        <div
+          key={box.box_id}
+          className="absolute rounded-[3px] pointer-events-none"
+          style={{
+            left:   `${(box.min_x / editionWidth)  * 100}%`,
+            top:    `${(box.min_y / editionHeight) * 100}%`,
+            width:  `${((box.max_x - box.min_x) / editionWidth)  * 100}%`,
+            height: `${((box.max_y - box.min_y) / editionHeight) * 100}%`,
+            background: 'rgba(34,197,94,0.22)',
+            border: '1.5px solid rgba(34,197,94,0.6)',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -120,6 +169,10 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
       if (saved) return Math.max(1, Math.min(edition.totalPages, Number(saved)))
     }
     return initialPage
+  })
+  const [spreadMode, setSpreadMode] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(SPREAD_MODE_KEY) === '1'
+    return false
   })
   const [scale, setScale] = useState(1)
   const [barsVisible, setBarsVisible] = useState(true)
@@ -165,6 +218,10 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     if (selectedReciter) localStorage.setItem(RECITER_KEY, selectedReciter)
   }, [selectedReciter])
 
+  useEffect(() => {
+    localStorage.setItem(SPREAD_MODE_KEY, spreadMode ? '1' : '0')
+  }, [spreadMode])
+
   const containerRef = useRef<HTMLDivElement>(null)
   const pageInputRef = useRef<HTMLInputElement>(null)
   const touchStartX = useRef<number | null>(null)
@@ -183,7 +240,15 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     return () => ro.disconnect()
   }, [])
 
-  // ── Computed image bounds ──────────────────────────────────────────────────
+  // ── Two-page spread pairing ─────────────────────────────────────────────────
+  const spreadPair = useMemo(
+    () => spreadMode ? getSpreadPair(page, edition.totalPages) : { right: page, left: null },
+    [spreadMode, page, edition.totalPages]
+  )
+  const rightPage = spreadPair.right
+  const leftPage = spreadPair.left
+
+  // ── Computed image bounds (combined spread box when two pages are shown) ──
   const imgBounds = useMemo(() => {
     const { w: cW, h: cH } = containerSize
     if (!cW || !cH) return null
@@ -192,16 +257,23 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     const bottomSafe = barsVisible ? BOTTOM_BAR_SAFE : 0
     const availH = Math.max(0, cH - topSafe - bottomSafe)
     if (!availH) return null
+    const showSpread = leftPage !== null
     const imageAR = edition.width / edition.height
+    const combinedAR = showSpread ? imageAR * 2 : imageAR
     const containerAR = cW / availH
-    let imgW: number, imgH: number
-    if (containerAR > imageAR) {
-      imgH = availH; imgW = availH * imageAR
+    let totalW: number, totalH: number
+    if (containerAR > combinedAR) {
+      totalH = availH; totalW = availH * combinedAR
     } else {
-      imgW = cW; imgH = cW / imageAR
+      totalW = cW; totalH = cW / combinedAR
     }
-    return { w: imgW, h: imgH, x: (cW - imgW) / 2, y: topSafe + (availH - imgH) / 2 }
-  }, [containerSize, edition.width, edition.height, barsVisible])
+    return {
+      w: totalW, h: totalH,
+      x: (cW - totalW) / 2,
+      y: topSafe + (availH - totalH) / 2,
+      showSpread,
+    }
+  }, [containerSize, edition.width, edition.height, barsVisible, leftPage])
 
   // ── Load ayah boxes via same-origin proxy (avoids CDN CORS issues) ────────
   useEffect(() => {
@@ -276,10 +348,10 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
 
   const currentPara = useMemo(() => {
     for (const [para, pages] of paraPageRanges) {
-      if (pages.includes(page)) return para
+      if (pages.includes(rightPage)) return para
     }
     return null
-  }, [paraPageRanges, page])
+  }, [paraPageRanges, rightPage])
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   const goTo = useCallback((p: number) => {
@@ -292,19 +364,18 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     router.replace(`?${params}`, { scroll: false })
   }, [edition, searchParams, router])
 
-  const prev = useCallback(() => goTo(page - 1), [page, goTo])
-  const next = useCallback(() => goTo(page + 1), [page, goTo])
+  const prev = useCallback(() => goTo(page - (spreadMode ? 2 : 1)), [page, goTo, spreadMode])
+  const next = useCallback(() => goTo(page + (spreadMode ? 2 : 1)), [page, goTo, spreadMode])
 
   function goToAyah(sura: number, ayah: number) {
     const target = ayahFirstPage.get(`${sura}:${ayah}`)
     if (target === undefined) return
     goTo(target)
     setSelectedAyah({ sura, ayah })
-    setDrawerOpen(false)
   }
 
   function openDrawer() {
-    const cs = boxesByPage.get(page)?.[0]?.sura_number
+    const cs = boxesByPage.get(rightPage)?.[0]?.sura_number
     if (cs) setNavSurah(cs)
     if (currentPara) setNavPara(currentPara)
     setDrawerOpen(true)
@@ -317,14 +388,15 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
 
   // ── Preload adjacent pages ─────────────────────────────────────────────────
   useEffect(() => {
-    [-2, -1, 1, 2].forEach(offset => {
+    const offsets = spreadMode ? [-3, -2, -1, 1, 2, 3] : [-2, -1, 1, 2]
+    offsets.forEach(offset => {
       const p = page + offset
       if (p >= 1 && p <= edition.totalPages) {
         const img = new window.Image()
         img.src = `${edition.pagesBaseUrl}/qm${p}.${edition.ext}`
       }
     })
-  }, [page, edition])
+  }, [page, edition, spreadMode])
 
   // ── Keyboard navigation (RTL: left arrow = forward) ───────────────────────
   useEffect(() => {
@@ -351,8 +423,8 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     touchStartX.current = null
   }
 
-  // ── Ayah hit detection ─────────────────────────────────────────────────────
-  function handleImageClick(e: React.MouseEvent<HTMLDivElement>) {
+  // ── Ayah hit detection — shared by whichever page face was tapped ─────────
+  function handleAyahClick(e: React.MouseEvent<HTMLDivElement>, boxes: AyahBox[]) {
     // getBoundingClientRect returns visual (scaled) bounds — correct for our use
     const rect = e.currentTarget.getBoundingClientRect()
     const relX = e.clientX - rect.left
@@ -361,8 +433,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     const origX = (relX / rect.width)  * edition.width
     const origY = (relY / rect.height) * edition.height
 
-    const pageBoxes = boxesByPage.get(page) ?? []
-    const hit = pageBoxes.find(b =>
+    const hit = boxes.find(b =>
       origX >= b.min_x && origX <= b.max_x &&
       origY >= b.min_y && origY <= b.max_y
     )
@@ -503,7 +574,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
   }
 
   function openTilawatPopup() {
-    const sura = boxesByPage.get(page)?.[0]?.sura_number ?? 1
+    const sura = boxesByPage.get(rightPage)?.[0]?.sura_number ?? 1
     setTilawatSura(sura)
     setRangeStart(1)
     setRangeEnd(AYAH_COUNTS[sura - 1])
@@ -539,12 +610,12 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     setSelectedAyah(null)
   }
 
-  // ── Page bookmark ──────────────────────────────────────────────────────────
-  const currentPageBookmarked = pageBookmarks.some(b => b.page === page)
+  // ── Page bookmark — bookmarks the spread's primary (right) page ────────────
+  const currentPageBookmarked = pageBookmarks.some(b => b.page === rightPage)
 
   function handleTogglePageBookmark() {
-    const cs = boxesByPage.get(page)?.[0]?.sura_number ?? 1
-    togglePageBookmark({ editionId: edition.id, page, sura: cs, para: currentPara })
+    const cs = boxesByPage.get(rightPage)?.[0]?.sura_number ?? 1
+    togglePageBookmark({ editionId: edition.id, page: rightPage, sura: cs, para: currentPara })
     setPageBookmarks(getPageBookmarks(edition.id))
   }
 
@@ -569,32 +640,43 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
   // Render
   // ─────────────────────────────────────────────────────────────────────────
 
-  const pageUrl = `${edition.pagesBaseUrl}/qm${page}.${edition.ext}`
-  const pageBoxes = boxesByPage.get(page) ?? []
-  const currentSura = pageBoxes[0]?.sura_number
+  const rightPageUrl = `${edition.pagesBaseUrl}/qm${rightPage}.${edition.ext}`
+  const leftPageUrl = leftPage !== null ? `${edition.pagesBaseUrl}/qm${leftPage}.${edition.ext}` : null
+  const rightPageBoxes = boxesByPage.get(rightPage) ?? []
+  const leftPageBoxes = leftPage !== null ? (boxesByPage.get(leftPage) ?? []) : []
+  const currentSura = rightPageBoxes[0]?.sura_number
 
-  // Boxes for the manually-selected ayah (drives the action menu + its highlight)
-  const selectedBoxes = selectedAyah
-    ? pageBoxes.filter(b => b.sura_number === selectedAyah.sura && b.ayah_number === selectedAyah.ayah)
-    : []
-  // Boxes for the ayah currently being recited (highlight only, no menu)
-  const playingBoxesOnPage = activeAyah
-    ? pageBoxes.filter(b => b.sura_number === activeAyah.sura && b.ayah_number === activeAyah.ayah)
-    : []
+  function boxesFor(pageBoxes: AyahBox[], target: { sura: number; ayah: number } | null) {
+    return target ? pageBoxes.filter(b => b.sura_number === target.sura && b.ayah_number === target.ayah) : []
+  }
+
+  const rightSelectedBoxes = boxesFor(rightPageBoxes, selectedAyah)
+  const leftSelectedBoxes = boxesFor(leftPageBoxes, selectedAyah)
+  const rightPlayingBoxes = boxesFor(rightPageBoxes, activeAyah)
+  const leftPlayingBoxes = boxesFor(leftPageBoxes, activeAyah)
   const sameAyahSelectedAndPlaying = !!(selectedAyah && activeAyah
     && selectedAyah.sura === activeAyah.sura && selectedAyah.ayah === activeAyah.ayah)
-  const highlightBoxes = sameAyahSelectedAndPlaying
-    ? selectedBoxes
-    : [...selectedBoxes, ...playingBoxesOnPage]
+  const rightHighlightBoxes = sameAyahSelectedAndPlaying ? rightSelectedBoxes : [...rightSelectedBoxes, ...rightPlayingBoxes]
+  const leftHighlightBoxes = sameAyahSelectedAndPlaying ? leftSelectedBoxes : [...leftSelectedBoxes, ...leftPlayingBoxes]
 
   // Ayah menu anchor: just above the top-most selected box, in rendered coordinates
   let menuTop: number | null = null
-  if (selectedAyah && imgBounds && selectedBoxes.length > 0) {
-    const minY = Math.min(...selectedBoxes.map(b => b.min_y))
-    const fy = minY / edition.height
-    const rendered = imgBounds.y + imgBounds.h / 2 + (fy - 0.5) * imgBounds.h * scale
-    menuTop = Math.min(Math.max(110, rendered - 10), containerSize.h - 16)
+  let menuLeftPx: number | null = null
+  if (selectedAyah && imgBounds) {
+    const onRight = rightSelectedBoxes.length > 0
+    const boxes = onRight ? rightSelectedBoxes : leftSelectedBoxes
+    if (boxes.length > 0) {
+      const half = imgBounds.showSpread ? imgBounds.w / 2 : imgBounds.w
+      const faceX = imgBounds.showSpread && onRight ? imgBounds.x + imgBounds.w / 2 : imgBounds.x
+      const minY = Math.min(...boxes.map(b => b.min_y))
+      const fy = minY / edition.height
+      const rendered = imgBounds.y + imgBounds.h / 2 + (fy - 0.5) * imgBounds.h * scale
+      menuTop = Math.min(Math.max(110, rendered - 10), containerSize.h - 16)
+      menuLeftPx = faceX + half / 2
+    }
   }
+
+  const selectedIsPlaying = sameAyahSelectedAndPlaying
 
   return (
     <div
@@ -610,10 +692,10 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
         onPlay={() => setIsPlaying(true)}
       />
 
-      {/* ── Page image + highlight ── */}
+      {/* ── Page image(s) + highlight ── */}
       {imgBounds && (
         <div
-          className="absolute transition-transform duration-200 cursor-pointer"
+          className="absolute transition-transform duration-200"
           style={{
             left: imgBounds.x,
             top: imgBounds.y,
@@ -622,32 +704,39 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
             transform: `scale(${scale})`,
             transformOrigin: 'center center',
           }}
-          onClick={handleImageClick}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            key={pageUrl}
-            src={pageUrl}
-            alt={`পৃষ্ঠা ${bn(page)}`}
-            className="w-full h-full block bg-white shadow-[0_4px_32px_rgba(0,0,0,0.25)]"
-            draggable={false}
-          />
-
-          {/* Ayah highlight — one overlay per box (ayah may span multiple lines) */}
-          {highlightBoxes.map(box => (
-            <div
-              key={box.box_id}
-              className="absolute rounded-[3px] pointer-events-none"
-              style={{
-                left:   `${(box.min_x / edition.width)  * 100}%`,
-                top:    `${(box.min_y / edition.height) * 100}%`,
-                width:  `${((box.max_x - box.min_x) / edition.width)  * 100}%`,
-                height: `${((box.max_y - box.min_y) / edition.height) * 100}%`,
-                background: 'rgba(34,197,94,0.22)',
-                border: '1.5px solid rgba(34,197,94,0.6)',
-              }}
+          {imgBounds.showSpread && leftPage !== null && leftPageUrl ? (
+            <div className="flex w-full h-full">
+              <PageFace
+                className="w-1/2 h-full order-1"
+                pageNum={leftPage}
+                url={leftPageUrl}
+                highlightBoxes={leftHighlightBoxes}
+                editionWidth={edition.width}
+                editionHeight={edition.height}
+                onClick={e => handleAyahClick(e, leftPageBoxes)}
+              />
+              <PageFace
+                className="w-1/2 h-full order-2"
+                pageNum={rightPage}
+                url={rightPageUrl}
+                highlightBoxes={rightHighlightBoxes}
+                editionWidth={edition.width}
+                editionHeight={edition.height}
+                onClick={e => handleAyahClick(e, rightPageBoxes)}
+              />
+            </div>
+          ) : (
+            <PageFace
+              className="w-full h-full"
+              pageNum={rightPage}
+              url={rightPageUrl}
+              highlightBoxes={rightHighlightBoxes}
+              editionWidth={edition.width}
+              editionHeight={edition.height}
+              onClick={e => handleAyahClick(e, rightPageBoxes)}
             />
-          ))}
+          )}
         </div>
       )}
 
@@ -704,6 +793,18 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
           aria-label="Zoom in"
         >
           <ZoomIn className="w-4.5 h-4.5" />
+        </button>
+
+        {/* Single-page / two-page spread toggle */}
+        <button
+          onClick={() => setSpreadMode(v => !v)}
+          className={cn(
+            'flex items-center justify-center w-9 h-9 rounded-lg transition-colors',
+            spreadMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+          title={spreadMode ? 'একক পাতা দেখুন' : 'দুই পাতা দেখুন'}
+        >
+          <BookOpen className="w-4.5 h-4.5" />
         </button>
       </div>
 
@@ -794,7 +895,9 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
               />
             ) : (
               <span className="text-muted-foreground text-sm tabular-nums hover:text-foreground transition-colors">
-                <span className="font-semibold text-foreground">{bn(page)}</span>
+                <span className="font-semibold text-foreground">
+                  {leftPage !== null ? `${bn(rightPage)}–${bn(leftPage)}` : bn(rightPage)}
+                </span>
                 <span className="mx-1">/</span>
                 {bn(edition.totalPages)}
               </span>
@@ -838,8 +941,8 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
       {/* ── Ayah menu — centered, floating just above the selected ayah ── */}
       {selectedAyah && menuTop !== null && (
         <div
-          className="absolute z-40 left-1/2"
-          style={{ top: menuTop, transform: 'translate(-50%, -100%)' }}
+          className="absolute z-40"
+          style={{ top: menuTop, left: menuLeftPx ?? '50%', transform: 'translate(-50%, -100%)' }}
         >
           <div className="flex items-center gap-0.5 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-xl px-1.5 py-1">
             <span className="px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap tabular-nums">
@@ -863,7 +966,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
               className="flex items-center justify-center w-9 h-9 rounded-xl text-foreground hover:bg-muted transition-colors"
               title="আয়াতটি শুনুন"
             >
-              <Play className="w-4.5 h-4.5" />
+              {selectedIsPlaying ? <Pause className="w-4.5 h-4.5" /> : <Play className="w-4.5 h-4.5" />}
             </button>
 
             <button
@@ -1016,11 +1119,11 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
                   <p className="shrink-0 py-2 text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">পাতা</p>
                   <div className="flex-1 overflow-y-auto">
                     {(paraPageRanges.get(navPara) ?? []).map((actualPage, idx) => {
-                      const isCurrent = actualPage === page
+                      const isCurrent = actualPage === rightPage || (leftPage !== null && actualPage === leftPage)
                       return (
                         <button
                           key={actualPage}
-                          onClick={() => { goTo(actualPage); setDrawerOpen(false) }}
+                          onClick={() => goTo(actualPage)}
                           className={cn(
                             'w-full py-2.5 text-sm text-center transition-colors hover:bg-muted border-b border-border/40',
                             isCurrent ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground'
@@ -1097,7 +1200,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
                       pageBookmarks.map((b, i) => (
                         <div key={b.page} className="flex items-center border-b border-border/40">
                           <button
-                            onClick={() => { goTo(b.page); setDrawerOpen(false) }}
+                            onClick={() => goTo(b.page)}
                             className="flex-1 min-w-0 px-3 py-2.5 text-left hover:bg-muted transition-colors"
                           >
                             <p className="text-sm font-medium text-foreground truncate">

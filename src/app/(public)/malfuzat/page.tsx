@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { BookOpen } from 'lucide-react'
 import { getMalfuzats, getMalfuzatCategories, getMalfuzatAuthors } from '@/lib/public-api'
 import { MalfuzatClient } from '@/components/public/malfuzat/malfuzat-client'
 
@@ -13,7 +12,7 @@ type Tab = 'all' | 'text' | 'audio'
 export default async function MalfuzatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; author?: string; page?: string; tab?: string }>
+  searchParams: Promise<{ q?: string; category?: string; author?: string; tab?: string }>
 }) {
   const sp = await searchParams
   const tab = (sp.tab === 'text' || sp.tab === 'audio' ? sp.tab : 'all') as Tab
@@ -24,7 +23,7 @@ export default async function MalfuzatPage({
       search: sp.q,
       categoryId: sp.category,
       authorId: sp.author,
-      page: Number(sp.page ?? 1),
+      page: 1,
       hasAudio,
     }),
     getMalfuzatCategories(),
@@ -32,17 +31,7 @@ export default async function MalfuzatPage({
   ])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-          <BookOpen className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">মালফুযাত</h1>
-          <p className="text-sm text-muted-foreground">Sayings & Discourses of the Elders</p>
-        </div>
-      </div>
-
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:h-[calc(100vh-68px)] lg:flex lg:flex-col">
       <MalfuzatClient
         initialItems={result?.data ?? []}
         initialTotal={result?.total ?? 0}
