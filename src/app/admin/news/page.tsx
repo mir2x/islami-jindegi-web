@@ -12,8 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PaginationBar } from '@/components/ui/pagination-bar'
+import { SortableHeader, useTableSort } from '@/components/ui/sortable-header'
 import { cn } from '@/lib/utils'
 import type { NewsListItem } from '@/types'
+
+/** Sortable columns. Values match the API's `sort` keys (`<key>_asc` / `<key>_desc`). */
+type SortKey = 'position' | 'title' | 'language' | 'published' | 'date'
+
+const PAGE_SIZE = 20
 
 export default function NewsPage() {
   const router = useRouter()
@@ -22,14 +28,17 @@ export default function NewsPage() {
   const [search, setSearch] = useState('')
   const [published, setPublished] = useState('')
   const [page, setPage] = useState(1)
+  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>('position')
   const [deleting, setDeleting] = useState<NewsListItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const load = useCallback(() => {
-    fetch({ page, pageSize: 20, search: search || undefined, published: published === '' ? undefined : published === 'true', sort: 'position_desc' })
-  }, [fetch, page, search, published])
+    fetch({ page, pageSize: PAGE_SIZE, search: search || undefined, published: published === '' ? undefined : published === 'true', sort: sortParam })
+  }, [fetch, page, search, published, sortParam])
 
   useEffect(() => { load() }, [load])
+
+  function handleSort(key: SortKey) { toggleSort(key); setPage(1) }
 
   async function handleDelete() {
     if (!deleting) return
@@ -46,7 +55,9 @@ export default function NewsPage() {
   const totalPages = result ? Math.ceil(result.total / result.pageSize) : 1
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    // No inner scroll container: the admin <main> is the only scroller, so the page
+    // never shows a nested scrollbar. The pagination sticks to the viewport bottom instead.
+    <div className="min-h-full flex flex-col">
       <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
         <div className="flex items-start justify-between mb-6">
           <div>
@@ -78,21 +89,31 @@ export default function NewsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pb-6">
+      <div className="flex-1 px-8 pb-4">
         <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
-          <table className="w-full">
+          {/* table-fixed + colgroup: keeps column widths identical across sorts, so
+              re-sorting can't re-measure columns and shift the layout. */}
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-32" />
+              <col />
+              <col className="w-32" />
+              <col className="w-36" />
+              <col className="w-40" />
+              <col className="w-28" />
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm">
               <tr className="border-b">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Published At</th>
-                <th className="px-5 py-3.5 w-24" />
+                <SortableHeader label="Position" sortKey="position" sort={sort} onSort={handleSort} />
+                <SortableHeader label="Title" sortKey="title" sort={sort} onSort={handleSort} />
+                <SortableHeader label="Language" sortKey="language" sort={sort} onSort={handleSort} />
+                <SortableHeader label="Status" sortKey="published" sort={sort} onSort={handleSort} />
+                <SortableHeader label="Published At" sortKey="date" sort={sort} onSort={handleSort} />
+                <th className="px-5 py-3.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {loading && Array.from({ length: 8 }).map((_, i) => (
+              {loading && Array.from({ length: PAGE_SIZE }).map((_, i) => (
                 <tr key={i}>
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-4 w-56" /></td>
@@ -113,7 +134,7 @@ export default function NewsPage() {
                 <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/news/${item.id}/edit`)}>
                   <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{item.position}</span></td>
                   <td className="px-5 py-4">
-                    <p className="font-semibold leading-snug">{item.title}</p>
+                    <p className="font-semibold leading-snug truncate">{item.title}</p>
                     {item.excerpt && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{item.excerpt}</p>}
                   </td>
                   <td className="px-5 py-4"><Badge variant="outline" className="text-xs">{item.language}</Badge></td>
@@ -122,7 +143,7 @@ export default function NewsPage() {
                       ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
                       : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
                   </td>
-                  <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : '—'}</span></td>
+                  <td className="px-5 py-4"><span className="text-sm text-muted-foreground whitespace-nowrap">{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : '—'}</span></td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/news/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
@@ -134,8 +155,14 @@ export default function NewsPage() {
             </tbody>
           </table>
         </div>
-        <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
+
+      {/* ── Pagination: sticks to the viewport bottom while <main> scrolls ── */}
+      {totalPages > 1 && (
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-8 py-2.5 backdrop-blur-sm">
+          <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} inline />
+        </div>
+      )}
 
       <Dialog open={!!deleting} onOpenChange={o => !o && setDeleting(null)}>
         <DialogContent>

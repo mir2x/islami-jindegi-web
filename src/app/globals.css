@@ -191,44 +191,25 @@
   --sidebar-ring: oklch(0.62 0.172 163);
 }
 
-/* Admin CMS dark dashboard theme — always-on, independent of the public site's
-   light/dark toggle below. Scoped to `.admin.dark` (set by admin/layout.tsx)
-   so it doesn't leak into the public site's `.dark`. */
+/* Admin CMS theme — single always-on mode that adopts the public site's dark
+   teal palette. admin/layout.tsx always sets both `dark` and `admin` on <html>,
+   so the shared tokens come from `.dark` below; this block only fills in the
+   tokens the public palette doesn't define, tuned to the same teal family. */
 .admin.dark {
-  /* near-neutral charcoal — barely warm, classic dark dashboard base */
-  --background: oklch(0.115 0.005 55);
-  --foreground: oklch(0.94 0.005 55);
-  --card: oklch(0.155 0.007 55);
-  --card-foreground: oklch(0.94 0.005 55);
-  --popover: oklch(0.175 0.008 55);
-  --popover-foreground: oklch(0.94 0.005 55);
-  /* vibrant emerald green — rich, not neon */
-  --primary: oklch(0.64 0.22 150);
-  --primary-foreground: oklch(0.05 0.02 150);
-  --secondary: oklch(0.195 0.007 55);
-  --secondary-foreground: oklch(0.90 0.005 55);
-  --muted: oklch(0.178 0.022 155);
-  --muted-foreground: oklch(0.56 0.012 155);
-  --accent: oklch(0.205 0.028 155);
-  --accent-foreground: oklch(0.92 0.010 155);
-  --destructive: oklch(0.63 0.22 25);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(0.195 0.007 55);
-  --ring: oklch(0.64 0.22 150);
-  --chart-1: oklch(0.64 0.22 150);
-  --chart-2: oklch(0.76 0.18 150);
-  --chart-3: oklch(0.52 0.20 150);
-  --chart-4: oklch(0.84 0.13 150);
-  --chart-5: oklch(0.40 0.16 150);
-  /* sidebar — rich dark green, clearly branded */
-  --sidebar: oklch(0.11 0.044 155);
-  --sidebar-foreground: oklch(0.84 0.030 155);
-  --sidebar-primary: oklch(0.64 0.22 150);
-  --sidebar-primary-foreground: oklch(0.05 0.02 150);
-  --sidebar-accent: oklch(0.18 0.060 155);
-  --sidebar-accent-foreground: oklch(0.92 0.022 155);
-  --sidebar-border: oklch(0.22 0.050 155 / 45%);
-  --sidebar-ring: oklch(0.64 0.22 150);
+  --chart-1: #7ec7b2;
+  --chart-2: #52a793;
+  --chart-3: #bedbd7;
+  --chart-4: #2d6d84;
+  --chart-5: #085053;
+  /* sidebar — deeper teal than the content background */
+  --sidebar: #0f2f3c;
+  --sidebar-foreground: #bedbd7;
+  --sidebar-primary: #7ec7b2;
+  --sidebar-primary-foreground: #0a3a3a;
+  --sidebar-accent: #19546c;
+  --sidebar-accent-foreground: #daf5f2;
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: #7ec7b2;
 }
 
 /* Public site dark theme — Islami Jindegi's brand teal, carried over from the

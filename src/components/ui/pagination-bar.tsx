@@ -9,6 +9,8 @@ interface Props {
   totalPages: number
   onPageChange: (page: number) => void
   className?: string
+  /** Render the page buttons and the "go to page" control on a single row. */
+  inline?: boolean
 }
 
 function getPages(current: number, total: number): (number | 'ellipsis')[] {
@@ -26,7 +28,7 @@ function getPages(current: number, total: number): (number | 'ellipsis')[] {
   return pages
 }
 
-export function PaginationBar({ page, totalPages, onPageChange, className }: Props) {
+export function PaginationBar({ page, totalPages, onPageChange, className, inline = false }: Props) {
   const [goTo, setGoTo] = useState('')
 
   if (totalPages <= 1) return null
@@ -42,7 +44,14 @@ export function PaginationBar({ page, totalPages, onPageChange, className }: Pro
   }
 
   return (
-    <div className={cn('flex flex-col items-center gap-3 my-10', className)}>
+    <div
+      className={cn(
+        inline
+          ? 'flex flex-row flex-wrap items-center justify-center gap-x-4 gap-y-2'
+          : 'flex flex-col items-center gap-3 my-10',
+        className
+      )}
+    >
       <div className="flex items-center gap-1">
         {/* Prev */}
         <button
@@ -86,7 +95,7 @@ export function PaginationBar({ page, totalPages, onPageChange, className }: Pro
       </div>
 
       {/* Go to page */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
         <span>Go to</span>
         <input
           type="number"

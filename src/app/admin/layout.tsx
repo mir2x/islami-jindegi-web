@@ -44,8 +44,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })
   }
 
-  // Admin always uses its own dark dashboard theme (scoped via the `admin` class,
-  // independent of the public site's dark theme); restore user preference when leaving
+  // Admin is always dark, using the public site's dark teal palette (the `admin`
+  // class only adds sidebar/chart tokens); restore user preference when leaving
   useEffect(() => {
     document.documentElement.classList.add('dark', 'admin')
     return () => {
@@ -144,7 +144,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Content */}
-      <main className="flex-1 overflow-auto">
+      {/* scrollbar-gutter:stable reserves the scrollbar's width even when no scrollbar is
+          showing. Without it, a short loading state removes the scrollbar and the whole
+          page shifts sideways, then shifts back once the rows land. */}
+      <main className="flex-1 overflow-auto [scrollbar-gutter:stable]">
         {children}
       </main>
 

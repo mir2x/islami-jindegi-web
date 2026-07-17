@@ -9,7 +9,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { PaginationBar } from '@/components/ui/pagination-bar'
+import { SortableHeader, useTableSort } from '@/components/ui/sortable-header'
 import type { Author } from '@/types'
+
+/** Sortable columns. Values match the API's `sort` keys (`<key>_asc` / `<key>_desc`). */
+type SortKey = 'name' | 'position'
+
+const PAGE_SIZE = 20
 
 export default function AuthorsPage() {
   const router = useRouter()
@@ -17,14 +24,17 @@ export default function AuthorsPage() {
 
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>('position')
   const [deleting, setDeleting] = useState<Author | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const load = useCallback(() => {
-    fetch({ page, pageSize: 20, search: search || undefined })
-  }, [fetch, page, search])
+    fetch({ page, pageSize: PAGE_SIZE, search: search || undefined, sort: sortParam })
+  }, [fetch, page, search, sortParam])
 
   useEffect(() => { load() }, [load])
+
+  function handleSort(key: SortKey) { toggleSort(key); setPage(1) }
 
   async function handleDelete() {
     if (!deleting) return
@@ -44,7 +54,9 @@ export default function AuthorsPage() {
   const totalPages = result ? Math.ceil(result.total / result.pageSize) : 1
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    // No inner scroll container: the admin <main> is the only scroller, so the page
+    // never shows a nested scrollbar. The pagination sticks to the viewport bottom instead.
+    <div className="min-h-full flex flex-col">
 
       {/* ── Fixed top section ── */}
       <div className="shrink-0 px-8 pt-8 pb-4 bg-background">
@@ -74,18 +86,25 @@ export default function AuthorsPage() {
       </div>
 
       {/* ── Scrollable table area ── */}
-      <div className="flex-1 overflow-y-auto px-8 pb-6">
+      <div className="flex-1 px-8 pb-4">
         <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
-          <table className="w-full">
+          {/* table-fixed + colgroup: keeps column widths identical across sorts, so
+              re-sorting can't re-measure columns and shift the layout. */}
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col />
+              <col className="w-28" />
+              <col className="w-28" />
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
               <tr className="border-b">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Author</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">Pos.</th>
-                <th className="px-5 py-3.5 w-24" />
+                <SortableHeader label="Author" sortKey="name" sort={sort} onSort={handleSort} />
+                <SortableHeader label="Pos." sortKey="position" sort={sort} onSort={handleSort} />
+                <th className="px-5 py-3.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {loading && Array.from({ length: 6 }).map((_, i) => (
+              {loading && Array.from({ length: PAGE_SIZE }).map((_, i) => (
                 <tr key={i}>
                   <td className="px-5 py-4">
                     <div className="space-y-2">
@@ -115,7 +134,7 @@ export default function AuthorsPage() {
               {!loading && result?.data.map(author => (
                 <tr key={author.id} className="hover:bg-muted/30 transition-colors group">
                   <td className="px-5 py-4">
-                    <p className="font-semibold">{author.name}</p>
+                    <p className="font-semibold truncate">{author.name}</p>
                     {author.info && (
                       <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
                         {author.info.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
@@ -139,18 +158,14 @@ export default function AuthorsPage() {
           </table>
         </div>
 
-        {result && totalPages > 1 && (
-          <div className="flex items-center justify-between mt-5">
-            <p className="text-sm text-muted-foreground">
-              Page <span className="font-medium text-foreground">{page}</span> of <span className="font-medium text-foreground">{totalPages}</span>
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="bg-card">Previous</Button>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages} className="bg-card">Next</Button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* ── Pagination: sticks to the viewport bottom while <main> scrolls ── */}
+      {totalPages > 1 && (
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-8 py-2.5 backdrop-blur-sm">
+          <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} inline />
+        </div>
+      )}
 
       <Dialog open={!!deleting} onOpenChange={o => !o && setDeleting(null)}>
         <DialogContent>

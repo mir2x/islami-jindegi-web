@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Search, Pencil, Trash2, BookOpen, Check, ChevronsUpDown, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -11,18 +11,27 @@ import { useChapterStore } from '@/store/chapter-store'
 import { useSubChapterStore } from '@/store/subchapter-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { PaginationBar } from '@/components/ui/pagination-bar'
+import { SortableHeader, useTableSort } from '@/components/ui/sortable-header'
 import { cn } from '@/lib/utils'
 import type { Book, ChapterListItem, SubChapterListItem } from '@/types'
 
 type Tab = 'books' | 'chapters' | 'subchapters'
 
+const BOOKS_PAGE_SIZE = 10
+const NESTED_PAGE_SIZE = 20
+
+/** Sortable columns per tab. Values match the API's `sort` keys (`<key>_asc` / `<key>_desc`). */
+type SortKey = 'position' | 'title' | 'authors' | 'updated' | 'published'
+type ChapterSortKey = 'position' | 'title' | 'book' | 'subs'
+type SubChapterSortKey = 'position' | 'title' | 'chapter' | 'book'
+
 export default function BooksPage() {
-  const { result, loading, fetch, remove } = useBookStore()
+  const { result, all: allBooks, loading, fetch, fetchAll: fetchAllBooks, remove } = useBookStore()
   const { fetchAll: fetchAuthors, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
   const { result: chapterResult, loading: chapterLoading, fetch: fetchChapters, remove: removeChapter } = useChapterStore()
@@ -36,28 +45,31 @@ export default function BooksPage() {
   const [categoryId, setCategoryId] = useState('')
   const [bookFilter, setBookFilter] = useState('')
   const [page, setPage] = useState(1)
+  const { sort, toggle: toggleSort, reset: resetSort, param: sortParam } = useTableSort<SortKey>('position')
+  const { sort: chSort, toggle: toggleChSort, reset: resetChSort, param: chSortParam } = useTableSort<ChapterSortKey>('position')
+  const { sort: subSort, toggle: toggleSubSort, reset: resetSubSort, param: subSortParam } = useTableSort<SubChapterSortKey>('position')
   const [authorOpen, setAuthorOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [bookFilterOpen, setBookFilterOpen] = useState(false)
   const [deleting, setDeleting] = useState<{ id: string; title: string; type: Tab } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 
   const loadBooks = useCallback(() => {
-    fetch({ page, pageSize: 10, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, sort: 'position_desc' })
-  }, [fetch, page, search, authorId, categoryId])
+    fetch({ page, pageSize: BOOKS_PAGE_SIZE, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, sort: sortParam })
+  }, [fetch, page, search, authorId, categoryId, sortParam])
 
   const loadChapters = useCallback(() => {
-    fetchChapters({ page, pageSize: 20, search: search || undefined, bookId: bookFilter || undefined, sort: 'position_desc' })
-  }, [fetchChapters, page, search, bookFilter])
+    fetchChapters({ page, pageSize: NESTED_PAGE_SIZE, search: search || undefined, bookId: bookFilter || undefined, sort: chSortParam })
+  }, [fetchChapters, page, search, bookFilter, chSortParam])
 
   const loadSubs = useCallback(() => {
-    fetchSubs({ page, pageSize: 20, search: search || undefined, bookId: bookFilter || undefined, sort: 'position_desc' })
-  }, [fetchSubs, page, search, bookFilter])
+    fetchSubs({ page, pageSize: NESTED_PAGE_SIZE, search: search || undefined, bookId: bookFilter || undefined, sort: subSortParam })
+  }, [fetchSubs, page, search, bookFilter, subSortParam])
 
-  useEffect(() => { fetchAuthors(); fetchCategories() }, [fetchAuthors, fetchCategories])
-  useEffect(() => { fetch({ pageSize: 500 }) }, [])
+  useEffect(() => { fetchAuthors(); fetchCategories(); fetchAllBooks() }, [fetchAuthors, fetchCategories, fetchAllBooks])
 
   useEffect(() => {
     if (tab === 'books') loadBooks()
@@ -65,7 +77,18 @@ export default function BooksPage() {
     else loadSubs()
   }, [tab, loadBooks, loadChapters, loadSubs])
 
-  function switchTab(t: Tab) { setTab(t); setSearch(''); setPage(1); setBookFilter('') }
+  // New rows replace the old ones in place, so without this the list stays mid-scroll
+  // after a sort or page change and appears to jump. The admin <main> is the scroller.
+  useEffect(() => { scrollRef.current?.closest('main')?.scrollTo({ top: 0 }) }, [sort, chSort, subSort, page, tab])
+
+  function switchTab(t: Tab) {
+    setTab(t); setSearch(''); setPage(1); setBookFilter('')
+    resetSort(); resetChSort(); resetSubSort()
+  }
+
+  function handleSort(key: SortKey) { toggleSort(key); setPage(1) }
+  function handleChSort(key: ChapterSortKey) { toggleChSort(key); setPage(1) }
+  function handleSubSort(key: SubChapterSortKey) { toggleSubSort(key); setPage(1) }
 
   async function handleDelete() {
     if (!deleting) return
@@ -83,7 +106,6 @@ export default function BooksPage() {
     finally { setDeleteLoading(false) }
   }
 
-  const allBooks = result?.data ?? []
   const totalPages = tab === 'books' ? (result ? Math.ceil(result.total / result.pageSize) : 1)
     : tab === 'chapters' ? (chapterResult ? Math.ceil(chapterResult.total / chapterResult.pageSize) : 1)
     : (subResult ? Math.ceil(subResult.total / subResult.pageSize) : 1)
@@ -91,17 +113,17 @@ export default function BooksPage() {
   const isLoading = tab === 'books' ? loading : tab === 'chapters' ? chapterLoading : subLoading
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    // No inner scroll container: the admin <main> is the only scroller, so the page
+    // never shows a nested scrollbar. The pagination sticks to the viewport bottom instead.
+    <div ref={scrollRef} className="min-h-full flex flex-col">
 
-      {/* ── Fixed top section ── */}
+      {/* ── Top section ── */}
       <div className="shrink-0 px-8 pt-8 bg-background">
         <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Books</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {totalCount !== undefined ? <><span className="font-semibold text-foreground">{totalCount.toLocaleString()}</span> {tab}</> : 'Loading...'}
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Books
+            {totalCount !== undefined && <span className="ml-2 font-semibold text-muted-foreground">({totalCount.toLocaleString()})</span>}
+          </h1>
           {tab === 'books' && <Button onClick={() => router.push('/admin/books/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Book</Button>}
           {tab === 'chapters' && <Button onClick={() => router.push('/admin/chapters/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Chapter</Button>}
           {tab === 'subchapters' && <Button onClick={() => router.push('/admin/subchapters/new')} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> Add Subchapter</Button>}
@@ -190,29 +212,39 @@ export default function BooksPage() {
         </div>
       </div>
 
-      {/* ── Scrollable table area ── */}
-      <div className="flex-1 overflow-y-auto px-8 pb-6">
+      {/* ── Table area ── */}
+      <div className="flex-1 px-8 pb-4">
 
         {tab === 'books' && (
           <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
-            <table className="w-full">
+            {/* table-fixed + colgroup: keeps column widths identical across sorts, so
+                re-sorting can't re-measure columns and shift the layout. */}
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-32" />
+                <col />
+                <col className="w-56" />
+                <col className="w-36" />
+                <col className="w-36" />
+                <col className="w-28" />
+              </colgroup>
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
                 <tr className="border-b">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authors</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                  <th className="px-5 py-3.5 w-24" />
+                  <SortableHeader label="Position" sortKey="position" sort={sort} onSort={handleSort} />
+                  <SortableHeader label="Book" sortKey="title" sort={sort} onSort={handleSort} />
+                  <SortableHeader label="Authors" sortKey="authors" sort={sort} onSort={handleSort} />
+                  <SortableHeader label="Updated At" sortKey="updated" sort={sort} onSort={handleSort} />
+                  <SortableHeader label="Status" sortKey="published" sort={sort} onSort={handleSort} />
+                  <th className="px-5 py-3.5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {loading && Array.from({ length: 6 }).map((_, i) => (
+                {loading && Array.from({ length: BOOKS_PAGE_SIZE }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><div className="flex items-center gap-3"><Skeleton className="w-10 h-14 rounded-lg shrink-0" /><div className="space-y-2"><Skeleton className="h-4 w-44" /><Skeleton className="h-3 w-32" /></div></div></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-28" /></td>
-                    <td className="px-5 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                    <td className="px-5 py-4"><Skeleton className="h-3.5 w-20" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-8 w-16 rounded-lg" /></td>
                   </tr>
@@ -231,13 +263,13 @@ export default function BooksPage() {
                       <div className="flex items-center gap-3">
                         {book.coverUrl ? <img src={book.coverUrl} alt="" className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0 border" /> : <div className="w-10 h-14 bg-muted rounded-lg flex items-center justify-center shrink-0 border"><BookOpen className="w-4 h-4 text-muted-foreground/60" /></div>}
                         <div className="min-w-0">
-                          <p className="font-semibold text-foreground leading-snug">{book.title}</p>
+                          <p className="font-semibold text-foreground leading-snug truncate">{book.title}</p>
                           {book.excerpt && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{book.excerpt}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{book.authors.length ? book.authors.map(a => a.name).join(', ') : '—'}</span></td>
-                    <td className="px-5 py-4"><Badge variant="outline" className="text-xs font-medium">{book.language}</Badge></td>
+                    <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-2">{book.authors.length ? book.authors.map(a => a.name).join(', ') : '—'}</p></td>
+                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground whitespace-nowrap">{new Date(book.updatedAt).toLocaleDateString()}</span></td>
                     <td className="px-5 py-4">
                       {book.published
                         ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
@@ -258,18 +290,27 @@ export default function BooksPage() {
 
         {tab === 'chapters' && (
           <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
-            <table className="w-full">
+            {/* table-fixed + colgroup: keeps column widths identical across sorts, so
+                re-sorting can't re-measure columns and shift the layout. */}
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-32" />
+                <col />
+                <col className="w-72" />
+                <col className="w-28" />
+                <col className="w-28" />
+              </colgroup>
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
                 <tr className="border-b">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-24">Subs</th>
-                  <th className="px-5 py-3.5 w-24" />
+                  <SortableHeader label="Position" sortKey="position" sort={chSort} onSort={handleChSort} />
+                  <SortableHeader label="Chapter" sortKey="title" sort={chSort} onSort={handleChSort} />
+                  <SortableHeader label="Book" sortKey="book" sort={chSort} onSort={handleChSort} />
+                  <SortableHeader label="Subs" sortKey="subs" sort={chSort} onSort={handleChSort} />
+                  <th className="px-5 py-3.5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {chapterLoading && Array.from({ length: 6 }).map((_, i) => (
+                {chapterLoading && Array.from({ length: NESTED_PAGE_SIZE }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-4 w-48" /></td>
@@ -284,8 +325,8 @@ export default function BooksPage() {
                 {!chapterLoading && chapterResult?.data.map((c: ChapterListItem) => (
                   <tr key={c.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{c.position}</span></td>
-                    <td className="px-5 py-4"><p className="font-semibold">{c.title}</p></td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground line-clamp-1">{c.bookTitle}</span></td>
+                    <td className="px-5 py-4"><p className="font-semibold truncate">{c.title}</p></td>
+                    <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{c.bookTitle}</p></td>
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{c.subChapterCount || '—'}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
@@ -302,18 +343,27 @@ export default function BooksPage() {
 
         {tab === 'subchapters' && (
           <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
-            <table className="w-full">
+            {/* table-fixed + colgroup: keeps column widths identical across sorts, so
+                re-sorting can't re-measure columns and shift the layout. */}
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-32" />
+                <col />
+                <col className="w-64" />
+                <col className="w-64" />
+                <col className="w-28" />
+              </colgroup>
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
                 <tr className="border-b">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">#</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subchapter</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Chapter</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Book</th>
-                  <th className="px-5 py-3.5 w-24" />
+                  <SortableHeader label="Position" sortKey="position" sort={subSort} onSort={handleSubSort} />
+                  <SortableHeader label="Subchapter" sortKey="title" sort={subSort} onSort={handleSubSort} />
+                  <SortableHeader label="Chapter" sortKey="chapter" sort={subSort} onSort={handleSubSort} />
+                  <SortableHeader label="Book" sortKey="book" sort={subSort} onSort={handleSubSort} />
+                  <th className="px-5 py-3.5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {subLoading && Array.from({ length: 6 }).map((_, i) => (
+                {subLoading && Array.from({ length: NESTED_PAGE_SIZE }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-6" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-4 w-48" /></td>
@@ -328,9 +378,9 @@ export default function BooksPage() {
                 {!subLoading && subResult?.data.map((s: SubChapterListItem) => (
                   <tr key={s.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{s.position}</span></td>
-                    <td className="px-5 py-4"><p className="font-semibold">{s.title}</p></td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground line-clamp-1">{s.chapterTitle}</span></td>
-                    <td className="px-5 py-4"><span className="text-sm text-muted-foreground line-clamp-1">{s.bookTitle}</span></td>
+                    <td className="px-5 py-4"><p className="font-semibold truncate">{s.title}</p></td>
+                    <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{s.chapterTitle}</p></td>
+                    <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{s.bookTitle}</p></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/subchapters/${s.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
@@ -344,16 +394,14 @@ export default function BooksPage() {
           </div>
         )}
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-5">
-            <p className="text-sm text-muted-foreground">Page <span className="font-medium text-foreground">{page}</span> of <span className="font-medium text-foreground">{totalPages}</span></p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="bg-card">Previous</Button>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages} className="bg-card">Next</Button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* ── Pagination: sticks to the viewport bottom while <main> scrolls ── */}
+      {totalPages > 1 && (
+        <div className="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-border bg-background/95 px-8 py-2.5 backdrop-blur-sm">
+          <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} inline />
+        </div>
+      )}
 
       <Dialog open={!!deleting} onOpenChange={o => !o && setDeleting(null)}>
         <DialogContent>
