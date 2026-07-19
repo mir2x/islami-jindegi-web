@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import {
   HelpCircle, Mic, X,
   ChevronDown,
@@ -64,6 +65,7 @@ export function MasailClient({
   initialSearch, initialCategory, initialAuthor, initialTab,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('MasailPage')
 
   const [items, setItems] = useState(initialItems)
   const [total, setTotal] = useState(initialTotal)
@@ -179,9 +181,9 @@ export function MasailClient({
     : categories
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'all', label: 'সব', icon: null },
-    { key: 'text', label: 'লিখন', icon: <HelpCircle className="w-3.5 h-3.5" /> },
-    { key: 'audio', label: 'অডিও', icon: <Volume2 className="w-3.5 h-3.5" /> },
+    { key: 'all', label: t('tabAll'), icon: null },
+    { key: 'text', label: t('tabText'), icon: <HelpCircle className="w-3.5 h-3.5" /> },
+    { key: 'audio', label: t('tabAudio'), icon: <Volume2 className="w-3.5 h-3.5" /> },
   ]
 
   return (
@@ -192,26 +194,26 @@ export function MasailClient({
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           {authors.length > 0 && (
             <SidebarOptionSection
-              title="মুফতী / আলেম"
+              title={t('speaker')}
               items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
               search={authorSearch}
               onSearch={setAuthorSearch}
               selected={selectedAuthor}
               onSelect={setAuthor}
-              emptyText="কোনো আলেম পাওয়া যায়নি"
+              emptyText={t('speakerEmpty')}
               fill
               inlineSearch
             />
           )}
           {categories.length > 0 && (
             <SidebarOptionSection
-              title="শ্রেণীবিভাগ"
+              title={t('category')}
               items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
               search={categorySearch}
               onSearch={setCategorySearch}
               selected={selectedCategory}
               onSelect={setCategory}
-              emptyText="কোনো বিষয় পাওয়া যায়নি"
+              emptyText={t('categoryEmpty')}
               fill
               inlineSearch
             />
@@ -246,10 +248,10 @@ export function MasailClient({
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
           {authors.length > 0 && (
-            <MobileFilterTrigger label="মুফতী / আলেম" activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
+            <MobileFilterTrigger label={t('speaker')} activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
           )}
           {categories.length > 0 && (
-            <MobileFilterTrigger label="শ্রেণীবিভাগ" activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
+            <MobileFilterTrigger label={t('category')} activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
           )}
         </div>
 
@@ -257,31 +259,31 @@ export function MasailClient({
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="মাসাইল খুঁজুন..."
+          placeholder={t('searchPlaceholder')}
         />
 
         {authors.length > 0 && (
           <MobileFilterSheet
             open={authorSheetOpen}
             onClose={() => setAuthorSheetOpen(false)}
-            title="মুফতী / আলেম"
+            title={t('speaker')}
             options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
             fetchOptions={q => fetchNamedOptions('/api/masail/authors', q)}
             selected={selectedAuthor}
             onSelect={setAuthor}
-            emptyText="কোনো আলেম পাওয়া যায়নি"
+            emptyText={t('speakerEmpty')}
           />
         )}
         {categories.length > 0 && (
           <MobileFilterSheet
             open={categorySheetOpen}
             onClose={() => setCategorySheetOpen(false)}
-            title="শ্রেণীবিভাগ"
+            title={t('category')}
             options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
             fetchOptions={q => fetchTitledOptions('/api/masail/categories', q)}
             selected={selectedCategory}
             onSelect={setCategory}
-            emptyText="কোনো বিষয় পাওয়া যায়নি"
+            emptyText={t('categoryEmpty')}
           />
         )}
 
@@ -300,12 +302,12 @@ export function MasailClient({
                 <button onClick={() => setAuthor('')} className="hover:bg-primary/20 rounded-full p-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
-            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">সব মুছুন</button>
+            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">{t('clearAll')}</button>
           </div>
         )}
 
         <p className="text-sm text-muted-foreground mt-4">
-          {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি মাসাইল`}
+          {loading ? t('loading') : t('resultCount', { count: total })}
         </p>
         </div>
 
@@ -326,10 +328,10 @@ export function MasailClient({
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <HelpCircle className="w-14 h-14 text-muted-foreground/25 mb-4" />
-            <p className="text-lg font-medium text-foreground">কোনো মাসাইল পাওয়া যায়নি</p>
-            <p className="text-sm text-muted-foreground mt-1">ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন</p>
+            <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('emptyHint')}</p>
             {hasFilters && (
-              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">সব ফিল্টার মুছুন</button>
+              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">{t('clearFilters')}</button>
             )}
           </div>
         ) : (
@@ -348,7 +350,7 @@ export function MasailClient({
         {/* Scroll sentinel — pulls in the next page */}
         {hasMore && !loading && (
           <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
-            {loadingMore ? 'লোড হচ্ছে...' : ''}
+            {loadingMore ? t('loading') : ''}
           </div>
         )}
         </div>
@@ -419,6 +421,7 @@ function MasailRow({ item, expanded, onToggle }: {
 // ── Audio inline player ─────────────────────────────────────────────────────
 
 function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListItem }) {
+  const t = useTranslations('MasailPage')
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -480,7 +483,7 @@ function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListIte
         </div>
       </div>
 
-      {audioError && <p className="text-xs text-destructive mt-3">অডিও লোড করা যায়নি।</p>}
+      {audioError && <p className="text-xs text-destructive mt-3">{t('audioError')}</p>}
 
       {item.categories.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-4">
@@ -496,6 +499,7 @@ function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListIte
 // ── Q&A inline expand ───────────────────────────────────────────────────────
 
 function TextExpand({ item }: { item: MasailListItem }) {
+  const t = useTranslations('MasailPage')
   const [detail, setDetail] = useState<MasailDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -520,7 +524,7 @@ function TextExpand({ item }: { item: MasailListItem }) {
         <>
           {/* Question */}
           <div className="rounded-lg bg-primary/5 border border-primary/15 p-4">
-            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">প্রশ্ন</p>
+            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">{t('question')}</p>
             <div
               className="prose-content text-sm text-foreground leading-relaxed"
               dangerouslySetInnerHTML={{ __html: detail.question }}
@@ -530,7 +534,7 @@ function TextExpand({ item }: { item: MasailListItem }) {
           {/* Answer */}
           {detail.answer && (
             <div className="rounded-lg bg-muted/50 border border-border p-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">উত্তর</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('answer')}</p>
               <div
                 className="prose-content text-sm text-foreground leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: detail.answer }}
@@ -547,7 +551,7 @@ function TextExpand({ item }: { item: MasailListItem }) {
           )}
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">বিস্তারিত পাওয়া যায়নি।</p>
+        <p className="text-sm text-muted-foreground">{t('detailNotFound')}</p>
       )}
     </div>
   )

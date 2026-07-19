@@ -1,6 +1,7 @@
 'use client'
 
 import { Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 export interface FilterOption {
@@ -31,6 +32,7 @@ interface Props {
 export function SidebarOptionSection({
   title, items, search, onSearch, selected, onSelect, emptyText, listClassName, fill, inlineSearch,
 }: Props) {
+  const t = useTranslations('Common')
   return (
     <div className={cn('flex flex-col', fill && 'flex-1 min-h-0 basis-0')}>
       <div className={cn('px-4 pt-4 pb-3 shrink-0', inlineSearch && 'flex items-center gap-3')}>
@@ -45,7 +47,7 @@ export function SidebarOptionSection({
           <input
             value={search}
             onChange={e => onSearch(e.target.value)}
-            placeholder="খুঁজুন..."
+            placeholder={t('searchPlaceholder')}
             className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>

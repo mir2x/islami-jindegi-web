@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import {
   BookOpen, X, FileText,
 } from 'lucide-react'
@@ -46,6 +47,7 @@ export function BooksClient({
   initialSearch, initialCategory, initialAuthor,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('BooksPage')
 
   const [books, setBooks] = useState(initialBooks)
   const [total, setTotal] = useState(initialTotal)
@@ -160,25 +162,25 @@ export function BooksClient({
       <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:min-h-0">
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           <SidebarOptionSection
-            title="লেখক"
+            title={t('author')}
             items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
             search={authorSearch}
             onSearch={setAuthorSearch}
             selected={selectedAuthor}
             onSelect={setAuthor}
-            emptyText="কোনো লেখক পাওয়া যায়নি"
+            emptyText={t('authorEmpty')}
             fill
             inlineSearch
           />
           {categories.length > 0 && (
             <SidebarOptionSection
-              title="শ্রেণীবিভাগ"
+              title={t('category')}
               items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
               search={categorySearch}
               onSearch={setCategorySearch}
               selected={selectedCategory}
               onSelect={setCategory}
-              emptyText="কোনো বিষয় পাওয়া যায়নি"
+              emptyText={t('categoryEmpty')}
               fill
               inlineSearch
             />
@@ -190,9 +192,9 @@ export function BooksClient({
       <div className="min-w-0 flex flex-col lg:flex-1 lg:min-h-0">
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
-          <MobileFilterTrigger label="লেখক" activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
+          <MobileFilterTrigger label={t('author')} activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
           {categories.length > 0 && (
-            <MobileFilterTrigger label="শ্রেণীবিভাগ" activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
+            <MobileFilterTrigger label={t('category')} activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
           )}
         </div>
 
@@ -203,28 +205,28 @@ export function BooksClient({
             <SearchInput
               value={search}
               onChange={setSearch}
-              placeholder="কিতাব খুঁজুন..."
+              placeholder={t('searchPlaceholder')}
             />
 
           <MobileFilterSheet
             open={authorSheetOpen}
             onClose={() => setAuthorSheetOpen(false)}
-            title="লেখক"
+            title={t('author')}
             options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
             fetchOptions={q => fetchNamedOptions('/api/books/authors', q)}
             selected={selectedAuthor}
             onSelect={setAuthor}
-            emptyText="কোনো লেখক পাওয়া যায়নি"
+            emptyText={t('authorEmpty')}
           />
           <MobileFilterSheet
             open={categorySheetOpen}
             onClose={() => setCategorySheetOpen(false)}
-            title="শ্রেণীবিভাগ"
+            title={t('category')}
             options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
             fetchOptions={q => fetchTitledOptions('/api/books/categories', q)}
             selected={selectedCategory}
             onSelect={setCategory}
-            emptyText="কোনো বিষয় পাওয়া যায়নি"
+            emptyText={t('categoryEmpty')}
           />
 
           {/* Active filter chips */}
@@ -247,14 +249,14 @@ export function BooksClient({
                 </span>
               )}
               <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">
-                সব মুছুন
+                {t('clearAll')}
               </button>
             </div>
           )}
 
             {/* ── Count row ──────────────────────────────────────── */}
             <p className="text-sm text-muted-foreground mt-4">
-              {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি কিতাব`}
+              {loading ? t('loading') : t('resultCount', { count: total })}
             </p>
           </div>
 
@@ -273,11 +275,11 @@ export function BooksClient({
           ) : books.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <BookOpen className="w-14 h-14 text-muted-foreground/25 mb-4" />
-              <p className="text-lg font-medium text-foreground">কোনো কিতাব পাওয়া যায়নি</p>
-              <p className="text-sm text-muted-foreground mt-1">ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন</p>
+              <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t('emptyHint')}</p>
               {hasFilters && (
                 <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">
-                  সব ফিল্টার মুছুন
+                  {t('clearFilters')}
                 </button>
               )}
             </div>
@@ -290,7 +292,7 @@ export function BooksClient({
               {/* Scroll sentinel — pulls in the next page */}
               {hasMore && (
                 <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
-                  {loadingMore ? 'লোড হচ্ছে...' : ''}
+                  {loadingMore ? t('loading') : ''}
                 </div>
               )}
             </>

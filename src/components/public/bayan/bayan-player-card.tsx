@@ -5,6 +5,7 @@ import {
   Play, Pause, Download, MapPin, Calendar,
   Clock, Share2, Mic, Check,
 } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 import type { BayanListItem } from '@/types'
 
 function formatTime(seconds: number) {
@@ -14,8 +15,8 @@ function formatTime(seconds: number) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })
+function formatDate(d: string, locale: string) {
+  return new Date(d).toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export function BayanPlayerCard({ bayan, className }: Props) {
+  const t = useTranslations('BayanDetail')
+  const locale = useLocale()
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -81,7 +84,7 @@ export function BayanPlayerCard({ bayan, className }: Props) {
         <button
           onClick={handleShare}
           className="shrink-0 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          title="শেয়ার করুন"
+          title={t('share')}
         >
           {copied ? <Check className="w-4.5 h-4.5 text-primary" /> : <Share2 className="w-4.5 h-4.5" />}
         </button>
@@ -142,11 +145,11 @@ export function BayanPlayerCard({ bayan, className }: Props) {
           </div>
 
           {audioError && (
-            <p className="text-xs text-destructive mt-3">অডিও লোড করা যায়নি। আবার চেষ্টা করুন।</p>
+            <p className="text-xs text-destructive mt-3">{t('audioError')}</p>
           )}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground mt-7">এই বয়ানের কোনো অডিও পাওয়া যায়নি।</p>
+        <p className="text-sm text-muted-foreground mt-7">{t('noAudio')}</p>
       )}
 
       {/* Meta info */}
@@ -155,7 +158,7 @@ export function BayanPlayerCard({ bayan, className }: Props) {
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs text-muted-foreground">স্থান</p>
+              <p className="text-xs text-muted-foreground">{t('location')}</p>
               <p className="text-foreground font-medium">{bayan.location}</p>
             </div>
           </div>
@@ -163,15 +166,15 @@ export function BayanPlayerCard({ bayan, className }: Props) {
         <div className="flex items-start gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs text-muted-foreground">তারিখ</p>
-            <p className="text-foreground font-medium">{formatDate(bayan.publishedAt)}</p>
+            <p className="text-xs text-muted-foreground">{t('date')}</p>
+            <p className="text-foreground font-medium">{formatDate(bayan.publishedAt, locale)}</p>
           </div>
         </div>
         {duration > 0 && (
           <div className="flex items-start gap-2">
             <Clock className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs text-muted-foreground">অডিও সময়</p>
+              <p className="text-xs text-muted-foreground">{t('audioDuration')}</p>
               <p className="text-foreground font-medium">{formatTime(duration)}</p>
             </div>
           </div>
@@ -184,7 +187,7 @@ export function BayanPlayerCard({ bayan, className }: Props) {
           download
           className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
-          <Download className="w-4 h-4" /> ডাউনলোড করুন
+          <Download className="w-4 h-4" /> {t('download')}
         </a>
       )}
     </div>

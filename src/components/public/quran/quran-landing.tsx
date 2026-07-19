@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { BookOpen, AlignLeft, AlignJustify, ArrowRight, Search, BookMarked, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -18,6 +19,7 @@ type Mode = 'mushaf' | 'text' | 'tilawat'
 const MODES: Mode[] = ['mushaf', 'text', 'tilawat']
 
 export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; surahs: QuranSurah[] }) {
+  const t = useTranslations('QuranLanding')
   const searchParams = useSearchParams()
   const initialMode = ((): Mode => {
     const m = searchParams.get('mode')
@@ -51,22 +53,22 @@ export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; 
         <p className="text-3xl text-muted-foreground mb-2" style={{ fontFamily: DEFAULT_ARABIC_FONT }}>
           القرآن الكريم
         </p>
-        <h1 className="text-4xl sm:text-5xl font-bold text-foreground mt-1">কুরআন মাজীদ</h1>
-        <p className="text-muted-foreground mt-3 text-base">পবিত্র কুরআন পড়ুন — মুসহাফ বা পাঠ্য আকারে</p>
+        <h1 className="text-4xl sm:text-5xl font-bold text-foreground mt-1">{t('title')}</h1>
+        <p className="text-muted-foreground mt-3 text-base">{t('subtitle')}</p>
         <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
           <button
             onClick={() => setSearchOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-sm text-muted-foreground hover:text-primary transition-all"
           >
             <Search className="w-4 h-4" />
-            সম্পূর্ণ কুরআনে অনুসন্ধান করুন
+            {t('searchQuran')}
           </button>
           <button
             onClick={() => setBookmarksOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-sm text-muted-foreground hover:text-primary transition-all"
           >
             <BookMarked className="w-4 h-4" />
-            বুকমার্ক
+            {t('bookmarks')}
           </button>
         </div>
       </div>
@@ -81,8 +83,8 @@ export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; 
             <History className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">চালিয়ে যান</p>
-            <p className="text-sm font-semibold text-foreground truncate">{lastRead.surahName} · আয়াত {bn(lastRead.ayahNumber)}</p>
+            <p className="text-xs text-muted-foreground">{t('continueReading')}</p>
+            <p className="text-sm font-semibold text-foreground truncate">{t('surahAyah', { surahName: lastRead.surahName, ayahNumber: bn(lastRead.ayahNumber) })}</p>
           </div>
           <ArrowRight className="w-4 h-4 text-primary shrink-0" />
         </Link>
@@ -97,23 +99,23 @@ export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; 
           active={mode === 'mushaf'}
           onClick={() => setMode('mushaf')}
           icon={BookOpen}
-          label="মুসহাফ"
-          sub="ছবিতে পড়ুন"
+          label={t('modeMushaf')}
+          sub={t('modeMushafSub')}
         />
         <ModeCard
           active={mode === 'text'}
           onClick={() => setMode('text')}
           icon={AlignLeft}
-          label="পাঠ্য কুরআন"
-          sub="সূরা ও আয়াত"
+          label={t('modeText')}
+          sub={t('modeTextSub')}
           disabled={surahs.length === 0}
         />
         <ModeCard
           active={mode === 'tilawat'}
           onClick={() => setMode('tilawat')}
           icon={AlignJustify}
-          label="তিলাওয়াত"
-          sub="ধারাবাহিক পাঠ"
+          label={t('modeTilawat')}
+          sub={t('modeTilawatSub')}
           disabled={surahs.length === 0}
         />
       </div>
@@ -167,16 +169,17 @@ function ModeCard({
 // ─── Mushaf section ───────────────────────────────────────────────────────────
 
 function MushafSection({ editions }: { editions: MushafEdition[] }) {
+  const t = useTranslations('QuranLanding')
   if (!editions.length) {
     return (
-      <p className="text-center text-muted-foreground py-20">মুসহাফ লোড হচ্ছে না। পরে আবার চেষ্টা করুন।</p>
+      <p className="text-center text-muted-foreground py-20">{t('mushafLoadError')}</p>
     )
   }
 
   return (
     <div>
       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-5">
-        মুসহাফ বেছে নিন
+        {t('chooseMushaf')}
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
         {editions.map(e => <EditionCard key={e.id} edition={e} />)}
@@ -186,6 +189,7 @@ function MushafSection({ editions }: { editions: MushafEdition[] }) {
 }
 
 function EditionCard({ edition }: { edition: MushafEdition }) {
+  const t = useTranslations('QuranLanding')
   const coverUrl = `${edition.pagesBaseUrl}/qm1.${edition.ext}`
 
   return (
@@ -202,7 +206,7 @@ function EditionCard({ edition }: { edition: MushafEdition }) {
           sizes="(max-width: 640px) 50vw, 33vw"
         />
         <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
-          {bn(edition.totalPages)} পৃষ্ঠা
+          {t('pageCount', { count: bn(edition.totalPages) })}
         </div>
       </div>
       <div className="p-3.5 flex items-start justify-between gap-2">
@@ -217,17 +221,17 @@ function EditionCard({ edition }: { edition: MushafEdition }) {
 
 // ─── Text / Surah list section (also reused for tilawat mode's surah picker) ──
 
-const REVELATION_LABEL: Record<string, string> = {
-  Meccan: 'মক্কী',
-  Medinan: 'মাদানী',
-}
-
 function TextSection({ surahs, search, onSearch, hrefPrefix }: {
   surahs: QuranSurah[]
   search: string
   onSearch: (v: string) => void
   hrefPrefix: string
 }) {
+  const t = useTranslations('QuranLanding')
+  const REVELATION_LABEL: Record<string, string> = {
+    Meccan: t('meccan'),
+    Medinan: t('medinan'),
+  }
   const filtered = search.trim()
     ? surahs.filter(s =>
         s.nameBengali.includes(search) ||
@@ -246,7 +250,7 @@ function TextSection({ surahs, search, onSearch, hrefPrefix }: {
           type="text"
           value={search}
           onChange={e => onSearch(e.target.value)}
-          placeholder="সূরা খুঁজুন..."
+          placeholder={t('searchSurah')}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
@@ -273,7 +277,11 @@ function TextSection({ surahs, search, onSearch, hrefPrefix }: {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {bn(surah.totalAyahs)} আয়াত · {REVELATION_LABEL[surah.revelationType] ?? surah.revelationType} · পারা {bn(surah.paraNumber)}
+                {t('surahMeta', {
+                  ayahCount: bn(surah.totalAyahs),
+                  revelation: REVELATION_LABEL[surah.revelationType] ?? surah.revelationType,
+                  para: bn(surah.paraNumber),
+                })}
               </p>
             </div>
           </Link>
@@ -281,7 +289,7 @@ function TextSection({ surahs, search, onSearch, hrefPrefix }: {
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-center text-muted-foreground py-16">কোনো সূরা পাওয়া যায়নি।</p>
+        <p className="text-center text-muted-foreground py-16">{t('noSurahFound')}</p>
       )}
     </div>
   )

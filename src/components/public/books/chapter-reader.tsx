@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import {
   ArrowLeft, Menu, X, ChevronRight, ChevronDown,
@@ -39,6 +40,7 @@ function flattenSubs(chapter: Chapter, subs: SubChapter[]): SubChapter[] {
 }
 
 export function ChapterReader({ book, onSwitchToPdf }: Props) {
+  const t = useTranslations('BookReader')
   const firstReadable = book.chapters.find(c => c.body || c.subChapters.some(s => s.body))
 
   const [active, setActive] = useState<ActiveContent>(
@@ -138,7 +140,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
             href="/books"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> কিতাব
+            <ArrowLeft className="w-4 h-4" /> {t('booksLabel')}
           </Link>
           <button onClick={() => setDrawerOpen(false)} className="lg:hidden p-1 text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -175,7 +177,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
         <div className="flex-1 overflow-y-auto py-2 text-sm">
           {book.excerpt && (
             <SidebarItem
-              label="ভূমিকা"
+              label={t('introduction')}
               active={active.kind === 'intro'}
               onClick={() => { setActive({ kind: 'intro' }); setDrawerOpen(false) }}
             />
@@ -230,7 +232,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
           <button
             onClick={() => setDrawerOpen(true)}
             className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label="নেভিগেশন খুলুন"
+            aria-label={t('openNavigation')}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -264,7 +266,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
                   onClick={onSwitchToPdf}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
                 >
-                  <FileText className="w-3.5 h-3.5" /> PDF পড়ুন
+                  <FileText className="w-3.5 h-3.5" /> {t('readPdf')}
                 </button>
               ) : (
                 <a
@@ -317,7 +319,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
               />
             ) : childIndexItems.length > 0 ? (
               <div>
-                <p className="text-sm text-muted-foreground mb-4">এই অধ্যায়ে নিম্নলিখিত বিষয়গুলো রয়েছে:</p>
+                <p className="text-sm text-muted-foreground mb-4">{t('chapterIndexHint')}</p>
                 <div className="space-y-2">
                   {childIndexItems.map(item => (
                     <button
@@ -332,7 +334,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground italic text-base">এই অধ্যায়ে কোনো বিষয়বস্তু নেই।</p>
+              <p className="text-muted-foreground italic text-base">{t('noChapterContent')}</p>
             )}
 
             {/* Prev / Next navigation */}
@@ -345,7 +347,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
                   >
                     <ArrowLeft className="w-4 h-4 shrink-0" />
                     <span className="line-clamp-1">
-                      {prevItem.kind === 'intro' ? 'ভূমিকা' :
+                      {prevItem.kind === 'intro' ? t('introduction') :
                         prevItem.kind === 'chapter' ? prevItem.chapter.title : prevItem.sub.title}
                     </span>
                   </button>
@@ -357,7 +359,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[45%] text-right ml-auto"
                   >
                     <span className="line-clamp-1">
-                      {nextItem.kind === 'intro' ? 'ভূমিকা' :
+                      {nextItem.kind === 'intro' ? t('introduction') :
                         nextItem.kind === 'chapter' ? nextItem.chapter.title : nextItem.sub.title}
                     </span>
                     <ChevronRight className="w-4 h-4 shrink-0" />

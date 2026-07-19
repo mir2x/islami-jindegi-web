@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { X, ChevronDown, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function TafsirModal({ surahNumber, surahName, ayahNumber, onClose }: Props) {
+  const t = useTranslations('TafsirModal')
   const [tafsirs, setTafsirs] = useState<QuranTafsir[] | null>(null)
   const [error, setError] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -49,8 +51,8 @@ export function TafsirModal({ surahNumber, surahName, ayahNumber, onClose }: Pro
       <div className="relative w-full sm:max-w-2xl sm:mx-4 max-h-[85vh] flex flex-col bg-background rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden">
         <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3.5 border-b border-border">
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">তাফসীর</p>
-            <p className="text-xs text-muted-foreground truncate">{surahName} · আয়াত {bn(ayahNumber)}</p>
+            <p className="text-sm font-bold text-foreground">{t('title')}</p>
+            <p className="text-xs text-muted-foreground truncate">{t('subtitle', { surahName, ayahNumber: bn(ayahNumber) })}</p>
           </div>
           <button
             onClick={onClose}
@@ -62,18 +64,18 @@ export function TafsirModal({ surahNumber, surahName, ayahNumber, onClose }: Pro
 
         <div className="flex-1 overflow-y-auto">
           {error && (
-            <p className="text-center text-sm text-destructive py-12">তাফসীর লোড করা যায়নি। আবার চেষ্টা করুন।</p>
+            <p className="text-center text-sm text-destructive py-12">{t('loadError')}</p>
           )}
 
           {!error && tafsirs === null && (
             <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <p className="text-sm">তাফসীর লোড হচ্ছে…</p>
+              <p className="text-sm">{t('loading')}</p>
             </div>
           )}
 
           {!error && tafsirs !== null && tafsirs.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-12">এই আয়াতের জন্য কোনো তাফসীর পাওয়া যায়নি।</p>
+            <p className="text-center text-sm text-muted-foreground py-12">{t('empty')}</p>
           )}
 
           {!error && tafsirs !== null && tafsirs.map(t => {

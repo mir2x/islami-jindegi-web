@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Check, ChevronDown, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { SearchInput } from '@/components/public/search-input'
 
@@ -53,8 +54,9 @@ interface SheetProps {
 // `options` seeds the list instantly from the already-fetched full set; typing in the sheet's
 // own search box switches to live server-side search via `fetchOptions` (debounced).
 export function MobileFilterSheet({
-  open, onClose, title, options, fetchOptions, selected, onSelect, emptyText, searchPlaceholder = 'সার্চ',
+  open, onClose, title, options, fetchOptions, selected, onSelect, emptyText, searchPlaceholder,
 }: SheetProps) {
+  const t = useTranslations('Common')
   const [query, setQuery] = useState('')
   const [items, setItems] = useState(options)
   const [loading, setLoading] = useState(false)
@@ -98,7 +100,7 @@ export function MobileFilterSheet({
         </div>
 
         <div className="p-4 pb-2 shrink-0">
-          <SearchInput value={query} onChange={setQuery} placeholder={searchPlaceholder} />
+          <SearchInput value={query} onChange={setQuery} placeholder={searchPlaceholder ?? t('searchShort')} />
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -110,7 +112,7 @@ export function MobileFilterSheet({
             )}
           >
             <Check className={cn('w-4 h-4 shrink-0', selected === '' ? 'opacity-100' : 'opacity-0')} />
-            সব
+            {t('all')}
           </button>
 
           {loading ? (

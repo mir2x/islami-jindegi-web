@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Mic, X, MapPin, ChevronDown,
 } from 'lucide-react'
@@ -31,8 +32,8 @@ async function fetchBayans(opts: {
   } catch { return { data: [], total: 0 } }
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })
+function formatDate(d: string, locale: string) {
+  return new Date(d).toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 interface Props {
@@ -50,6 +51,8 @@ export function BayanClient({
   initialSearch, initialCategory, initialAuthor,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('BayanPage')
+  const locale = useLocale()
 
   const [bayans, setBayans] = useState(initialBayans)
   const [total, setTotal] = useState(initialTotal)
@@ -164,25 +167,25 @@ export function BayanClient({
       <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:min-h-0">
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           <SidebarOptionSection
-            title="বক্তা"
+            title={t('speaker')}
             items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
             search={authorSearch}
             onSearch={setAuthorSearch}
             selected={selectedAuthor}
             onSelect={setAuthor}
-            emptyText="কোনো বক্তা পাওয়া যায়নি"
+            emptyText={t('speakerEmpty')}
             fill
             inlineSearch
           />
           {categories.length > 0 && (
             <SidebarOptionSection
-              title="শ্রেণীবিভাগ"
+              title={t('category')}
               items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
               search={categorySearch}
               onSearch={setCategorySearch}
               selected={selectedCategory}
               onSelect={setCategory}
-              emptyText="কোনো বিষয় পাওয়া যায়নি"
+              emptyText={t('categoryEmpty')}
               fill
               inlineSearch
             />
@@ -194,9 +197,9 @@ export function BayanClient({
       <div className="min-w-0 flex flex-col lg:flex-1 lg:min-h-0">
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
-          <MobileFilterTrigger label="বক্তা" activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
+          <MobileFilterTrigger label={t('speaker')} activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
           {categories.length > 0 && (
-            <MobileFilterTrigger label="শ্রেণীবিভাগ" activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
+            <MobileFilterTrigger label={t('category')} activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
           )}
         </div>
 
@@ -207,28 +210,28 @@ export function BayanClient({
           <SearchInput
             value={search}
             onChange={setSearch}
-            placeholder="বয়ান খুঁজুন..."
+            placeholder={t('searchPlaceholder')}
           />
 
         <MobileFilterSheet
           open={authorSheetOpen}
           onClose={() => setAuthorSheetOpen(false)}
-          title="বক্তা"
+          title={t('speaker')}
           options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
           fetchOptions={q => fetchNamedOptions('/api/bayan/authors', q)}
           selected={selectedAuthor}
           onSelect={setAuthor}
-          emptyText="কোনো বক্তা পাওয়া যায়নি"
+          emptyText={t('speakerEmpty')}
         />
         <MobileFilterSheet
           open={categorySheetOpen}
           onClose={() => setCategorySheetOpen(false)}
-          title="শ্রেণীবিভাগ"
+          title={t('category')}
           options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
           fetchOptions={q => fetchTitledOptions('/api/bayan/categories', q)}
           selected={selectedCategory}
           onSelect={setCategory}
-          emptyText="কোনো বিষয় পাওয়া যায়নি"
+          emptyText={t('categoryEmpty')}
         />
 
         {/* Active filter chips */}
@@ -251,13 +254,13 @@ export function BayanClient({
               </span>
             )}
             <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">
-              সব মুছুন
+              {t('clearAll')}
             </button>
           </div>
         )}
 
         <p className="text-sm text-muted-foreground mt-4">
-          {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি বয়ান`}
+          {loading ? t('loading') : t('resultCount', { count: total })}
         </p>
         </div>
 
@@ -278,11 +281,11 @@ export function BayanClient({
         ) : bayans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Mic className="w-14 h-14 text-muted-foreground/25 mb-4" />
-            <p className="text-lg font-medium text-foreground">কোনো বয়ান পাওয়া যায়নি</p>
-            <p className="text-sm text-muted-foreground mt-1">ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন</p>
+            <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('emptyHint')}</p>
             {hasFilters && (
               <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">
-                সব ফিল্টার মুছুন
+                {t('clearFilters')}
               </button>
             )}
           </div>
@@ -302,7 +305,7 @@ export function BayanClient({
         {/* Scroll sentinel — pulls in the next page */}
         {hasMore && !loading && (
           <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
-            {loadingMore ? 'লোড হচ্ছে...' : ''}
+            {loadingMore ? t('loading') : ''}
           </div>
         )}
         </div>
@@ -319,6 +322,7 @@ function BayanRow({ bayan, expanded, onToggle }: {
   expanded: boolean
   onToggle: () => void
 }) {
+  const locale = useLocale()
   return (
     <div className={cn(
       'rounded-xl border bg-card overflow-hidden transition-colors',
@@ -350,7 +354,7 @@ function BayanRow({ bayan, expanded, onToggle }: {
         </div>
 
         <div className="hidden sm:block text-xs text-muted-foreground shrink-0 tabular-nums">
-          {formatDate(bayan.publishedAt)}
+          {formatDate(bayan.publishedAt, locale)}
         </div>
 
         <ChevronDown className={cn(

@@ -175,8 +175,13 @@ const HIJRI_MONTHS_BN = [
   'জুমাদাল উলা', 'জুমাদাল উখরা', 'রজব', 'শাবান',
   'রমাযান', 'শাউয়াল', 'যিলক্বদ', 'যিলহাজ্জ',
 ]
+export const HIJRI_MONTHS_EN = [
+  'Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani',
+  'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', 'Shaban',
+  'Ramadan', 'Shawwal', 'Dhul-Qadah', 'Dhul-Hijjah',
+]
 
-export function toHijri(date: Date): { day: number; month: number; year: number; monthBn: string } {
+export function toHijri(date: Date): { day: number; month: number; year: number; monthBn: string; monthEn: string } {
   // Umm al-Qura shifted one day back — Bangladesh's default relationship to the
   // Saudi calendar (mirrors the dotnet API's default_offset=+1 on month starts) —
   // plus the user's manual adjustment. This is the instant-render/offline value;
@@ -187,12 +192,21 @@ export function toHijri(date: Date): { day: number; month: number; year: number;
     date.getDate() + getSettings().hijriAdjustment - 1,
   )
   const u = umalqura(shifted)
-  return { day: u.hd, month: u.hm, year: u.hy, monthBn: HIJRI_MONTHS_BN[u.hm - 1] ?? '' }
+  return {
+    day: u.hd, month: u.hm, year: u.hy,
+    monthBn: HIJRI_MONTHS_BN[u.hm - 1] ?? '',
+    monthEn: HIJRI_MONTHS_EN[u.hm - 1] ?? '',
+  }
 }
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯']
 export function toBnNum(n: number) {
   return String(n).split('').map(c => BN_DIGITS[+c] ?? c).join('')
+}
+
+/** Renders a number in Bengali numerals for `bn`, or plain digits for any other locale. */
+export function formatNum(n: number, locale: string) {
+  return locale === 'bn' ? toBnNum(n) : String(n)
 }
 
 export function formatTimeBn(d: Date) {
@@ -202,10 +216,23 @@ export function formatTimeBn(d: Date) {
   return `${toBnNum(h)}:${m.split('').map(c => BN_DIGITS[+c] ?? c).join('')} ${ampm}`
 }
 
+/** Locale-aware time formatting — Bengali numerals for `bn`, plain digits otherwise. */
+export function formatTime(d: Date, locale: string) {
+  if (locale === 'bn') return formatTimeBn(d)
+  const h = d.getHours() % 12 || 12
+  const m = d.getMinutes().toString().padStart(2, '0')
+  const ampm = d.getHours() < 12 ? 'AM' : 'PM'
+  return `${h}:${m} ${ampm}`
+}
+
 // ── Bangla (Bengali solar) calendar ──────────────────────────────────────────
 const BANGLA_MONTHS_BN = [
   'বৈশাখ', 'জ্যৈষ্ঠ', 'আষাঢ়', 'শ্রাবণ', 'ভাদ্র', 'আশ্বিন',
   'কার্তিক', 'অগ্রহায়ণ', 'পৌষ', 'মাঘ', 'ফাল্গুন', 'চৈত্র',
+]
+const BANGLA_MONTHS_EN = [
+  'Boishakh', 'Joishtho', 'Ashar', 'Shrabon', 'Bhadro', 'Ashwin',
+  'Kartik', 'Agrahayan', 'Poush', 'Magh', 'Falgun', 'Choitro',
 ]
 
 // [gregMonth, gregDay] when each Bangla month starts (Bangladesh official calendar)
@@ -214,7 +241,7 @@ const BANGLA_STARTS: [number, number][] = [
   [10, 16], [11, 15], [12, 15], [1, 14], [2, 13], [3, 14],
 ]
 
-export function toBanglaDate(date: Date): { day: number; monthBn: string; year: number; monthIdx: number } {
+export function toBanglaDate(date: Date): { day: number; monthBn: string; monthEn: string; year: number; monthIdx: number } {
   const y = date.getFullYear()
   const m = date.getMonth() + 1
   const d = date.getDate()
@@ -250,7 +277,13 @@ export function toBanglaDate(date: Date): { day: number; monthBn: string; year: 
   ) + 1
 
   const banglaYear = m >= 4 ? y - 593 : y - 594
-  return { day: banglaDay, monthBn: BANGLA_MONTHS_BN[banglaMonthIdx], year: banglaYear, monthIdx: banglaMonthIdx }
+  return {
+    day: banglaDay,
+    monthBn: BANGLA_MONTHS_BN[banglaMonthIdx],
+    monthEn: BANGLA_MONTHS_EN[banglaMonthIdx],
+    year: banglaYear,
+    monthIdx: banglaMonthIdx,
+  }
 }
 
 export function countdownText(target: Date, now: Date): string {
@@ -260,4 +293,11 @@ export function countdownText(target: Date, now: Date): string {
   const m = Math.floor((diff % 3600000) / 60000)
   if (h > 0) return `${toBnNum(h)} ঘণ্টা ${toBnNum(m)} মিনিট বাকি`
   return `${toBnNum(m)} মিনিট বাকি`
+}
+
+/** Locale-agnostic countdown parts — caller composes the translated sentence. */
+export function countdownParts(target: Date, now: Date): { hours: number; minutes: number } {
+  let diff = target.getTime() - now.getTime()
+  if (diff < 0) diff += 86400000
+  return { hours: Math.floor(diff / 3600000), minutes: Math.floor((diff % 3600000) / 60000) }
 }

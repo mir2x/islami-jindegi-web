@@ -1,0 +1,29 @@
+{
+  "Metadata": {
+    "title": "Islami Jindegi",
+    "description": "A guiding light for Islamic living"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "close": "Close",
+    "confirm": "Confirm",
+    "noResults": "No results found",
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try again",
+    "readMore": "Read more",
+    "viewAll": "View all",
+    "languageSwitcherLabel": "Language",
+    "searchPlaceholder": "Search...",
+    "searchShort": "Search",
+    "all": "All",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

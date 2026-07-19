@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, forwardRef, type CSSProperties } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
+import { useRouter } from '@/i18n/navigation'
 import {
   ChevronLeft, ChevronRight, ChevronDown, ArrowLeft,
   Play, Pause, SkipBack, SkipForward, Volume2, Settings, X,
@@ -39,14 +40,9 @@ const AUTO_SCROLL_SPEEDS = [0.5, 1, 1.5, 2, 3]
 // Madani edition is the closest to the standard 1–606 print-page numbering used for page-jump lookups.
 const PAGE_JUMP_EDITION = 'madani'
 
-const NAV_TABS = [
-  { id: 'surah', label: 'সূরা' },
-  { id: 'verse', label: 'আয়াত' },
-  { id: 'juz', label: 'পারা' },
-  { id: 'page', label: 'পৃষ্ঠা' },
-] as const
+const NAV_TAB_IDS = ['surah', 'verse', 'juz', 'page'] as const
 
-type NavTab = typeof NAV_TABS[number]['id']
+type NavTab = typeof NAV_TAB_IDS[number]
 
 interface Props {
   surah: QuranSurahDetail
@@ -57,7 +53,18 @@ interface Props {
 }
 
 export function SurahReader({ surah, allSurahs, reciters, translators, initialAyah }: Props) {
+  const t = useTranslations('SurahReader')
   const router = useRouter()
+  const NAV_TABS: { id: NavTab; label: string }[] = [
+    { id: 'surah', label: t('navTabSurah') },
+    { id: 'verse', label: t('navTabVerse') },
+    { id: 'juz', label: t('navTabJuz') },
+    { id: 'page', label: t('navTabPage') },
+  ]
+  const REVELATION_LABEL: Record<string, string> = {
+    Meccan: t('meccan'),
+    Medinan: t('medinan'),
+  }
 
   const [selectedTranslators, setSelectedTranslators] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
@@ -192,9 +199,9 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
     if (selectedReciter) localStorage.setItem(RECITER_KEY, selectedReciter)
   }, [selectedReciter])
 
-  function toggleTranslator(t: string) {
+  function toggleTranslator(name: string) {
     setSelectedTranslators(prev =>
-      prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]
+      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
     )
   }
 
@@ -420,7 +427,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
             <h1 className="font-bold text-foreground text-base leading-tight truncate">{surah.nameBengali}</h1>
             <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0', showNav && 'rotate-180')} />
           </div>
-          <p className="text-xs text-muted-foreground">{bn(surah.totalAyahs)} আয়াত · {surah.revelationType === 'Meccan' ? 'মক্কী' : 'মাদানী'} · পারা {bn(surah.paraNumber)}</p>
+          <p className="text-xs text-muted-foreground">{t('surahMeta', { ayahCount: bn(surah.totalAyahs), revelation: REVELATION_LABEL[surah.revelationType] ?? surah.revelationType, para: bn(surah.paraNumber) })}</p>
         </button>
 
         <p className="text-2xl text-muted-foreground" style={{ fontFamily: 'var(--quran-arabic-font)', direction: 'rtl' }}>{surah.nameArabic}</p>
@@ -428,7 +435,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         <Link
           href={`/quran/tilawat/${surah.surahNumber}`}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          title="তিলাওয়াত মোড"
+          title={t('tilawatMode')}
         >
           <AlignJustify className="w-5 h-5" />
         </Link>
@@ -436,7 +443,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         <button
           onClick={() => setBookmarksOpen(true)}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          title="বুকমার্ক তালিকা"
+          title={t('bookmarksList')}
         >
           <BookMarked className="w-5 h-5" />
         </button>
@@ -444,7 +451,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         <button
           onClick={() => setSearchOpen(true)}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          title="কুরআন অনুসন্ধান করুন"
+          title={t('searchQuran')}
         >
           <Search className="w-5 h-5" />
         </button>
@@ -452,7 +459,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         <button
           onClick={() => setShowSettings(s => !s)}
           className={cn('p-1.5 rounded-lg transition-colors', showSettings ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
-          title="সেটিংস"
+          title={t('settings')}
         >
           <Settings className="w-5 h-5" />
         </button>
@@ -463,20 +470,20 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         <div className="shrink-0 border-b border-border bg-muted/30 px-4 py-4">
           <div className="max-w-2xl mx-auto space-y-4">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">অনুবাদ (একাধিক বেছে নিন)</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('translationLabel')}</p>
               <div className="flex flex-wrap gap-2">
-                {translators.map(t => (
+                {translators.map(name => (
                   <button
-                    key={t}
-                    onClick={() => toggleTranslator(t)}
+                    key={name}
+                    onClick={() => toggleTranslator(name)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-sm transition-colors',
-                      selectedTranslators.includes(t)
+                      selectedTranslators.includes(name)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted border border-border text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    {t}
+                    {name}
                   </button>
                 ))}
               </div>
@@ -484,7 +491,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
 
             {reciters.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">ক্বারী</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('reciter')}</p>
                 <div className="flex flex-wrap gap-2">
                   {reciters.map(r => (
                     <button
@@ -505,7 +512,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
             )}
 
             <div className="flex items-center gap-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">শব্দার্থ</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('wordByWord')}</p>
               <button
                 onClick={() => setShowWords(w => !w)}
                 className={cn('relative w-10 h-5 rounded-full transition-colors', showWords ? 'bg-primary' : 'bg-muted')}
@@ -517,7 +524,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
             {/* Font settings */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">আরবী ফন্ট</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('arabicFont')}</p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {ARABIC_FONTS.map(f => (
                     <button
@@ -549,7 +556,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">বাংলা ফন্ট</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('bengaliFont')}</p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {BENGALI_FONTS.map(f => (
                     <button
@@ -584,7 +591,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
             {/* Auto-scroll */}
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">অটো-স্ক্রল</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('autoScroll')}</p>
                 <button
                   onClick={() => setAutoScroll(v => !v)}
                   className={cn('relative w-10 h-5 rounded-full transition-colors', autoScroll ? 'bg-primary' : 'bg-muted')}
@@ -653,7 +660,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                       <input
                         value={surahSearch}
                         onChange={e => setSurahSearch(e.target.value)}
-                        placeholder="সূরা খুঁজুন..."
+                        placeholder={t('searchSurah')}
                         className="w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
@@ -672,7 +679,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                         <span className="w-6 text-right text-xs font-bold text-muted-foreground tabular-nums shrink-0">{bn(s.number)}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{s.nameBengali}</p>
-                          <p className="text-xs text-muted-foreground">{bn(s.totalAyahs)} আয়াত</p>
+                          <p className="text-xs text-muted-foreground">{t('ayahCount', { count: bn(s.totalAyahs) })}</p>
                         </div>
                         <p className="text-base text-muted-foreground shrink-0" style={{ fontFamily: 'var(--quran-arabic-font)', direction: 'rtl' }}>{s.nameArabic}</p>
                       </Link>
@@ -754,7 +761,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                           {bn(juzNum)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={cn('text-sm font-semibold', isCurrentJuz && 'text-primary')}>পারা {bn(juzNum)}</p>
+                          <p className={cn('text-sm font-semibold', isCurrentJuz && 'text-primary')}>{t('para', { number: bn(juzNum) })}</p>
                           <p className="text-xs text-muted-foreground truncate">
                             {surahs.map(s => s.nameBengali).join(', ')}
                           </p>
@@ -769,9 +776,9 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               {/* ── পৃষ্ঠা tab ── */}
               {navTab === 'page' && (
                 <div className="px-4 pt-4 space-y-4">
-                  <p className="text-sm font-medium text-foreground">পৃষ্ঠা নম্বর দিয়ে যান</p>
+                  <p className="text-sm font-medium text-foreground">{t('goToPage')}</p>
                   <p className="text-xs text-muted-foreground">
-                    কুরআনের পৃষ্ঠা ১ – {maxPage ? bn(maxPage) : '…'} (মাদানী কুরআন অনুসারে)
+                    {t('pageRange', { max: maxPage ? bn(maxPage) : '…' })}
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -781,7 +788,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                       value={pageInput}
                       onChange={e => setPageInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') goToPage() }}
-                      placeholder="পৃষ্ঠা নম্বর"
+                      placeholder={t('pageNumber')}
                       disabled={pageMapLoading}
                       className="flex-1 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                     />
@@ -790,11 +797,11 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                       disabled={pageMapLoading || !pageInput}
                       className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                     >
-                      {pageMapLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'যান'}
+                      {pageMapLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('go')}
                     </button>
                   </div>
                   {pageJumpError && (
-                    <p className="text-xs text-destructive">সঠিক পৃষ্ঠা নম্বর দিন।</p>
+                    <p className="text-xs text-destructive">{t('invalidPage')}</p>
                   )}
                 </div>
               )}
@@ -813,14 +820,14 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
             </p>
             <p className="text-lg font-semibold text-foreground">{surah.nameBengali}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {bn(surah.totalAyahs)} আয়াত · {surah.revelationType === 'Meccan' ? 'মক্কী' : 'মাদানী'} · পারা {bn(surah.paraNumber)}
+              {t('surahMeta', { ayahCount: bn(surah.totalAyahs), revelation: REVELATION_LABEL[surah.revelationType] ?? surah.revelationType, para: bn(surah.paraNumber) })}
             </p>
             <button
               onClick={() => setTilawatOpen(true)}
               className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               <Play className="w-4 h-4" />
-              তিলাওয়াত শুনুন
+              {t('listenTilawat')}
             </button>
             {surah.surahNumber !== 1 && surah.surahNumber !== 9 && (
               <p className="mt-4 text-xl text-foreground" style={{ fontFamily: 'var(--quran-arabic-font)', direction: 'rtl' }}>
@@ -857,7 +864,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               >
                 <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">আগের সূরা</p>
+                  <p className="text-xs text-muted-foreground">{t('prevSurah')}</p>
                   <p className="text-sm font-semibold truncate group-hover:text-primary">{prevSurah.nameBengali}</p>
                 </div>
               </Link>
@@ -868,7 +875,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                 className="flex items-center justify-end gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
               >
                 <div className="min-w-0 text-right">
-                  <p className="text-xs text-muted-foreground">পরের সূরা</p>
+                  <p className="text-xs text-muted-foreground">{t('nextSurah')}</p>
                   <p className="text-sm font-semibold truncate group-hover:text-primary">{nextSurah.nameBengali}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
@@ -885,25 +892,25 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
           {activeRange && (activeRange.end > activeRange.start || activeRange.repeatsLeft > 1) && (
             <div className="max-w-2xl mx-auto mb-2 flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-xs">
               <span className="text-primary font-medium">
-                আয়াত {bn(activeRange.start)}–{bn(activeRange.end)} পুনরাবৃত্তি চলছে ({bn(activeRange.repeatsLeft)} বাকি)
+                {t('rangeRepeating', { start: bn(activeRange.start), end: bn(activeRange.end), left: bn(activeRange.repeatsLeft) })}
               </span>
-              <button onClick={stopRangePlayback} className="text-muted-foreground hover:text-foreground transition-colors">বন্ধ করুন</button>
+              <button onClick={stopRangePlayback} className="text-muted-foreground hover:text-foreground transition-colors">{t('stop')}</button>
             </div>
           )}
 
           <div className="max-w-2xl mx-auto flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm text-muted-foreground truncate">
-                {surah.nameBengali} · আয়াত {bn(activeAyah)}
+                {t('surahAyah', { surahName: surah.nameBengali, ayahNumber: bn(activeAyah) })}
               </p>
-              {audioError && <p className="text-xs text-destructive">অডিও পাওয়া যায়নি, আবার চেষ্টা করুন</p>}
+              {audioError && <p className="text-xs text-destructive">{t('audioError')}</p>}
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setTilawatOpen(true)}
                 className={cn('p-2 rounded-lg transition-colors', activeRange ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
-                title="আয়াত রেঞ্জ ও পুনরাবৃত্তি"
+                title={t('rangeAndRepeat')}
               >
                 <Repeat className="w-4 h-4" />
               </button>
@@ -938,7 +945,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               <button
                 onClick={stopPlayback}
                 className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                title="বন্ধ করুন"
+                title={t('stop')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -954,7 +961,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
 
           <div className="relative w-full sm:max-w-md sm:mx-4 bg-background rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-4 py-3.5 border-b border-border">
-              <p className="text-sm font-bold text-foreground">তিলাওয়াত শুনুন</p>
+              <p className="text-sm font-bold text-foreground">{t('listenTilawatTitle')}</p>
               <button
                 onClick={() => setTilawatOpen(false)}
                 className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -965,7 +972,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
 
             <div className="px-4 py-4 space-y-3">
               <div className="flex items-center gap-3">
-                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">সূরা:</p>
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">{t('surahLabel')}</p>
                 <select
                   value={surah.surahNumber}
                   onChange={e => router.push(`/quran/surah/${e.target.value}`)}
@@ -979,7 +986,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
 
               {reciters.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <p className="w-24 shrink-0 text-sm font-semibold text-foreground">ক্বারী:</p>
+                  <p className="w-24 shrink-0 text-sm font-semibold text-foreground">{t('reciterLabel')}</p>
                   <select
                     value={selectedReciter}
                     onChange={e => setSelectedReciter(e.target.value)}
@@ -993,7 +1000,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               )}
 
               <div className="flex items-center gap-3">
-                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">শুরু আয়াত:</p>
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">{t('startAyah')}</p>
                 <select
                   value={rangeStart}
                   disabled={fullSurah}
@@ -1011,7 +1018,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               </div>
 
               <div className="flex items-center gap-3">
-                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">শেষ আয়াত:</p>
+                <p className="w-24 shrink-0 text-sm font-semibold text-foreground">{t('endAyah')}</p>
                 <select
                   value={rangeEnd}
                   disabled={fullSurah}
@@ -1035,11 +1042,11 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                   onChange={e => setFullSurah(e.target.checked)}
                   className="w-4 h-4 accent-primary"
                 />
-                <span className="text-sm font-medium text-foreground">সম্পূর্ণ সূরা</span>
+                <span className="text-sm font-medium text-foreground">{t('fullSurah')}</span>
               </label>
 
               <div className="flex items-center justify-center gap-3 px-3 py-2 rounded-lg border border-border bg-muted/40">
-                <span className="text-sm font-medium text-foreground">আয়াতের পুনরাবৃত্তি</span>
+                <span className="text-sm font-medium text-foreground">{t('ayahRepeat')}</span>
                 <button
                   onClick={() => setRepeatCount(c => Math.max(1, c - 1))}
                   className="w-7 h-7 rounded-full border border-border bg-background text-foreground hover:bg-muted transition-colors"
@@ -1057,7 +1064,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {audioLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                অডিও শুনুন
+                {t('listenAudio')}
               </button>
             </div>
           </div>
@@ -1091,7 +1098,8 @@ const AyahCard = forwardRef<HTMLDivElement, {
   onPlaySingle: () => void
   onOpenTafsir: () => void
 }>(function AyahCard({ ayah, surahNumber, surahName, selectedTranslators, showWords, isActive, onPlay, onPlaySingle, onOpenTafsir }, ref) {
-  const shownTranslations = ayah.translations.filter(t => selectedTranslators.includes(t.translator))
+  const t = useTranslations('SurahReader')
+  const shownTranslations = ayah.translations.filter(tr => selectedTranslators.includes(tr.translator))
   const [bookmarked, setBookmarked] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -1104,7 +1112,7 @@ const AyahCard = forwardRef<HTMLDivElement, {
   }
 
   function handleCopy() {
-    const text = [ayah.arabic, ...shownTranslations.map(t => t.text)].join('\n')
+    const text = [ayah.arabic, ...shownTranslations.map(tr => tr.text)].join('\n')
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
@@ -1112,7 +1120,7 @@ const AyahCard = forwardRef<HTMLDivElement, {
   }
 
   function handleShare() {
-    const text = [ayah.arabic, ...shownTranslations.map(t => t.text)].join('\n')
+    const text = [ayah.arabic, ...shownTranslations.map(tr => tr.text)].join('\n')
     if (navigator.share) {
       navigator.share({ text })
     } else {
@@ -1138,7 +1146,7 @@ const AyahCard = forwardRef<HTMLDivElement, {
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary'
           )}
-          title={`আয়াত ${bn(ayah.number)} বাজান`}
+          title={t('playAyah', { number: bn(ayah.number) })}
         >
           {bn(ayah.number)}
         </button>
@@ -1153,35 +1161,35 @@ const AyahCard = forwardRef<HTMLDivElement, {
           )}
           <button
             onClick={onPlaySingle}
-            title="এই আয়াতটি শুনুন"
+            title={t('playThisAyah')}
             className={cn('p-1.5 rounded-md transition-colors', isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
           >
             <Play className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleCopy}
-            title="কপি করুন"
+            title={t('copy')}
             className={cn('p-1.5 rounded-md transition-colors', copied ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
           >
             <Copy className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleShare}
-            title="শেয়ার করুন"
+            title={t('share')}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <Share2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleBookmarkToggle}
-            title="বুকমার্ক"
+            title={t('bookmark')}
             className={cn('p-1.5 rounded-md transition-colors', bookmarked ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
           >
             <Bookmark className={cn('w-3.5 h-3.5', bookmarked && 'fill-current')} />
           </button>
           <button
             onClick={onOpenTafsir}
-            title="তাফসীর দেখুন"
+            title={t('viewTafsir')}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <BookOpenText className="w-3.5 h-3.5" />
@@ -1212,12 +1220,12 @@ const AyahCard = forwardRef<HTMLDivElement, {
       {/* Translations */}
       {shownTranslations.length > 0 && (
         <div className="space-y-3">
-          {shownTranslations.map(t => (
-            <div key={t.translator}>
+          {shownTranslations.map(tr => (
+            <div key={tr.translator}>
               {shownTranslations.length > 1 && (
-                <p className="text-xs font-semibold text-primary/80 mb-1">{t.translator}</p>
+                <p className="text-xs font-semibold text-primary/80 mb-1">{tr.translator}</p>
               )}
-              <p className="text-muted-foreground leading-relaxed" style={{ fontFamily: 'var(--quran-bengali-font)', fontSize: 'var(--quran-bengali-size)' }}>{t.text}</p>
+              <p className="text-muted-foreground leading-relaxed" style={{ fontFamily: 'var(--quran-bengali-font)', fontSize: 'var(--quran-bengali-size)' }}>{tr.text}</p>
             </div>
           ))}
         </div>

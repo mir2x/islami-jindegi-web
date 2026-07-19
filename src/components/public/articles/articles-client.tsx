@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   FileText, X,
   ChevronDown,
@@ -54,6 +55,8 @@ export function ArticlesClient({
   initialSearch, initialCategory, initialAuthor,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('ArticlesPage')
+  const locale = useLocale()
 
   const [items, setItems] = useState(initialItems)
   const [total, setTotal] = useState(initialTotal)
@@ -168,26 +171,26 @@ export function ArticlesClient({
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           {authors.length > 0 && (
             <SidebarOptionSection
-              title="লেখক"
+              title={t('author')}
               items={filteredAuthors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
               search={authorSearch}
               onSearch={setAuthorSearch}
               selected={selectedAuthor}
               onSelect={setAuthor}
-              emptyText="কোনো লেখক পাওয়া যায়নি"
+              emptyText={t('authorEmpty')}
               fill
               inlineSearch
             />
           )}
           {categories.length > 0 && (
             <SidebarOptionSection
-              title="শ্রেণীবিভাগ"
+              title={t('category')}
               items={filteredCategories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
               search={categorySearch}
               onSearch={setCategorySearch}
               selected={selectedCategory}
               onSelect={setCategory}
-              emptyText="কোনো বিষয় পাওয়া যায়নি"
+              emptyText={t('categoryEmpty')}
               fill
               inlineSearch
             />
@@ -200,10 +203,10 @@ export function ArticlesClient({
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
           {authors.length > 0 && (
-            <MobileFilterTrigger label="লেখক" activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
+            <MobileFilterTrigger label={t('author')} activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
           )}
           {categories.length > 0 && (
-            <MobileFilterTrigger label="শ্রেণীবিভাগ" activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
+            <MobileFilterTrigger label={t('category')} activeLabel={activeCategoryName} onClick={() => setCategorySheetOpen(true)} />
           )}
         </div>
 
@@ -214,31 +217,31 @@ export function ArticlesClient({
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="প্রবন্ধ খুঁজুন..."
+          placeholder={t('searchPlaceholder')}
         />
 
         {authors.length > 0 && (
           <MobileFilterSheet
             open={authorSheetOpen}
             onClose={() => setAuthorSheetOpen(false)}
-            title="লেখক"
+            title={t('author')}
             options={authors.map(a => ({ id: a.id, label: a.name, count: a.count }))}
             fetchOptions={q => fetchNamedOptions('/api/articles/authors', q)}
             selected={selectedAuthor}
             onSelect={setAuthor}
-            emptyText="কোনো লেখক পাওয়া যায়নি"
+            emptyText={t('authorEmpty')}
           />
         )}
         {categories.length > 0 && (
           <MobileFilterSheet
             open={categorySheetOpen}
             onClose={() => setCategorySheetOpen(false)}
-            title="শ্রেণীবিভাগ"
+            title={t('category')}
             options={categories.map(c => ({ id: c.id, label: c.title, count: c.count }))}
             fetchOptions={q => fetchTitledOptions('/api/articles/categories', q)}
             selected={selectedCategory}
             onSelect={setCategory}
-            emptyText="কোনো বিষয় পাওয়া যায়নি"
+            emptyText={t('categoryEmpty')}
           />
         )}
 
@@ -257,12 +260,12 @@ export function ArticlesClient({
                 <button onClick={() => setAuthor('')} className="hover:bg-primary/20 rounded-full p-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
-            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">সব মুছুন</button>
+            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">{t('clearAll')}</button>
           </div>
         )}
 
         <p className="text-sm text-muted-foreground mt-4">
-          {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি প্রবন্ধ`}
+          {loading ? t('loading') : t('resultCount', { count: total })}
         </p>
         </div>
 
@@ -283,10 +286,10 @@ export function ArticlesClient({
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <FileText className="w-14 h-14 text-muted-foreground/25 mb-4" />
-            <p className="text-lg font-medium text-foreground">কোনো প্রবন্ধ পাওয়া যায়নি</p>
-            <p className="text-sm text-muted-foreground mt-1">ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন</p>
+            <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('emptyHint')}</p>
             {hasFilters && (
-              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">সব ফিল্টার মুছুন</button>
+              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">{t('clearFilters')}</button>
             )}
           </div>
         ) : (
@@ -305,7 +308,7 @@ export function ArticlesClient({
         {/* Scroll sentinel — pulls in the next page */}
         {hasMore && !loading && (
           <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
-            {loadingMore ? 'লোড হচ্ছে...' : ''}
+            {loadingMore ? t('loading') : ''}
           </div>
         )}
         </div>
@@ -322,6 +325,8 @@ function ArticleRow({ item, expanded, onToggle }: {
   expanded: boolean
   onToggle: () => void
 }) {
+  const t = useTranslations('ArticlesPage')
+  const locale = useLocale()
   const [detail, setDetail] = useState<ArticleDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
@@ -358,7 +363,7 @@ function ArticleRow({ item, expanded, onToggle }: {
             {item.author && <span className="truncate">{item.author.name}</span>}
             {item.publishedAt && (
               <span className="tabular-nums shrink-0">
-                {new Date(item.publishedAt).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {new Date(item.publishedAt).toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             )}
           </div>
@@ -399,7 +404,7 @@ function ArticleRow({ item, expanded, onToggle }: {
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">{item.excerpt ?? 'বিস্তারিত পাওয়া যায়নি।'}</p>
+            <p className="text-sm text-muted-foreground">{item.excerpt ?? t('noDetail')}</p>
           )}
         </div>
       )}

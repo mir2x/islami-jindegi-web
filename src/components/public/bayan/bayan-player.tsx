@@ -1,7 +1,8 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ArrowLeft, Mic } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 import { BayanPlayerCard, formatBayanDate } from './bayan-player-card'
 import type { BayanDetail, BayanListItem } from '@/types'
 
@@ -11,13 +12,15 @@ interface Props {
 }
 
 export function BayanPlayer({ bayan, related }: Props) {
+  const t = useTranslations('BayanDetail')
+  const locale = useLocale()
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       <Link
         href="/bayan"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
       >
-        <ArrowLeft className="w-4 h-4" /> বয়ান তালিকা
+        <ArrowLeft className="w-4 h-4" /> {t('bayanList')}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
@@ -28,7 +31,7 @@ export function BayanPlayer({ bayan, related }: Props) {
         {related.length > 0 && (
           <aside>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              {bayan.author.name} এর আরও বয়ান
+              {t('moreFrom', { name: bayan.author.name })}
             </p>
             <div className="space-y-2">
               {related.map(b => (
@@ -44,7 +47,7 @@ export function BayanPlayer({ bayan, related }: Props) {
                     <p className="text-sm font-medium leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-2">
                       {b.title}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">{formatBayanDate(b.publishedAt)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{formatBayanDate(b.publishedAt, locale)}</p>
                   </div>
                 </Link>
               ))}

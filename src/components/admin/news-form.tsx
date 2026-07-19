@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { useNewsStore } from '@/store/news-store'

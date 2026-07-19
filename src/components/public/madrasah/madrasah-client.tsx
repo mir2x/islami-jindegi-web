@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 import {
   School, ChevronDown,
   BookOpen, ArrowRight,
@@ -42,6 +43,8 @@ interface Props {
 
 export function MadrasahClient({ initialItems, initialTotal, initialSearch }: Props) {
   const router = useRouter()
+  const t = useTranslations('MadrasahPage')
+  const tCommon = useTranslations('Common')
 
   const [items, setItems] = useState(initialItems)
   const [total, setTotal] = useState(initialTotal)
@@ -85,12 +88,12 @@ export function MadrasahClient({ initialItems, initialTotal, initialSearch }: Pr
         <SearchInput
           value={search}
           onChange={v => { setSearch(v); setPage(1) }}
-          placeholder="মাদ্রাসা খুঁজুন..."
+          placeholder={t('searchPlaceholder')}
         />
       </div>
 
       <p className="text-sm text-muted-foreground mb-4">
-        {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি মাদ্রাসা`}
+        {loading ? tCommon('loading') : t('resultCount', { count: total })}
       </p>
 
       {/* List */}
@@ -109,10 +112,10 @@ export function MadrasahClient({ initialItems, initialTotal, initialSearch }: Pr
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <School className="w-14 h-14 text-muted-foreground/25 mb-4" />
-          <p className="text-lg font-medium text-foreground">কোনো মাদ্রাসা পাওয়া যায়নি</p>
+          <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
           {search && (
             <button onClick={() => { setSearch(''); setPage(1) }} className="mt-4 text-sm text-primary hover:underline">
-              অনুসন্ধান মুছুন
+              {t('clearSearch')}
             </button>
           )}
         </div>
@@ -142,6 +145,7 @@ function MadrasahRow({ item, expanded, onToggle }: {
   expanded: boolean
   onToggle: () => void
 }) {
+  const t = useTranslations('MadrasahPage')
   const [detail, setDetail] = useState<MadrasahDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
@@ -176,7 +180,7 @@ function MadrasahRow({ item, expanded, onToggle }: {
           </p>
           {item.infoCount > 0 && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {item.infoCount.toLocaleString('bn-BD')} টি অধ্যায়
+              {t('chapterCount', { count: item.infoCount })}
             </p>
           )}
         </div>
@@ -213,7 +217,7 @@ function MadrasahRow({ item, expanded, onToggle }: {
               ))}
             </ul>
           ) : (
-            <p className="p-4 text-sm text-muted-foreground">{item.excerpt ?? 'কোনো অধ্যায় পাওয়া যায়নি।'}</p>
+            <p className="p-4 text-sm text-muted-foreground">{item.excerpt ?? t('noChaptersFound')}</p>
           )}
         </div>
       )}

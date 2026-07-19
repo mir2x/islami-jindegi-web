@@ -5,10 +5,13 @@ export interface FontOption {
   key: string
   label: string
   family: string
+  isDefault?: boolean
 }
 
+// `label` is the font's proper name (not translated). Consumers append a localized
+// "(Default)" suffix themselves for the entry with `isDefault: true`.
 export const ARABIC_FONTS: FontOption[] = [
-  { key: 'noorehuda', label: 'Noorehuda (ডিফল্ট)', family: '"Noorehuda", serif' },
+  { key: 'noorehuda', label: 'Noorehuda', family: '"Noorehuda", serif', isDefault: true },
   { key: 'al-mushaf', label: 'Al Mushaf Quran', family: '"AlMushafQuran", serif' },
   { key: 'al-qalam-kolkatta', label: 'Al Qalam Kolkatta Quranic', family: '"AlQalamKolkatta", serif' },
   { key: 'al-qalam-quran', label: 'Al Qalam Quran', family: '"AlQalamQuran", serif' },
@@ -20,7 +23,7 @@ export const ARABIC_FONTS: FontOption[] = [
 ]
 
 export const BENGALI_FONTS: FontOption[] = [
-  { key: 'solaimanlipi', label: 'SolaimanLipi (ডিফল্ট)', family: '"SolaimanLipi", sans-serif' },
+  { key: 'solaimanlipi', label: 'SolaimanLipi', family: '"SolaimanLipi", sans-serif', isDefault: true },
   { key: 'kalpurush', label: 'Kalpurush', family: '"Kalpurush", sans-serif' },
   { key: 'noto-sans-bengali', label: 'Noto Sans Bengali', family: '"NotoSansBengali", sans-serif' },
   { key: 'siyamrupali', label: 'Siyam Rupali', family: '"SiyamRupali", sans-serif' },

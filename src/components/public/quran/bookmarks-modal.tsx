@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { X, Bookmark, Trash2 } from 'lucide-react'
 import { getBookmarks, removeBookmark, BOOKMARKS_CHANGED_EVENT, type QuranBookmark } from '@/lib/quran-bookmarks'
 import { DEFAULT_ARABIC_FONT } from '@/lib/quran-fonts'
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function BookmarksModal({ onClose }: Props) {
+  const t = useTranslations('BookmarksModal')
   const router = useRouter()
   const [bookmarks, setBookmarks] = useState<QuranBookmark[]>([])
 
@@ -41,7 +43,7 @@ export function BookmarksModal({ onClose }: Props) {
         <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3.5 border-b border-border">
           <div className="flex items-center gap-2">
             <Bookmark className="w-4 h-4 text-primary" />
-            <p className="text-sm font-bold text-foreground">বুকমার্ক করা আয়াত</p>
+            <p className="text-sm font-bold text-foreground">{t('title')}</p>
           </div>
           <button
             onClick={onClose}
@@ -53,7 +55,7 @@ export function BookmarksModal({ onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto">
           {bookmarks.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-16">এখনো কোনো আয়াত বুকমার্ক করা হয়নি।</p>
+            <p className="text-center text-sm text-muted-foreground py-16">{t('empty')}</p>
           )}
 
           {bookmarks.map(b => (
@@ -64,7 +66,7 @@ export function BookmarksModal({ onClose }: Props) {
               <button onClick={() => goTo(b)} className="flex-1 min-w-0 text-left">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-semibold text-primary">{b.surahName}</span>
-                  <span className="text-xs text-muted-foreground">আয়াত {bn(b.ayahNumber)}</span>
+                  <span className="text-xs text-muted-foreground">{t('ayah', { number: bn(b.ayahNumber) })}</span>
                 </div>
                 <p className="text-lg text-right text-foreground line-clamp-1" style={{ fontFamily: DEFAULT_ARABIC_FONT, direction: 'rtl' }}>
                   {b.arabic}
@@ -72,7 +74,7 @@ export function BookmarksModal({ onClose }: Props) {
               </button>
               <button
                 onClick={() => removeBookmark(b.surahNumber, b.ayahNumber)}
-                title="মুছে ফেলুন"
+                title={t('remove')}
                 className="shrink-0 mt-1 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />

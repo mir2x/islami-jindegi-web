@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Newspaper,
   ChevronDown,
@@ -41,6 +42,8 @@ interface Props {
 
 export function NewsClient({ initialItems, initialTotal, initialSearch }: Props) {
   const router = useRouter()
+  const t = useTranslations('NewsPage')
+  const tCommon = useTranslations('Common')
 
   const [items, setItems] = useState(initialItems)
   const [total, setTotal] = useState(initialTotal)
@@ -84,12 +87,12 @@ export function NewsClient({ initialItems, initialTotal, initialSearch }: Props)
         <SearchInput
           value={search}
           onChange={v => { setSearch(v); setPage(1) }}
-          placeholder="সংবাদ খুঁজুন..."
+          placeholder={t('searchPlaceholder')}
         />
       </div>
 
       <p className="text-sm text-muted-foreground mb-4">
-        {loading ? 'লোড হচ্ছে...' : `${total.toLocaleString('bn-BD')} টি সংবাদ`}
+        {loading ? tCommon('loading') : t('resultCount', { count: total })}
       </p>
 
       {/* List */}
@@ -108,10 +111,10 @@ export function NewsClient({ initialItems, initialTotal, initialSearch }: Props)
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Newspaper className="w-14 h-14 text-muted-foreground/25 mb-4" />
-          <p className="text-lg font-medium text-foreground">কোনো সংবাদ পাওয়া যায়নি</p>
+          <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
           {search && (
             <button onClick={() => { setSearch(''); setPage(1) }} className="mt-4 text-sm text-primary hover:underline">
-              অনুসন্ধান মুছুন
+              {t('clearSearch')}
             </button>
           )}
         </div>
@@ -141,6 +144,8 @@ function NewsRow({ item, expanded, onToggle }: {
   expanded: boolean
   onToggle: () => void
 }) {
+  const t = useTranslations('NewsPage')
+  const locale = useLocale()
   const [detail, setDetail] = useState<NewsDetail | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
@@ -175,7 +180,7 @@ function NewsRow({ item, expanded, onToggle }: {
           </p>
           {item.publishedAt && (
             <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
-              {new Date(item.publishedAt).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {new Date(item.publishedAt).toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           )}
         </div>
@@ -200,7 +205,7 @@ function NewsRow({ item, expanded, onToggle }: {
               dangerouslySetInnerHTML={{ __html: detail.body }}
             />
           ) : (
-            <p className="text-sm text-muted-foreground">{item.excerpt ?? 'বিস্তারিত পাওয়া যায়নি।'}</p>
+            <p className="text-sm text-muted-foreground">{item.excerpt ?? t('noDetail')}</p>
           )}
         </div>
       )}

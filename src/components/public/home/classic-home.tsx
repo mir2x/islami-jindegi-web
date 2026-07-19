@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import Image from 'next/image'
 import { BookOpen, Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin } from 'lucide-react'
 import {
   calcPrayerSlots, findActiveSlot, findNextSlot,
-  toHijri, toBanglaDate, toBnNum, formatTimeBn,
+  toHijri, toBanglaDate, formatNum, formatTime,
 } from '@/lib/prayer-times'
 import type { PrayerSlot } from '@/lib/prayer-times'
 import { getHijriToday, type HijriDisplayDate } from '@/lib/hijri'
@@ -54,28 +55,15 @@ function useInfiniteList<T>(initialItems: T[], initialTotal: number, path: strin
   return { items, hasMore, loading, loadMore }
 }
 
-const SECTIONS = [
-  { label: 'কুরআন',        href: '/quran',       icon: '/icons/quran.svg'      },
-  { label: 'কিতাব',        href: '/books',       icon: '/icons/book.svg'       },
-  { label: 'বয়ান',         href: '/bayan',       icon: '/icons/bayan.svg'      },
-  { label: 'মালফুযাত',    href: '/malfuzat',    icon: '/icons/malfuzat.svg'   },
-  { label: 'মাসাইল',      href: '/masail',      icon: '/icons/masail.svg'     },
-  { label: "দু'আ-দুরূদ",  href: '/dua',         icon: '/icons/dua.svg'        },
-  { label: 'প্রবন্ধ',     href: '/articles',    icon: '/icons/article.svg'    },
-  { label: 'সংবাদ',       href: '/news',        icon: '/icons/news.svg'       },
-  { label: 'মাদরাসা',     href: '/madrasah',    icon: '/icons/madrasah.svg'   },
-  { label: 'নামাযের সময়', href: '/namaz-times', icon: '/icons/namaz-time.svg' },
-  { label: 'অনুদান',      href: '/donate',      icon: '/icons/donate.svg'     },
-  { label: 'সেটিংস',      href: '/settings',    icon: '/icons/settings.svg'   },
-]
-
-const BN_DAYS   = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার']
-const BN_MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর']
-const BN_SEASONS = ['গ্রীষ্মকাল','গ্রীষ্মকাল','বর্ষাকাল','বর্ষাকাল','শরৎকাল','শরৎকাল','হেমন্তকাল','হেমন্তকাল','শীতকাল','শীতকাল','বসন্তকাল','বসন্তকাল']
-
 // ── Prayer card ───────────────────────────────────────────────────────────────
 
 function PrayerCard({ width }: { width: number | null }) {
+  const t = useTranslations('Home')
+  const tCommon = useTranslations('Common')
+  const locale = useLocale()
+  const days = t.raw('days') as string[]
+  const months = t.raw('months') as string[]
+  const seasons = t.raw('seasons') as string[]
   const style = width ? { width } : undefined
 
   const [state, setState] = useState<{
@@ -103,13 +91,14 @@ function PrayerCard({ width }: { width: number | null }) {
   useEffect(() => {
     // Render the Dhaka default immediately — geolocation refines it if/when granted.
     const dk = [23.8103, 90.4125] as const
-    init(...dk, 'ঢাকা, বাংলাদেশ', 'BD')
+    init(...dk, t('dhakaLocation'), 'BD')
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
-      p => init(p.coords.latitude, p.coords.longitude, 'আপনার অবস্থান'),
+      p => init(p.coords.latitude, p.coords.longitude, t('yourLocation')),
       () => { /* keep the Dhaka default */ },
       { timeout: 5000 }
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [init])
 
   useEffect(() => {
@@ -124,7 +113,7 @@ function PrayerCard({ width }: { width: number | null }) {
   if (!state) return (
     <div className="mx-auto rounded-2xl bg-card dark:bg-[#163f4f] border border-foreground/15 shadow-sm px-5 py-4 flex items-center gap-3 text-muted-foreground shrink-0" style={style}>
       <Loader2 className="w-4 h-4 animate-spin shrink-0 text-primary" />
-      <span className="text-sm">লোড হচ্ছে...</span>
+      <span className="text-sm">{tCommon('loading')}</span>
     </div>
   )
 
@@ -133,7 +122,7 @@ function PrayerCard({ width }: { width: number | null }) {
   const bangla = toBanglaDate(now)
   const active = slots.find(s => s.key === activeKey)
   const next   = findNextSlot(slots, now)
-  const season = BN_SEASONS[bangla.monthIdx] ?? ''
+  const season = seasons[bangla.monthIdx] ?? ''
 
   return (
     <Link href="/namaz-times" className="mx-auto block bg-card dark:bg-[#163f4f] p-[clamp(0.625rem,2vh,1.5rem)] rounded-2xl shadow-sm border border-border/60 dark:border-foreground/15 hover:border-primary/50 hover:shadow-md transition-all shrink-0" style={style}>
@@ -141,13 +130,13 @@ function PrayerCard({ width }: { width: number | null }) {
       <div className="flex justify-between items-start mb-[clamp(0.5rem,1.8vh,1.5rem)]">
         <div>
           <h2 className="text-[clamp(1rem,2.5vh,1.5rem)] font-bold text-primary dark:text-white mb-1 leading-snug">
-            {toBnNum(hijri.day)} {hijri.monthBn}, {toBnNum(hijri.year)} হিজরী
+            {formatNum(hijri.day, locale)} {locale === 'bn' ? hijri.monthBn : hijri.monthEn}, {formatNum(hijri.year, locale)} {t('hijriSuffix')}
           </h2>
           <p className="text-[clamp(0.75rem,1.8vh,1rem)] text-foreground/70 dark:text-white/80 font-semibold">
-            {BN_DAYS[now.getDay()]}, {toBnNum(now.getDate())} {BN_MONTHS[now.getMonth()]} {toBnNum(now.getFullYear())}
+            {days[now.getDay()]}, {formatNum(now.getDate(), locale)} {months[now.getMonth()]} {formatNum(now.getFullYear(), locale)}
           </p>
           <p className="text-[clamp(0.75rem,1.8vh,1rem)] text-foreground/70 dark:text-white/70">
-            {toBnNum(bangla.day)} {bangla.monthBn}, {toBnNum(bangla.year)} — {season}
+            {formatNum(bangla.day, locale)} {locale === 'bn' ? bangla.monthBn : bangla.monthEn}, {formatNum(bangla.year, locale)} — {season}
           </p>
           <div className="flex items-center text-foreground/70 dark:text-white/70 mt-[clamp(0.25rem,0.7vh,0.5rem)] text-[clamp(0.65rem,1.5vh,0.875rem)]">
             <MapPin className="w-[1.1em] h-[1.1em] mr-1 shrink-0" />
@@ -161,12 +150,12 @@ function PrayerCard({ width }: { width: number | null }) {
       <div className="grid grid-cols-2 gap-[clamp(0.5rem,1.4vh,1rem)]">
         {/* Current */}
         <div className="bg-emerald-50 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] p-[clamp(0.5rem,1.5vh,1rem)] rounded-xl border border-emerald-100 dark:border-white/10">
-          <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-primary dark:text-amber-200">বর্তমান</span>
+          <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-primary dark:text-amber-200">{t('current')}</span>
           {active ? (
             <>
-              <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-primary dark:text-white">{active.nameBn}</h3>
-              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">শুরু <span className="font-bold text-primary dark:text-white">{formatTimeBn(active.start)}</span></p>
-              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">শেষ <span className="font-bold text-primary dark:text-white">{formatTimeBn(active.end)}</span></p>
+              <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-primary dark:text-white">{locale === 'bn' ? active.nameBn : active.nameEn}</h3>
+              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">{t('start')} <span className="font-bold text-primary dark:text-white">{formatTime(active.start, locale)}</span></p>
+              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">{t('end')} <span className="font-bold text-primary dark:text-white">{formatTime(active.end, locale)}</span></p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground mt-1">—</p>
@@ -175,9 +164,9 @@ function PrayerCard({ width }: { width: number | null }) {
         {/* Next */}
         {next && (
           <div className="bg-gray-50 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] p-[clamp(0.5rem,1.5vh,1rem)] rounded-xl border border-gray-200 dark:border-white/10">
-            <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-foreground/70 dark:text-amber-200">পরবর্তী</span>
-            <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-foreground/80 dark:text-white">{next.nameBn}</h3>
-            <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">শুরু <span className="font-bold text-foreground dark:text-white">{formatTimeBn(next.start)}</span></p>
+            <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-foreground/70 dark:text-amber-200">{t('next')}</span>
+            <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-foreground/80 dark:text-white">{locale === 'bn' ? next.nameBn : next.nameEn}</h3>
+            <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">{t('start')} <span className="font-bold text-foreground dark:text-white">{formatTime(next.start, locale)}</span></p>
           </div>
         )}
       </div>
@@ -188,6 +177,7 @@ function PrayerCard({ width }: { width: number | null }) {
 // ── News card ─────────────────────────────────────────────────────────────────
 
 function NewsCard({ news, width }: { news: NewsListItem[]; width: number | null }) {
+  const t = useTranslations('Home')
   if (news.length === 0) return null
   const latest = news[0]
 
@@ -201,12 +191,12 @@ function NewsCard({ news, width }: { news: NewsListItem[]; width: number | null 
           <Newspaper className="w-[45%] h-[45%]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[clamp(0.5rem,1.1vh,0.625rem)] font-bold text-primary uppercase tracking-wider mb-0.5">সর্বশেষ সংবাদ</p>
+          <p className="text-[clamp(0.5rem,1.1vh,0.625rem)] font-bold text-primary uppercase tracking-wider mb-0.5">{t('latestNews')}</p>
           <p className="text-[clamp(0.7rem,1.5vh,0.875rem)] font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</p>
         </div>
       </Link>
       <Link href="/news" className="text-[clamp(0.6rem,1.3vh,0.75rem)] text-primary font-medium hover:underline whitespace-nowrap shrink-0">
-        সব দেখুন →
+        {t('viewAllArrow')}
       </Link>
     </div>
   )
@@ -276,18 +266,35 @@ interface Props {
 
 type Tab = 'books' | 'bayans' | 'malfuzat' | 'articles'
 
-const TABS: { key: Tab; label: string; href: string }[] = [
-  { key: 'books',    label: 'নতুন কিতাব',    href: '/books'    },
-  { key: 'bayans',   label: 'নতুন বয়ান',     href: '/bayan'    },
-  { key: 'malfuzat', label: 'নতুন মালফুযাত', href: '/malfuzat' },
-  { key: 'articles', label: 'নতুন প্রবন্ধ',  href: '/articles' },
-]
-
 export function ClassicHome({
   books, booksTotal, bayans, bayansTotal, malfuzat, malfuzatTotal,
   articles, articlesTotal, news,
 }: Props) {
+  const t = useTranslations('Home')
+  const tNav = useTranslations('Nav')
   const [tab, setTab] = useState<Tab>('books')
+
+  const SECTIONS = [
+    { label: tNav('quran'),        href: '/quran',       icon: '/icons/quran.svg'      },
+    { label: tNav('books'),        href: '/books',       icon: '/icons/book.svg'       },
+    { label: tNav('bayan'),        href: '/bayan',       icon: '/icons/bayan.svg'      },
+    { label: tNav('malfuzat'),     href: '/malfuzat',    icon: '/icons/malfuzat.svg'   },
+    { label: tNav('masail'),       href: '/masail',      icon: '/icons/masail.svg'     },
+    { label: tNav('dua'),         href: '/dua',         icon: '/icons/dua.svg'        },
+    { label: tNav('articles'),     href: '/articles',    icon: '/icons/article.svg'    },
+    { label: tNav('news'),        href: '/news',        icon: '/icons/news.svg'       },
+    { label: tNav('madrasah'),     href: '/madrasah',    icon: '/icons/madrasah.svg'   },
+    { label: tNav('namazTimes'),   href: '/namaz-times', icon: '/icons/namaz-time.svg' },
+    { label: t('navDonate'),      href: '/donate',      icon: '/icons/donate.svg'     },
+    { label: t('navSettings'),    href: '/settings',    icon: '/icons/settings.svg'   },
+  ]
+
+  const TABS: { key: Tab; label: string; href: string }[] = [
+    { key: 'books',    label: t('tabBooks'),    href: '/books'    },
+    { key: 'bayans',   label: t('tabBayans'),   href: '/bayan'    },
+    { key: 'malfuzat', label: t('tabMalfuzat'), href: '/malfuzat' },
+    { key: 'articles', label: t('tabArticles'), href: '/articles' },
+  ]
 
   const booksList    = useInfiniteList<Book>(books, booksTotal, '/api/books')
   const bayansList   = useInfiniteList<BayanListItem>(bayans, bayansTotal, '/api/bayan', { sort: 'date' })
@@ -344,7 +351,7 @@ export function ClassicHome({
     return () => ro.disconnect()
   }, [])
 
-  const currentTabHref = TABS.find(t => t.key === tab)?.href ?? '/'
+  const currentTabHref = TABS.find(tab_ => tab_.key === tab)?.href ?? '/'
 
   const bayansForList   = bayansList.items.map(b   => ({ id: b.id, title: b.title, subtitle: b.author?.name }))
   const malfuzatForList = malfuzatList.items.map(m => ({ id: m.id, title: m.title, subtitle: m.author?.name }))
@@ -408,9 +415,9 @@ export function ClassicHome({
               ))}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Link href={currentTabHref} className="text-xs text-primary font-medium hover:underline whitespace-nowrap">সব দেখুন →</Link>
+              <Link href={currentTabHref} className="text-xs text-primary font-medium hover:underline whitespace-nowrap">{t('viewAllArrow')}</Link>
               <span className="text-border/60 text-xs hidden sm:block">|</span>
-              <Link href="/explore" className="text-xs text-foreground/60 hover:text-primary transition-colors hidden sm:block whitespace-nowrap">নতুন লেআউট →</Link>
+              <Link href="/explore" className="text-xs text-foreground/60 hover:text-primary transition-colors hidden sm:block whitespace-nowrap">{t('newLayoutLink')}</Link>
             </div>
           </div>
 

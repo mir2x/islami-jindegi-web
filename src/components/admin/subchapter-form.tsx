@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Check, ChevronsUpDown } from 'lucide-react'
 import { useSubChapterStore } from '@/store/subchapter-store'
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export function SubChapterForm({ subChapter, defaultBookId }: Props) {
+  const t = useTranslations('SubChapterForm')
+  const tc = useTranslations('Common')
   const router = useRouter()
   const { create, update } = useSubChapterStore()
   const { fetchByBook } = useChapterStore()
@@ -58,15 +61,15 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
   }, [form.bookId, fetchByBook])
 
   const parentLabel = (() => {
-    if (form.parentSubChapterId) return allSubChapters.find(s => s.id === form.parentSubChapterId)?.title ?? 'Select parent...'
-    if (form.chapterId) return bookChapters.find(c => c.id === form.chapterId)?.title ?? (isEdit ? subChapter.chapterTitle : 'Select parent...')
-    return 'Select parent...'
+    if (form.parentSubChapterId) return allSubChapters.find(s => s.id === form.parentSubChapterId)?.title ?? t('selectParentPlaceholder')
+    if (form.chapterId) return bookChapters.find(c => c.id === form.chapterId)?.title ?? (isEdit ? subChapter.chapterTitle : t('selectParentPlaceholder'))
+    return t('selectParentPlaceholder')
   })()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.title.trim()) { toast.error('Title is required'); return }
-    if (!form.chapterId) { toast.error('Parent chapter is required'); return }
+    if (!form.title.trim()) { toast.error(t('titleRequired')); return }
+    if (!form.chapterId) { toast.error(t('parentChapterRequired')); return }
     setLoading(true)
     try {
       const payload = {
@@ -78,14 +81,14 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
       }
       if (isEdit) {
         await update(subChapter.id, payload)
-        toast.success('Subchapter updated')
+        toast.success(t('subchapterUpdated'))
       } else {
         await create({ ...payload, chapterId: form.chapterId })
-        toast.success('Subchapter created')
+        toast.success(t('subchapterCreated'))
       }
       router.back()
     } catch {
-      toast.error('Something went wrong')
+      toast.error(tc('somethingWentWrong'))
     } finally {
       setLoading(false)
     }
@@ -99,35 +102,35 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          {tc('back')}
         </button>
-        <h1 className="text-2xl font-bold">{isEdit ? 'Edit Subchapter' : 'Add New Subchapter'}</h1>
+        <h1 className="text-2xl font-bold">{isEdit ? t('editSubchapter') : t('addNewSubchapter')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {isEdit ? `Editing "${subChapter.title}"` : 'Fill in the details to add a new subchapter'}
+          {isEdit ? t('editingSubchapter', { title: subChapter.title }) : t('fillDetailsSubchapter')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('basicInformation')}</h2>
 
             {/* Book selector */}
             <div className="space-y-1.5">
-              <Label>Book <span className="text-destructive">*</span></Label>
+              <Label>{t('bookLabel')} <span className="text-destructive">*</span></Label>
               <Popover open={bookOpen} onOpenChange={setBookOpen}>
                 <PopoverTrigger className={cn(
                   'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm',
                   form.bookId ? 'text-foreground' : 'text-muted-foreground'
                 )}>
-                  <span className="truncate">{allBooks.find(b => b.id === form.bookId)?.title ?? 'Select book...'}</span>
+                  <span className="truncate">{allBooks.find(b => b.id === form.bookId)?.title ?? t('selectBookPlaceholder')}</span>
                   <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search books..." />
+                    <CommandInput placeholder={t('searchBooksPlaceholder')} />
                     <CommandList>
-                      <CommandEmpty>No books found.</CommandEmpty>
+                      <CommandEmpty>{t('noBooksFound')}</CommandEmpty>
                       <CommandGroup>
                         {allBooks.map(b => (
                           <CommandItem key={b.id} value={b.title} onSelect={() => {
@@ -147,7 +150,7 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
 
             {/* Parent picker — always editable */}
             <div className="space-y-1.5">
-              <Label>Parent <span className="text-destructive">*</span></Label>
+              <Label>{t('parentLabel')} <span className="text-destructive">*</span></Label>
               <Popover open={parentOpen} onOpenChange={setParentOpen}>
                 <PopoverTrigger disabled={!form.bookId} className={cn(
                   'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm disabled:opacity-50',
@@ -158,11 +161,11 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search..." />
+                    <CommandInput placeholder={tc('search')} />
                     <CommandList>
-                      <CommandEmpty>No results.</CommandEmpty>
+                      <CommandEmpty>{tc('noResults')}</CommandEmpty>
                       {bookChapters.length > 0 && (
-                        <CommandGroup heading="Chapter">
+                        <CommandGroup heading={t('chapterHeading')}>
                           {bookChapters.map(c => (
                             <CommandItem key={c.id} value={c.title} onSelect={() => {
                               setForm(f => ({ ...f, chapterId: c.id, parentSubChapterId: '' }))
@@ -175,7 +178,7 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
                         </CommandGroup>
                       )}
                       {allSubChapters.length > 0 && (
-                        <CommandGroup heading="Subchapter">
+                        <CommandGroup heading={t('subchapterHeading')}>
                           {allSubChapters.filter(s => s.id !== subChapter?.id).map(s => (
                             <CommandItem key={s.id} value={s.title} onSelect={() => {
                               setForm(f => ({ ...f, chapterId: s.chapterId, parentSubChapterId: s.id }))
@@ -194,21 +197,21 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Title <span className="text-destructive">*</span></Label>
+              <Label>{t('titleLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="Subchapter title"
+                placeholder={t('subchapterTitlePlaceholder')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Position</Label>
+              <Label>{t('positionLabel')}</Label>
               <Input
                 type="number"
                 value={form.position}
                 onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
-                placeholder="Auto"
+                placeholder={t('autoPlaceholder')}
                 min={1}
                 className="w-40"
               />
@@ -216,21 +219,21 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
           </div>
 
           <div className="bg-card border rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Content</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('content')}</h2>
             <RichEditor
               value={form.body}
               onChange={body => setForm(f => ({ ...f, body }))}
-              placeholder="Subchapter content..."
+              placeholder={t('subchapterContentPlaceholder')}
               editorKey={editorKey}
             />
           </div>
 
           <div className="flex gap-3">
             <Button type="submit" disabled={loading} className="sm:px-8">
-              {loading ? 'Saving...' : isEdit ? 'Update Subchapter' : 'Create Subchapter'}
+              {loading ? t('saving') : isEdit ? t('updateSubchapter') : t('createSubchapter')}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
+              {tc('cancel')}
             </Button>
           </div>
         </div>

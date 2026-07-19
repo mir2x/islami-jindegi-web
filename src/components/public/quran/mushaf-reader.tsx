@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import {
   ArrowLeft, ZoomIn, ZoomOut, X,
   ChevronLeft, ChevronRight, ChevronDown, BookOpen,
@@ -103,13 +105,9 @@ function getSpreadPair(p: number, totalPages: number): { right: number; left: nu
   return { right, left: left <= totalPages ? left : null }
 }
 
-const DRAWER_TABS = [
-  { id: 'surah', label: 'সূরা' },
-  { id: 'juz', label: 'পারা' },
-  { id: 'bookmarks', label: 'বুকমার্ক' },
-] as const
+const DRAWER_TAB_IDS = ['surah', 'juz', 'bookmarks'] as const
 
-type DrawerTab = typeof DRAWER_TABS[number]['id']
+type DrawerTab = typeof DRAWER_TAB_IDS[number]
 
 // ─── One page face (image + ayah highlights + tap target) ────────────────────
 
@@ -122,13 +120,14 @@ function PageFace({ pageNum, url, highlightBoxes, editionWidth, editionHeight, o
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void
   className?: string
 }) {
+  const t = useTranslations('MushafReader')
   return (
     <div className={cn('relative cursor-pointer', className)} onClick={onClick}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={url}
         src={url}
-        alt={`পৃষ্ঠা ${bn(pageNum)}`}
+        alt={t('pageAlt', { number: bn(pageNum) })}
         className="w-full h-full block bg-white shadow-[0_4px_32px_rgba(0,0,0,0.25)]"
         draggable={false}
       />
@@ -159,8 +158,14 @@ interface Props {
 }
 
 function MushafReaderInner({ edition, initialPage, reciters }: Props) {
+  const t = useTranslations('MushafReader')
   const router = useRouter()
   const searchParams = useSearchParams()
+  const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
+    { id: 'surah', label: t('drawerTabSurah') },
+    { id: 'juz', label: t('drawerTabJuz') },
+    { id: 'bookmarks', label: t('drawerTabBookmarks') },
+  ]
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [page, setPage] = useState(() => {
@@ -601,7 +606,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
     setActionBusy(true)
     const arabic = await fetchArabic(sura, ayah)
     setActionBusy(false)
-    const text = arabic || `সূরা ${SURA_NAMES[sura - 1]}, আয়াত ${bn(ayah)}`
+    const text = arabic || t('shareFallback', { surahName: SURA_NAMES[sura - 1], ayahNumber: bn(ayah) })
     if (navigator.share) {
       await navigator.share({ text }).catch(() => {})
     } else {
@@ -750,7 +755,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
         <button
           onClick={() => router.push('/quran')}
           className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Back"
+          aria-label={t('back')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -771,7 +776,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
           className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
         >
           <Play className="w-3.5 h-3.5" />
-          তিলাওয়াত শুনুন
+          {t('listenTilawat')}
         </button>
 
         {/* Zoom */}
@@ -779,7 +784,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
           onClick={zoomOut}
           disabled={scale <= 0.75}
           className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
-          aria-label="Zoom out"
+          aria-label={t('zoomOut')}
         >
           <ZoomOut className="w-4.5 h-4.5" />
         </button>
@@ -790,7 +795,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
           onClick={zoomIn}
           disabled={scale >= 3}
           className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 transition-colors"
-          aria-label="Zoom in"
+          aria-label={t('zoomIn')}
         >
           <ZoomIn className="w-4.5 h-4.5" />
         </button>
@@ -802,7 +807,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
             'flex items-center justify-center w-9 h-9 rounded-lg transition-colors',
             spreadMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           )}
-          title={spreadMode ? 'একক পাতা দেখুন' : 'দুই পাতা দেখুন'}
+          title={spreadMode ? t('singlePageView') : t('twoPageView')}
         >
           <BookOpen className="w-4.5 h-4.5" />
         </button>
@@ -821,13 +826,13 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
               <p className="text-xs font-medium text-foreground truncate max-w-[9rem]">
                 {SURA_NAMES[activeAyah.sura - 1]} · {bn(activeAyah.ayah)}
               </p>
-              {audioError && <p className="text-[10px] text-destructive">অডিও পাওয়া যায়নি</p>}
+              {audioError && <p className="text-[10px] text-destructive">{t('audioNotFound')}</p>}
             </div>
 
             <button
               onClick={openTilawatPopup}
               className={cn('p-1.5 rounded-full transition-colors', activeRange ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
-              title="আয়াত রেঞ্জ ও পুনরাবৃত্তি"
+              title={t('rangeAndRepeat')}
             >
               <Repeat className="w-4 h-4" />
             </button>
@@ -859,7 +864,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
             <button
               onClick={stopPlayback}
               className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title="বন্ধ করুন"
+              title={t('stop')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -874,7 +879,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
             className="flex items-center gap-1 pl-3 pr-3.5 py-2 rounded-full text-foreground hover:bg-muted disabled:opacity-30 transition-colors text-sm font-medium"
           >
             <ChevronLeft className="w-4 h-4" />
-            পরে
+            {t('nextPage')}
           </button>
 
           <div className="w-px h-5 bg-border" />
@@ -909,7 +914,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
               'flex items-center justify-center w-8 h-8 rounded-full transition-colors',
               currentPageBookmarked ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             )}
-            title="পৃষ্ঠা বুকমার্ক"
+            title={t('pageBookmark')}
           >
             <Star className={cn('w-4 h-4', currentPageBookmarked && 'fill-current')} />
           </button>
@@ -921,7 +926,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
             disabled={page <= 1}
             className="flex items-center gap-1 pl-3.5 pr-3 py-2 rounded-full text-foreground hover:bg-muted disabled:opacity-30 transition-colors text-sm font-medium"
           >
-            আগে
+            {t('prevPage')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -932,7 +937,7 @@ function MushafReaderInner({ edition, initialPage, reciters }: Props) {
         <button
           onClick={() => setBarsVisible(true)}
           className="absolute bottom-4 right-4 z-30 flex items-center justify-center w-11 h-11 rounded-full bg-background/95 backdrop-blur-md border border-border shadow-xl text-foreground hover:bg-muted transition-colors"
-          title="ফুলস্ক্রিন থেকে বের হন"
+          title={t('exitFullscreen')}
         >
           <Minimize className="w-4.5 h-4.5" />
         </button>

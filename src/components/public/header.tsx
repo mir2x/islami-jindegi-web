@@ -1,27 +1,30 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Menu, X } from 'lucide-react'
 import { ThemeToggle } from './theme-toggle'
+import { LocaleSwitcher } from '@/components/locale-switcher'
 import { cn } from '@/lib/utils'
 
-const NAV = [
-  { label: 'কুরআন', href: '/quran' },
-  { label: 'কিতাব', href: '/books' },
-  { label: 'বয়ান', href: '/bayan' },
-  { label: 'মালফুযাত', href: '/malfuzat' },
-  { label: 'মাসাইল', href: '/masail' },
-  { label: 'দু\'আ-দুরূদ', href: '/dua' },
-  { label: 'প্রবন্ধ', href: '/articles' },
-  { label: 'সংবাদ', href: '/news' },
-  { label: 'মাদরাসা', href: '/madrasah' },
-  { label: 'নামাযের সময়', href: '/namaz-times' },
-]
-
 export function Header() {
+  const t = useTranslations('Nav')
+  const tMeta = useTranslations('Metadata')
+  const NAV = [
+    { label: t('quran'), href: '/quran' },
+    { label: t('books'), href: '/books' },
+    { label: t('bayan'), href: '/bayan' },
+    { label: t('malfuzat'), href: '/malfuzat' },
+    { label: t('masail'), href: '/masail' },
+    { label: t('dua'), href: '/dua' },
+    { label: t('articles'), href: '/articles' },
+    { label: t('news'), href: '/news' },
+    { label: t('madrasah'), href: '/madrasah' },
+    { label: t('namazTimes'), href: '/namaz-times' },
+  ]
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,13 +49,13 @@ export function Header() {
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
             <Image
               src="/logo-icon.png"
-              alt="ইসলামী যিন্দেগী"
+              alt={tMeta('title')}
               width={36}
               height={36}
               className="rounded-xl shadow-sm"
             />
             <span className="text-[17px] font-bold text-foreground leading-tight hidden sm:block">
-              ইসলামী যিন্দেগী
+              {tMeta('title')}
             </span>
           </Link>
 
@@ -78,12 +81,13 @@ export function Header() {
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
+            <LocaleSwitcher className="mr-1" />
             <ThemeToggle />
             <button
               type="button"
               className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               onClick={() => setMenuOpen(o => !o)}
-              aria-label="Toggle menu"
+              aria-label={t('toggleMenu')}
             >
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
   ARABIC_FONTS, BENGALI_FONTS, ARABIC_FONT_KEY, BENGALI_FONT_KEY,
@@ -48,6 +49,7 @@ function Select({ value, onChange, options }: {
 }
 
 export function SettingsClient() {
+  const t = useTranslations('SettingsPage')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [arabicFont, setArabicFont] = useState(ARABIC_FONTS[0].key)
   const [banglaFont, setBanglaFont] = useState(BENGALI_FONTS[0].key)
@@ -88,19 +90,19 @@ export function SettingsClient() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center justify-between gap-3 mb-8">
-        <h1 className="text-3xl font-bold text-foreground">সেটিংস</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('title')}</h1>
         <button
           onClick={reset}
           className="text-xs text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
         >
-          ডিফল্টে ফিরুন
+          {t('resetToDefault')}
         </button>
       </div>
 
       <div className="space-y-5">
         {/* ── General ── */}
-        <Section title="সাধারণ">
-          <Row label="হিজরী তারিখ সমন্বয়">
+        <Section title={t('generalSection')}>
+          <Row label={t('hijriAdjustmentLabel')}>
             <div className="flex gap-1.5">
               {HIJRI_ADJUSTMENTS.map(v => (
                 <button
@@ -119,7 +121,7 @@ export function SettingsClient() {
             </div>
           </Row>
 
-          <Row label="আরবি ফন্ট">
+          <Row label={t('arabicFontLabel')}>
             <Select
               value={arabicFont}
               onChange={updateArabicFont}
@@ -127,7 +129,7 @@ export function SettingsClient() {
             />
           </Row>
 
-          <Row label="বাংলা ফন্ট">
+          <Row label={t('banglaFontLabel')}>
             <Select
               value={banglaFont}
               onChange={updateBanglaFont}
@@ -137,8 +139,8 @@ export function SettingsClient() {
         </Section>
 
         {/* ── Prayer time calculation ── */}
-        <Section title="নামাযের সময় গণনা">
-          <Row label="মাযহাব">
+        <Section title={t('prayerCalcSection')}>
+          <Row label={t('madhabLabel')}>
             <Select
               value={settings.madhab}
               onChange={v => update({ madhab: v as MadhabSetting })}
@@ -146,7 +148,7 @@ export function SettingsClient() {
             />
           </Row>
 
-          <Row label="গণনা পদ্ধতি">
+          <Row label={t('methodLabel')}>
             <Select
               value={settings.method}
               onChange={v => update({ method: v })}
@@ -156,7 +158,7 @@ export function SettingsClient() {
         </Section>
 
         {/* ── Per-prayer minute offsets ── */}
-        <Section title="সময় সমন্বয় (মিনিট)">
+        <Section title={t('offsetSection')}>
           {PRAYER_OFFSETS.map(({ key, label }) => (
             <Row key={key} label={label}>
               <div className="flex items-center gap-2">
@@ -171,7 +173,7 @@ export function SettingsClient() {
                   }}
                   className="w-full px-3 py-2 rounded-xl border border-border bg-muted text-sm text-foreground tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-                <span className="text-xs text-muted-foreground shrink-0">মিনিট</span>
+                <span className="text-xs text-muted-foreground shrink-0">{t('minuteUnit')}</span>
               </div>
             </Row>
           ))}
@@ -179,7 +181,7 @@ export function SettingsClient() {
       </div>
 
       <p className="text-xs text-muted-foreground text-center mt-6">
-        সেটিংস আপনার ব্রাউজারে সংরক্ষিত হয়।
+        {t('footerNote')}
       </p>
     </div>
   )

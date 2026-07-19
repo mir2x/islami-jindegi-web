@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { ArrowLeft, BookOpen, X, Copy, Share2, Bookmark, BookOpenText, Settings, Type } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { QuranSurahDetail, QuranSurah } from '@/types'
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function TilawatReader({ surah, allSurahs }: Props) {
+  const t = useTranslations('TilawatReader')
   const [selectedAyah, setSelectedAyah] = useState<number | null>(null)
   const [tafsirAyah, setTafsirAyah] = useState<number | null>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -79,12 +81,12 @@ export function TilawatReader({ surah, allSurahs }: Props) {
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-foreground text-base leading-tight truncate">{surah.nameBengali}</h1>
-          <p className="text-xs text-muted-foreground">তিলাওয়াত মোড · {bn(surah.totalAyahs)} আয়াত</p>
+          <p className="text-xs text-muted-foreground">{t('subtitle', { count: bn(surah.totalAyahs) })}</p>
         </div>
         <Link
           href={`/quran/surah/${surah.surahNumber}`}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          title="সূরা মোডে দেখুন"
+          title={t('viewInSurahMode')}
         >
           <BookOpen className="w-5 h-5" />
         </Link>
@@ -99,7 +101,7 @@ export function TilawatReader({ surah, allSurahs }: Props) {
       {showSettings && (
         <div className="shrink-0 border-b border-border bg-muted/30 px-4 py-4">
           <div className="max-w-2xl mx-auto space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">আরবী ফন্ট</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('arabicFont')}</p>
             <div className="flex flex-wrap gap-2 mb-2">
               {ARABIC_FONTS.map(f => (
                 <button
@@ -170,7 +172,7 @@ export function TilawatReader({ surah, allSurahs }: Props) {
               className="flex items-center gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all"
             >
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">আগের সূরা</p>
+                <p className="text-xs text-muted-foreground">{t('prevSurah')}</p>
                 <p className="text-sm font-semibold truncate">{prevSurah.nameBengali}</p>
               </div>
             </Link>
@@ -181,7 +183,7 @@ export function TilawatReader({ surah, allSurahs }: Props) {
               className="flex items-center justify-end gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all"
             >
               <div className="min-w-0 text-right">
-                <p className="text-xs text-muted-foreground">পরের সূরা</p>
+                <p className="text-xs text-muted-foreground">{t('nextSurah')}</p>
                 <p className="text-sm font-semibold truncate">{nextSurah.nameBengali}</p>
               </div>
             </Link>
@@ -195,17 +197,17 @@ export function TilawatReader({ surah, allSurahs }: Props) {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" onClick={() => setSelectedAyah(null)} />
           <div className="relative w-full sm:max-w-md sm:mb-6 sm:rounded-2xl bg-background border border-border shadow-2xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-foreground">আয়াত {bn(selected.number)}</p>
+              <p className="text-sm font-semibold text-foreground">{t('ayah', { number: bn(selected.number) })}</p>
               <button onClick={() => setSelectedAyah(null)} className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={handleCopy} className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl bg-muted hover:bg-muted/70 transition-colors text-xs text-muted-foreground">
-                <Copy className="w-4 h-4" /> কপি
+                <Copy className="w-4 h-4" /> {t('copy')}
               </button>
               <button onClick={handleShare} className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl bg-muted hover:bg-muted/70 transition-colors text-xs text-muted-foreground">
-                <Share2 className="w-4 h-4" /> শেয়ার
+                <Share2 className="w-4 h-4" /> {t('share')}
               </button>
               <button
                 onClick={handleBookmarkToggle}
@@ -214,13 +216,13 @@ export function TilawatReader({ surah, allSurahs }: Props) {
                   bookmarked ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-muted/70 text-muted-foreground'
                 )}
               >
-                <Bookmark className={cn('w-4 h-4', bookmarked && 'fill-current')} /> বুকমার্ক
+                <Bookmark className={cn('w-4 h-4', bookmarked && 'fill-current')} /> {t('bookmark')}
               </button>
               <button
                 onClick={() => { setTafsirAyah(selected.number); setSelectedAyah(null) }}
                 className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl bg-muted hover:bg-muted/70 transition-colors text-xs text-muted-foreground"
               >
-                <BookOpenText className="w-4 h-4" /> তাফসীর
+                <BookOpenText className="w-4 h-4" /> {t('tafsir')}
               </button>
             </div>
           </div>

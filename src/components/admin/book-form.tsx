@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
 import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useBookStore } from '@/store/book-store'
@@ -27,6 +28,8 @@ interface Props {
 const LANGUAGES = ['Bangla', 'English']
 
 export function BookForm({ book }: Props) {
+  const t = useTranslations('BookForm')
+  const tc = useTranslations('Common')
   const router = useRouter()
   const { create, update } = useBookStore()
   const { all: authors, fetchAll } = useAuthorStore()
@@ -88,7 +91,7 @@ export function BookForm({ book }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim()) { toast.error('Title is required'); return }
+    if (!title.trim()) { toast.error(t('titleRequired')); return }
 
     setLoading(true)
     try {
@@ -109,15 +112,15 @@ export function BookForm({ book }: Props) {
 
       if (isEdit) {
         await update(book.id, payload)
-        toast.success('Book updated')
+        toast.success(t('bookUpdated'))
         router.push(`/admin/books/${book.id}`)
       } else {
         await create(payload)
-        toast.success('Book created')
+        toast.success(t('bookCreated'))
         router.push('/admin/books')
       }
     } catch {
-      toast.error('Something went wrong')
+      toast.error(tc('somethingWentWrong'))
     } finally {
       setLoading(false)
     }
@@ -132,10 +135,10 @@ export function BookForm({ book }: Props) {
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          {isEdit ? 'Back to book' : 'Back to books'}
+          {isEdit ? t('backToBook') : t('backToBooks')}
         </button>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {isEdit ? 'Edit Book' : 'Add New Book'}
+          {isEdit ? t('editBook') : t('addNewBook')}
         </p>
         {isEdit && book && (
           <p className="text-sm font-medium mt-0.5 text-foreground/80">{book.title}</p>
@@ -150,22 +153,22 @@ export function BookForm({ book }: Props) {
 
             {/* Basic Information */}
             <div className="bg-card border rounded-xl p-4 space-y-3">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('basicInformation')}</h2>
 
               <div className="space-y-1.5">
-                <Label>Title <span className="text-destructive">*</span></Label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Book title" maxLength={100} />
+                <Label>{t('titleLabel')} <span className="text-destructive">*</span></Label>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('bookTitlePlaceholder')} maxLength={100} />
               </div>
 
               <div className="space-y-1.5">
                 <Label>
-                  Excerpt
-                  <span className="ml-2 text-xs text-muted-foreground font-normal">for SEO & social media</span>
+                  {t('excerptLabel')}
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">{t('excerptHint')}</span>
                 </Label>
                 <Textarea
                   value={excerpt}
                   onChange={e => setExcerpt(e.target.value)}
-                  placeholder="Short description..."
+                  placeholder={t('shortDescriptionPlaceholder')}
                   rows={3}
                   maxLength={160}
                 />
@@ -174,7 +177,7 @@ export function BookForm({ book }: Props) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Language <span className="text-destructive">*</span></Label>
+                  <Label>{t('languageLabel')} <span className="text-destructive">*</span></Label>
                   <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -183,18 +186,18 @@ export function BookForm({ book }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Publisher</Label>
-                  <Input value={publisher} onChange={e => setPublisher(e.target.value)} placeholder="Publisher name" maxLength={100} />
+                  <Label>{t('publisherLabel')}</Label>
+                  <Input value={publisher} onChange={e => setPublisher(e.target.value)} placeholder={t('publisherPlaceholder')} maxLength={100} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Price</Label>
-                  <Input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 250 BDT" maxLength={50} />
+                  <Label>{t('priceLabel')}</Label>
+                  <Input value={price} onChange={e => setPrice(e.target.value)} placeholder={t('pricePlaceholder')} maxLength={50} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Published At</Label>
+                  <Label>{t('publishedAtLabel')}</Label>
                   <Input type="date" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
                 </div>
               </div>
@@ -202,21 +205,21 @@ export function BookForm({ book }: Props) {
 
             {/* Authors & Categories — stacked full-width */}
             <div className="bg-card border rounded-xl p-4 space-y-3">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Authors & Categories</h2>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('authorsAndCategories')}</h2>
 
               {/* Authors */}
               <div className="space-y-1.5">
-                <Label>Authors</Label>
+                <Label>{t('authorsLabel')}</Label>
                 <Popover open={authorOpen} onOpenChange={setAuthorOpen}>
                   <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
-                    {selectedAuthors.length ? `${selectedAuthors.length} selected` : 'Select authors...'}
+                    {selectedAuthors.length ? t('selectedCount', { count: selectedAuthors.length }) : t('selectAuthorsPlaceholder')}
                     <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
                   </PopoverTrigger>
                   <PopoverContent className="w-72 p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Search authors..." />
+                      <CommandInput placeholder={t('searchAuthorsPlaceholder')} />
                       <CommandList>
-                        <CommandEmpty>No authors found.</CommandEmpty>
+                        <CommandEmpty>{t('noAuthorsFound')}</CommandEmpty>
                         <CommandGroup>
                           {authors.map(a => (
                             <CommandItem key={a.id} value={a.name} onSelect={() => toggleAuthor(a)}>
@@ -245,17 +248,17 @@ export function BookForm({ book }: Props) {
 
               {/* Categories */}
               <div className="space-y-1.5">
-                <Label>Categories</Label>
+                <Label>{t('categoriesLabel')}</Label>
                 <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
                   <PopoverTrigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring">
-                    {selectedCategories.length ? `${selectedCategories.length} selected` : 'Select categories...'}
+                    {selectedCategories.length ? t('selectedCount', { count: selectedCategories.length }) : t('selectCategoriesPlaceholder')}
                     <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
                   </PopoverTrigger>
                   <PopoverContent className="w-72 p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Search categories..." />
+                      <CommandInput placeholder={t('searchCategoriesPlaceholder')} />
                       <CommandList>
-                        <CommandEmpty>No categories found.</CommandEmpty>
+                        <CommandEmpty>{t('noCategoriesFound')}</CommandEmpty>
                         <CommandGroup>
                           {flatCategories.map(c => (
                             <CommandItem key={c.id} value={c.title} onSelect={() => toggleCategory(c)}>
@@ -286,10 +289,10 @@ export function BookForm({ book }: Props) {
             {/* Actions */}
             <div className="flex gap-3">
               <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
-                {loading ? 'Saving...' : isEdit ? 'Update Book' : 'Create Book'}
+                {loading ? t('saving') : isEdit ? t('updateBook') : t('createBook')}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>
-                Cancel
+                {tc('cancel')}
               </Button>
             </div>
           </div>
@@ -299,27 +302,27 @@ export function BookForm({ book }: Props) {
 
             {/* Media */}
             <div className="bg-card border rounded-xl p-4 space-y-3">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Media</h2>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('media')}</h2>
               <div className="space-y-1.5">
-                <Label>Cover Image</Label>
-                <MediaField accept="image" value={coverUrl} onChange={setCoverUrl} placeholder="No cover image" compact />
+                <Label>{t('coverImage')}</Label>
+                <MediaField accept="image" value={coverUrl} onChange={setCoverUrl} placeholder={t('noCoverImage')} compact />
               </div>
               <div className="space-y-1.5">
-                <Label>Document (PDF)</Label>
-                <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" compact />
+                <Label>{t('documentPdf')}</Label>
+                <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder={t('noDocument')} compact />
               </div>
             </div>
 
             {/* Settings */}
             <div className="bg-card border rounded-xl p-4 space-y-3">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('settings')}</h2>
               <div className="space-y-1.5">
-                <Label>Position</Label>
-                <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+                <Label>{t('positionLabel')}</Label>
+                <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder={t('autoPlaceholder')} min={1} />
               </div>
               <div className="flex items-center gap-2.5">
                 <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
-                <Label htmlFor="published" className="cursor-pointer">Published</Label>
+                <Label htmlFor="published" className="cursor-pointer">{t('publishedLabel')}</Label>
               </div>
             </div>
 

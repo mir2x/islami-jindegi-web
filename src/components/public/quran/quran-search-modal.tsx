@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { X, Search, Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import type { PagedResult, QuranSearchHit } from '@/types'
@@ -15,6 +16,7 @@ interface Props {
 const PAGE_SIZE = 20
 
 export function QuranSearchModal({ onClose }: Props) {
+  const t = useTranslations('QuranSearchModal')
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<PagedResult<QuranSearchHit> | null>(null)
@@ -83,7 +85,7 @@ export function QuranSearchModal({ onClose }: Props) {
             ref={inputRef}
             value={query}
             onChange={e => onChange(e.target.value)}
-            placeholder="আরবী, বাংলা বা ইংরেজিতে কুরআন অনুসন্ধান করুন..."
+            placeholder={t('placeholder')}
             className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
           <button
@@ -96,20 +98,20 @@ export function QuranSearchModal({ onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto">
           {error && (
-            <p className="text-center text-sm text-destructive py-12">অনুসন্ধান করা যায়নি। আবার চেষ্টা করুন।</p>
+            <p className="text-center text-sm text-destructive py-12">{t('searchError')}</p>
           )}
 
           {!error && !loading && query.trim() && result && result.data.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-12">কোনো ফলাফল পাওয়া যায়নি।</p>
+            <p className="text-center text-sm text-muted-foreground py-12">{t('noResults')}</p>
           )}
 
           {!error && !query.trim() && (
-            <p className="text-center text-sm text-muted-foreground py-12">আয়াত বা অনুবাদের যেকোনো অংশ লিখে অনুসন্ধান করুন।</p>
+            <p className="text-center text-sm text-muted-foreground py-12">{t('hint')}</p>
           )}
 
           {result && result.data.length > 0 && (
             <>
-              <p className="px-4 pt-3 pb-1 text-xs text-muted-foreground">{bn(result.total)} টি ফলাফল</p>
+              <p className="px-4 pt-3 pb-1 text-xs text-muted-foreground">{t('resultCount', { count: bn(result.total) })}</p>
               <div>
                 {result.data.map(hit => (
                   <button
@@ -119,7 +121,7 @@ export function QuranSearchModal({ onClose }: Props) {
                   >
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-xs font-semibold text-primary">{hit.surahName}</span>
-                      <span className="text-xs text-muted-foreground">আয়াত {bn(hit.ayahNumber)}</span>
+                      <span className="text-xs text-muted-foreground">{t('ayah', { number: bn(hit.ayahNumber) })}</span>
                     </div>
                     <p className="text-lg text-right text-foreground mb-1.5" style={{ fontFamily: DEFAULT_ARABIC_FONT, direction: 'rtl' }}>
                       {highlight(hit.arabic)}
@@ -137,7 +139,7 @@ export function QuranSearchModal({ onClose }: Props) {
                     disabled={loading}
                     className="px-4 py-2 rounded-lg bg-muted text-sm font-medium text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
                   >
-                    {loading ? 'লোড হচ্ছে...' : 'আরো দেখুন'}
+                    {loading ? t('loadingMore') : t('loadMore')}
                   </button>
                 </div>
               )}
@@ -147,7 +149,7 @@ export function QuranSearchModal({ onClose }: Props) {
           {loading && (!result || result.page === 1) && (
             <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <p className="text-sm">অনুসন্ধান হচ্ছে…</p>
+              <p className="text-sm">{t('searching')}</p>
             </div>
           )}
         </div>

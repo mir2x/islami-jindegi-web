@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Check, ChevronsUpDown } from 'lucide-react'
 import { useChapterStore } from '@/store/chapter-store'
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export function ChapterForm({ chapter, defaultBookId }: Props) {
+  const t = useTranslations('ChapterForm')
+  const tc = useTranslations('Common')
   const router = useRouter()
   const { create, update } = useChapterStore()
   const { result, fetch: fetchBooks } = useBookStore()
@@ -46,8 +49,8 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.title.trim()) { toast.error('Title is required'); return }
-    if (!isEdit && !form.bookId) { toast.error('Book is required'); return }
+    if (!form.title.trim()) { toast.error(t('titleRequired')); return }
+    if (!isEdit && !form.bookId) { toast.error(t('bookRequired')); return }
     setLoading(true)
     try {
       const payload = {
@@ -57,14 +60,14 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
       }
       if (isEdit) {
         await update(chapter.id, payload)
-        toast.success('Chapter updated')
+        toast.success(t('chapterUpdated'))
       } else {
         await create(form.bookId, payload)
-        toast.success('Chapter created')
+        toast.success(t('chapterCreated'))
       }
       router.back()
     } catch {
-      toast.error('Something went wrong')
+      toast.error(tc('somethingWentWrong'))
     } finally {
       setLoading(false)
     }
@@ -78,40 +81,40 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          {tc('back')}
         </button>
-        <h1 className="text-2xl font-bold">{isEdit ? 'Edit Chapter' : 'Add New Chapter'}</h1>
+        <h1 className="text-2xl font-bold">{isEdit ? t('editChapter') : t('addNewChapter')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {isEdit ? `Editing "${chapter.title}"` : 'Fill in the details to add a new chapter'}
+          {isEdit ? t('editingChapter', { title: chapter.title }) : t('fillDetailsChapter')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('basicInformation')}</h2>
 
             {isEdit ? (
               <div className="space-y-1.5">
-                <Label>Book</Label>
+                <Label>{t('bookLabel')}</Label>
                 <p className="text-sm font-medium text-foreground">{chapter.bookTitle}</p>
               </div>
             ) : (
               <div className="space-y-1.5">
-                <Label>Book <span className="text-destructive">*</span></Label>
+                <Label>{t('bookLabel')} <span className="text-destructive">*</span></Label>
                 <Popover open={bookOpen} onOpenChange={setBookOpen}>
                   <PopoverTrigger className={cn(
                     'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm',
                     form.bookId ? 'text-foreground' : 'text-muted-foreground'
                   )}>
-                    <span className="truncate">{selectedBook?.title ?? 'Select book...'}</span>
+                    <span className="truncate">{selectedBook?.title ?? t('selectBookPlaceholder')}</span>
                     <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
                   </PopoverTrigger>
                   <PopoverContent className="w-80 p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Search books..." />
+                      <CommandInput placeholder={t('searchBooksPlaceholder')} />
                       <CommandList>
-                        <CommandEmpty>No books found.</CommandEmpty>
+                        <CommandEmpty>{t('noBooksFound')}</CommandEmpty>
                         <CommandGroup>
                           {allBooks.map(b => (
                             <CommandItem key={b.id} value={b.title} onSelect={() => { setForm(f => ({ ...f, bookId: b.id })); setBookOpen(false) }}>
@@ -128,21 +131,21 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
             )}
 
             <div className="space-y-1.5">
-              <Label>Title <span className="text-destructive">*</span></Label>
+              <Label>{t('titleLabel')} <span className="text-destructive">*</span></Label>
               <Input
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="Chapter title"
+                placeholder={t('chapterTitlePlaceholder')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Position</Label>
+              <Label>{t('positionLabel')}</Label>
               <Input
                 type="number"
                 value={form.position}
                 onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
-                placeholder="Auto"
+                placeholder={t('autoPlaceholder')}
                 min={1}
                 className="w-40"
               />
@@ -150,21 +153,21 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
           </div>
 
           <div className="bg-card border rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Content</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('content')}</h2>
             <RichEditor
               value={form.body}
               onChange={body => setForm(f => ({ ...f, body }))}
-              placeholder="Chapter content..."
+              placeholder={t('chapterContentPlaceholder')}
               editorKey={editorKey}
             />
           </div>
 
           <div className="flex gap-3">
             <Button type="submit" disabled={loading} className="sm:px-8">
-              {loading ? 'Saving...' : isEdit ? 'Update Chapter' : 'Create Chapter'}
+              {loading ? t('saving') : isEdit ? t('updateChapter') : t('createChapter')}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
+              {tc('cancel')}
             </Button>
           </div>
         </div>

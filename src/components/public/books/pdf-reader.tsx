@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
@@ -29,6 +30,7 @@ const ZOOM_STEPS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0]
 const SCROLL_BUFFER = 3
 
 export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
+  const t = useTranslations('BookReader')
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
   const [scaleIdx, setScaleIdx] = useState(2)
@@ -188,12 +190,12 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
         {onSwitchToText ? (
           <button onClick={onSwitchToText} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 mr-1">
             <AlignLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">পাঠ্য</span>
+            <span className="hidden sm:inline">{t('textLabel')}</span>
           </button>
         ) : (
           <Link href="/books" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 mr-1">
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">কিতাব</span>
+            <span className="hidden sm:inline">{t('booksLabel')}</span>
           </Link>
         )}
 
@@ -219,20 +221,20 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
 
           {/* Layout: single / double */}
           <div className="flex items-center border border-border rounded-lg overflow-hidden">
-            <ModeBtn active={layoutMode === 'single'} onClick={() => switchLayoutMode('single')} title="একক পৃষ্ঠা">
+            <ModeBtn active={layoutMode === 'single'} onClick={() => switchLayoutMode('single')} title={t('singlePage')}>
               <Square className="w-3.5 h-3.5" />
             </ModeBtn>
-            <ModeBtn active={layoutMode === 'double'} onClick={() => switchLayoutMode('double')} title="দুই পৃষ্ঠা">
+            <ModeBtn active={layoutMode === 'double'} onClick={() => switchLayoutMode('double')} title={t('doublePage')}>
               <Columns className="w-3.5 h-3.5" />
             </ModeBtn>
           </div>
 
           {/* Nav: continuous / flip */}
           <div className="flex items-center border border-border rounded-lg overflow-hidden ml-1">
-            <ModeBtn active={navMode === 'continuous'} onClick={() => switchNavMode('continuous')} title="ক্রমাগত স্ক্রল">
+            <ModeBtn active={navMode === 'continuous'} onClick={() => switchNavMode('continuous')} title={t('continuousScroll')}>
               <LayoutList className="w-3.5 h-3.5" />
             </ModeBtn>
-            <ModeBtn active={navMode === 'flip'} onClick={() => switchNavMode('flip')} title="পাতা উল্টানো">
+            <ModeBtn active={navMode === 'flip'} onClick={() => switchNavMode('flip')} title={t('flipPage')}>
               <BookMarked className="w-3.5 h-3.5" />
             </ModeBtn>
           </div>
@@ -240,24 +242,24 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
           <Divider />
 
           {/* Zoom */}
-          <ToolBtn onClick={zoomOut} disabled={scaleIdx === 0} title="জুম আউট (-)">
+          <ToolBtn onClick={zoomOut} disabled={scaleIdx === 0} title={t('zoomOut')}>
             <ZoomOut className="w-4 h-4" />
           </ToolBtn>
           <button
             onClick={() => setScaleIdx(2)}
             className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors min-w-[3rem] text-center tabular-nums"
-            title="রিসেট করুন"
+            title={t('resetZoom')}
           >
             {Math.round(scale * 100)}%
           </button>
-          <ToolBtn onClick={zoomIn} disabled={scaleIdx === ZOOM_STEPS.length - 1} title="জুম ইন (+)">
+          <ToolBtn onClick={zoomIn} disabled={scaleIdx === ZOOM_STEPS.length - 1} title={t('zoomIn')}>
             <ZoomIn className="w-4 h-4" />
           </ToolBtn>
 
           <Divider />
 
           {/* Page nav */}
-          <ToolBtn onClick={prevPage} disabled={pageNumber <= 1} title="আগের পাতা (←)">
+          <ToolBtn onClick={prevPage} disabled={pageNumber <= 1} title={t('prevPageArrow')}>
             <ChevronLeft className="w-4 h-4" />
           </ToolBtn>
           <div className="flex items-center gap-1 text-sm">
@@ -268,23 +270,23 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
               onBlur={commitPageInput}
               onKeyDown={e => { if (e.key === 'Enter') commitPageInput() }}
               className="w-10 text-center rounded-md border border-border bg-muted text-foreground text-xs py-1 focus:outline-none focus:ring-1 focus:ring-ring"
-              aria-label="পাতা নম্বর"
+              aria-label={t('pageNumberLabel')}
             />
             <span className="text-muted-foreground text-xs whitespace-nowrap">/ {numPages || '—'}</span>
           </div>
-          <ToolBtn onClick={nextPage} disabled={pageNumber >= numPages || numPages === 0} title="পরের পাতা (→)">
+          <ToolBtn onClick={nextPage} disabled={pageNumber >= numPages || numPages === 0} title={t('nextPageArrow')}>
             <ChevronRight className="w-4 h-4" />
           </ToolBtn>
 
           <Divider />
 
           {/* Download */}
-          <a href={pdfUrl} download className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title="ডাউনলোড">
+          <a href={pdfUrl} download className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" title={t('download')}>
             <Download className="w-4 h-4" />
           </a>
 
           {/* Fullscreen */}
-          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? 'সাধারণ দেখুন' : 'পূর্ণ পর্দা'}>
+          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? t('normalView') : t('fullscreen')}>
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </ToolBtn>
         </div>
@@ -386,7 +388,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
             <button
               onClick={prevPage}
               disabled={pageNumber <= 1}
-              aria-label="আগের পাতা"
+              aria-label={t('prevPageShort')}
               className="absolute left-0 top-0 h-full w-[15%] flex items-center justify-start pl-3 group disabled:pointer-events-none"
             >
               <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 rounded-full p-2">
@@ -396,7 +398,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
             <button
               onClick={nextPage}
               disabled={pageNumber >= numPages}
-              aria-label="পরের পাতা"
+              aria-label={t('nextPageShort')}
               className="absolute right-0 top-0 h-full w-[15%] flex items-center justify-end pr-3 group disabled:pointer-events-none"
             >
               <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 rounded-full p-2">
@@ -415,7 +417,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
             disabled={pageNumber <= 1}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-muted text-sm font-medium disabled:opacity-40 hover:bg-muted/70 transition-colors"
           >
-            <ChevronLeft className="w-4 h-4" /> আগের
+            <ChevronLeft className="w-4 h-4" /> {t('prevPageShort')}
           </button>
           <span className="text-sm text-muted-foreground tabular-nums">
             {layoutMode === 'double' ? `${leftPage}–${Math.min(rightPage, numPages)}` : pageNumber} / {numPages || '—'}
@@ -425,7 +427,7 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
             disabled={pageNumber >= numPages || numPages === 0}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-muted text-sm font-medium disabled:opacity-40 hover:bg-muted/70 transition-colors"
           >
-            পরের <ChevronRight className="w-4 h-4" />
+            {t('nextPageShort')} <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -474,23 +476,25 @@ function Divider() {
 }
 
 function PdfLoading() {
+  const t = useTranslations('BookReader')
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
       <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm">পিডিএফ লোড হচ্ছে...</p>
+      <p className="text-sm">{t('pdfLoading')}</p>
     </div>
   )
 }
 
 function PdfError({ url }: { url: string }) {
+  const t = useTranslations('BookReader')
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 text-center max-w-sm mx-auto">
       <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground/40">
         <BookOpen className="w-8 h-8" />
       </div>
       <div>
-        <p className="text-lg font-semibold text-foreground">পিডিএফ লোড হয়নি</p>
-        <p className="text-sm text-muted-foreground mt-1">ফাইলটি সঠিকভাবে লোড করা যায়নি।</p>
+        <p className="text-lg font-semibold text-foreground">{t('pdfLoadError')}</p>
+        <p className="text-sm text-muted-foreground mt-1">{t('pdfLoadErrorHint')}</p>
       </div>
       <a
         href={url}
@@ -498,7 +502,7 @@ function PdfError({ url }: { url: string }) {
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
       >
-        <Download className="w-4 h-4" /> সরাসরি ডাউনলোড করুন
+        <Download className="w-4 h-4" /> {t('downloadDirect')}
       </a>
     </div>
   )

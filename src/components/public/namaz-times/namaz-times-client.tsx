@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import {
   MapPin, Moon, Sunrise, Sun, Sunset,
   Clock, TriangleAlert, ChevronRight, Loader2,
 } from 'lucide-react'
 import {
   calcPrayerSlots, findActiveSlot,
-  toHijri, toBnNum, formatTimeBn, countdownText,
+  toHijri, formatNum, formatTime, countdownParts,
 } from '@/lib/prayer-times'
 import type { PrayerSlot } from '@/lib/prayer-times'
 import { getHijriToday, type HijriDisplayDate } from '@/lib/hijri'
@@ -31,10 +32,12 @@ interface Props {
 }
 
 export function NamazTimesClient({ namazTimes }: Props) {
+  const t = useTranslations('NamazTimesPage')
+  const locale = useLocale()
   const [slots, setSlots] = useState<PrayerSlot[] | null>(null)
   const [activeKey, setActiveKey] = useState<string | null>(null)
   const [now, setNow] = useState<Date>(new Date())
-  const [location, setLocation] = useState<string>('ঢাকা')
+  const [location, setLocation] = useState<string>(t('defaultLocation'))
   const [loadingGeo, setLoadingGeo] = useState(true)
   const [hijriState, setHijriState] = useState<HijriDisplayDate | null>(null)
 
@@ -121,7 +124,7 @@ export function NamazTimesClient({ namazTimes }: Props) {
         <div className="absolute -right-4 -top-4 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
         <div className="relative px-6 py-4 flex items-center justify-between gap-4">
           <p className="text-lg font-bold tracking-wide">
-            {toBnNum(hijri.day)} {hijri.monthBn}, {toBnNum(hijri.year)} হিজরি
+            {formatNum(hijri.day, locale)} {locale === 'bn' ? hijri.monthBn : hijri.monthEn}, {formatNum(hijri.year, locale)} {t('hijri')}
           </p>
           <div className="flex items-center gap-1.5 shrink-0">
             {loadingGeo
@@ -136,7 +139,7 @@ export function NamazTimesClient({ namazTimes }: Props) {
       {!slots ? (
         <div className="flex flex-col items-center py-20 gap-3 text-muted-foreground">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm">নামাযের সময় গণনা হচ্ছে...</p>
+          <p className="text-sm">{t('calculating')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -169,15 +172,22 @@ export function NamazTimesClient({ namazTimes }: Props) {
                       'font-semibold text-[15px] leading-snug',
                       isActive ? 'text-white' : 'text-foreground'
                     )}>
-                      {slot.nameBn}
+                      {locale === 'bn' ? slot.nameBn : slot.nameEn}
                     </span>
                     {slot.isForbidden && !isActive && (
                       <TriangleAlert className="w-3.5 h-3.5 text-red-400 shrink-0" />
                     )}
                   </div>
-                  {isActive && (
-                    <p className="text-xs text-white/70 mt-0.5">{countdownText(slot.end, now)}</p>
-                  )}
+                  {isActive && (() => {
+                    const { hours, minutes } = countdownParts(slot.end, now)
+                    return (
+                      <p className="text-xs text-white/70 mt-0.5">
+                        {hours > 0
+                          ? t('countdownHM', { hours: formatNum(hours, locale), minutes: formatNum(minutes, locale) })
+                          : t('countdownM', { minutes: formatNum(minutes, locale) })}
+                      </p>
+                    )
+                  })()}
                 </div>
 
                 {/* Time */}
@@ -186,14 +196,14 @@ export function NamazTimesClient({ namazTimes }: Props) {
                     'font-bold tabular-nums text-[15px]',
                     isActive ? 'text-white' : 'text-foreground'
                   )}>
-                    {formatTimeBn(slot.start)}
+                    {formatTime(slot.start, locale)}
                   </p>
                   {!isSinglePoint && (
                     <p className={cn(
                       'text-xs tabular-nums',
                       isActive ? 'text-white/65' : 'text-muted-foreground'
                     )}>
-                      শেষ {formatTimeBn(slot.end)}
+                      {t('endsAt')} {formatTime(slot.end, locale)}
                     </p>
                   )}
                 </div>

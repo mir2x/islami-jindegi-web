@@ -9,7 +9,7 @@
 // The user's hijriAdjustment shifts the *query* date sent to the backend, same
 // as the app's hijriLocalAdjustment.
 
-import { toHijri, calcPrayerSlots } from './prayer-times'
+import { toHijri, calcPrayerSlots, HIJRI_MONTHS_EN } from './prayer-times'
 import { getSettings } from './settings'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -20,6 +20,7 @@ export interface HijriDisplayDate {
   month: number
   year: number
   monthBn: string
+  monthEn: string
   source: 'backend' | 'local'
 }
 
@@ -116,6 +117,7 @@ export async function getHijriToday(lat: number, lng: number, country?: string):
       month: chosen.hijriMonth,
       year: chosen.hijriYear,
       monthBn: chosen.monthNameBn,
+      monthEn: HIJRI_MONTHS_EN[chosen.hijriMonth - 1] ?? '',
       source: 'backend',
     }
   }
