@@ -1,21 +1,37 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import {
-  Mic, X, MapPin, ChevronDown,
+  Mic, X, MapPin, Calendar,
+  Play, Pause, Printer, Download,
 } from 'lucide-react'
 import type { BayanListItem, BayanAuthorOption, BayanCategoryOption, PagedResult } from '@/types'
 import { cn } from '@/lib/utils'
 import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
+import { ShareActions } from '@/components/public/share-actions'
+import { ZoomControl } from '@/components/public/zoom-control'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
-import { BayanPlayerCard } from './bayan-player-card'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 const PAGE_SIZE = 20
+
+const DESKTOP_QUERY = '(min-width: 1024px)'
+function subscribeDesktopQuery(callback: () => void) {
+  const mql = window.matchMedia(DESKTOP_QUERY)
+  mql.addEventListener('change', callback)
+  return () => mql.removeEventListener('change', callback)
+}
+const getDesktopSnapshot = () => window.matchMedia(DESKTOP_QUERY).matches
+const getDesktopServerSnapshot = () => false
+
+/** True on viewports with the 3-column layout. False during SSR/hydration to avoid a mismatch. */
+function useIsDesktop() {
+  return useSyncExternalStore(subscribeDesktopQuery, getDesktopSnapshot, getDesktopServerSnapshot)
+}
 
 async function fetchBayans(opts: {
   search?: string; categoryId?: string; authorId?: string; page?: number
@@ -30,6 +46,17 @@ async function fetchBayans(opts: {
     const r: PagedResult<BayanListItem> = await res.json()
     return { data: r.data, total: r.total }
   } catch { return { data: [], total: 0 } }
+}
+
+const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯']
+function toLocaleDigits(value: string, locale: string) {
+  return locale === 'bn' ? value.replace(/[0-9]/g, d => BN_DIGITS[Number(d)]) : value
+}
+
+function formatTime(s: number, locale: string) {
+  const clamped = Number.isFinite(s) ? s : 0
+  const raw = `${Math.floor(clamped / 60)}:${String(Math.floor(clamped % 60)).padStart(2, '0')}`
+  return toLocaleDigits(raw, locale)
 }
 
 function formatDate(d: string, locale: string) {
@@ -52,7 +79,6 @@ export function BayanClient({
 }: Props) {
   const router = useRouter()
   const t = useTranslations('BayanPage')
-  const locale = useLocale()
 
   const [bayans, setBayans] = useState(initialBayans)
   const [total, setTotal] = useState(initialTotal)
@@ -66,17 +92,25 @@ export function BayanClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [authorSheetOpen, setAuthorSheetOpen] = useState(false)
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mounted = useRef(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const isDesktop = useIsDesktop()
+
   const hasMore = bayans.length < total
   const hasFilters = !!(search || selectedCategory || selectedAuthor)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
+
+  // Nothing explicitly selected yet → default to the first row on desktop, where
+  // there's a detail panel to fill; leave it empty on mobile, which navigates instead.
+  const effectiveSelectedId = selectedId ?? (isDesktop ? bayans[0]?.id ?? null : null)
+  // BayanDetail is the same shape as BayanListItem, so the selected row already has everything.
+  const detail = bayans.find(b => b.id === effectiveSelectedId) ?? null
 
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return }
@@ -91,7 +125,7 @@ export function BayanClient({
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
-      setExpandedId(null)
+      setSelectedId(null)
       const result = await fetchBayans({
         search: search || undefined,
         categoryId: selectedCategory || undefined,
@@ -152,6 +186,11 @@ export function BayanClient({
   const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id) }
   const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
 
+  const selectItem = (id: string) => {
+    setSelectedId(id)
+    if (!isDesktop) router.push(`/bayan/${id}`)
+  }
+
   const filteredAuthors = authorSearch.trim()
     ? authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()))
     : authors
@@ -163,8 +202,8 @@ export function BayanClient({
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
-      {/* ── Sidebar (desktop) — both filters share one card ─────── */}
-      <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:min-h-0">
+      {/* ── Column 1 — author & category share one card ──────────────── */}
+      <aside className="hidden lg:flex print:hidden lg:w-[280px] lg:shrink-0 lg:min-h-0">
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           <SidebarOptionSection
             title={t('speaker')}
@@ -193,8 +232,10 @@ export function BayanClient({
         </div>
       </aside>
 
-      {/* ── Main column ─────────────────────────────────────────── */}
-      <div className="min-w-0 flex flex-col lg:flex-1 lg:min-h-0">
+      {/* ── Column 2 — search, list ────────────────────────────────────── */}
+      <div className="min-w-0 flex flex-col lg:w-[460px] lg:shrink-0 lg:min-h-0 print:hidden">
+        <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="shrink-0 p-4">
         {/* Mobile filter row (author / category selects) */}
         <div className="flex lg:hidden gap-2 mb-2.5">
           <MobileFilterTrigger label={t('speaker')} activeLabel={activeAuthorName} onClick={() => setAuthorSheetOpen(true)} />
@@ -203,15 +244,12 @@ export function BayanClient({
           )}
         </div>
 
-        {/* Everything below lives in one card, same height as the sidebar card */}
-        <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="shrink-0 p-4">
         {/* Search */}
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={t('searchPlaceholder')}
-          />
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={t('searchPlaceholder')}
+        />
 
         <MobileFilterSheet
           open={authorSheetOpen}
@@ -238,7 +276,7 @@ export function BayanClient({
         {(activeCategoryName || activeAuthorName) && (
           <div className="flex items-center gap-1.5 flex-wrap mt-4">
             {activeCategoryName && (
-              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {activeCategoryName}
                 <button onClick={() => setCategory('')} className="hover:bg-primary/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
@@ -246,20 +284,20 @@ export function BayanClient({
               </span>
             )}
             {activeAuthorName && (
-              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {activeAuthorName}
                 <button onClick={() => setAuthor('')} className="hover:bg-primary/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </span>
             )}
-            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">
+            <button onClick={clearAll} className="text-sm text-muted-foreground hover:text-foreground hover:underline ml-1">
               {t('clearAll')}
             </button>
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-base text-muted-foreground mt-4">
           {loading ? t('loading') : t('resultCount', { count: total })}
         </p>
         </div>
@@ -281,10 +319,10 @@ export function BayanClient({
         ) : bayans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Mic className="w-14 h-14 text-muted-foreground/25 mb-4" />
-            <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t('emptyHint')}</p>
+            <p className="text-xl font-medium text-foreground">{t('emptyTitle')}</p>
+            <p className="text-base text-muted-foreground mt-1">{t('emptyHint')}</p>
             {hasFilters && (
-              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">
+              <button onClick={clearAll} className="mt-4 text-base text-primary hover:underline">
                 {t('clearFilters')}
               </button>
             )}
@@ -295,8 +333,8 @@ export function BayanClient({
               <BayanRow
                 key={bayan.id}
                 bayan={bayan}
-                expanded={expandedId === bayan.id}
-                onToggle={() => setExpandedId(id => id === bayan.id ? null : bayan.id)}
+                selected={effectiveSelectedId === bayan.id}
+                onSelect={() => selectItem(bayan.id)}
               />
             ))}
           </div>
@@ -304,69 +342,225 @@ export function BayanClient({
 
         {/* Scroll sentinel — pulls in the next page */}
         {hasMore && !loading && (
-          <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
+          <div ref={sentinelRef} className="py-6 text-center text-base text-muted-foreground">
             {loadingMore ? t('loading') : ''}
           </div>
         )}
         </div>
         </div>
       </div>
+
+      {/* ── Column 3 — detail panel (desktop only) ────────────────────── */}
+      <div className="hidden lg:flex print:flex lg:flex-1 lg:min-h-0 print:w-full print:h-auto">
+        <BayanDetailPanel bayan={detail} />
+      </div>
     </div>
   )
 }
 
-// ─── Bayan row (toggles inline player) ─────────────────────────────────────
+// ─── Single list row ────────────────────────────────────────────────────────
 
-function BayanRow({ bayan, expanded, onToggle }: {
+function BayanRow({ bayan, selected, onSelect }: {
   bayan: BayanListItem
-  expanded: boolean
-  onToggle: () => void
+  selected: boolean
+  onSelect: () => void
 }) {
   const locale = useLocale()
   return (
-    <div className={cn(
-      'rounded-xl border bg-card overflow-hidden transition-colors',
-      expanded ? 'border-primary/50' : 'border-border'
-    )}>
-      <button
-        onClick={onToggle}
-        className="group w-full flex items-center gap-4 p-4 text-left hover:bg-primary/5 transition-colors"
-      >
-        <div className={cn(
-          'w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-colors',
-          expanded ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
-        )}>
-          <Mic className="w-5 h-5" />
-        </div>
+    <button
+      onClick={onSelect}
+      className={cn(
+        'group w-full flex items-center gap-4 p-4 text-left rounded-xl border transition-colors',
+        selected ? 'border-primary/50 bg-primary/5' : 'border-border bg-card hover:bg-primary/5'
+      )}
+    >
+      <div className={cn(
+        'w-11 h-11 shrink-0 rounded-full flex items-center justify-center transition-colors',
+        selected ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+      )}>
+        <Mic className="w-5 h-5" />
+      </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-1">
-            {bayan.title}
-          </p>
-          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
-            <span className="truncate">{bayan.author.name}</span>
-            {bayan.location && (
-              <span className="flex items-center gap-0.5 truncate">
-                <MapPin className="w-3 h-3 shrink-0" /> {bayan.location}
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          'text-[17px] font-semibold leading-snug transition-colors line-clamp-1',
+          selected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+        )}>
+          {bayan.title}
+        </p>
+        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
+          <span className="truncate">{bayan.author.name}</span>
+          {bayan.location && (
+            <span className="flex items-center gap-0.5 truncate">
+              <MapPin className="w-3 h-3 shrink-0" /> {bayan.location}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="hidden sm:block text-sm text-muted-foreground shrink-0 tabular-nums">
+        {formatDate(bayan.publishedAt, locale)}
+      </div>
+    </button>
+  )
+}
+
+// ── Detail panel (column 3) ─────────────────────────────────────────────────
+
+function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
+  const t = useTranslations('BayanPage')
+  const locale = useLocale()
+  const [zoom, setZoom] = useState(100)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [audioError, setAudioError] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const progressRef = useRef<HTMLDivElement | null>(null)
+
+  const handlePrint = () => window.print()
+
+  const shareContent = bayan
+    ? [bayan.title, bayan.author.name, bayan.excerpt].filter(Boolean).join('\n\n')
+    : ''
+
+  const togglePlay = () => {
+    if (!audioRef.current) return
+    if (isPlaying) audioRef.current.pause()
+    else audioRef.current.play().catch(() => setAudioError(true))
+  }
+
+  const seek = useCallback((clientX: number) => {
+    const el = progressRef.current
+    const audio = audioRef.current
+    if (!el || !audio || !duration) return
+    const rect = el.getBoundingClientRect()
+    audio.currentTime = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) * duration
+    setCurrentTime(audio.currentTime)
+  }, [duration])
+
+  const pct = duration ? (currentTime / duration) * 100 : 0
+
+  return (
+    <div className="flex flex-col w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden print:overflow-visible print:border-none print:rounded-none">
+      {!bayan ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 print:hidden">
+          <Mic className="w-14 h-14 text-muted-foreground/25 mb-4" />
+          <p className="text-base text-muted-foreground">{t('selectPrompt')}</p>
+        </div>
+      ) : (
+        <>
+          <div className="shrink-0 flex items-start justify-between gap-4 p-6 pb-4 border-b border-border/60">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold text-foreground leading-snug">{bayan.title}</h2>
+              <p className="text-base text-muted-foreground mt-1">{bayan.author.name}</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0 print:hidden">
+              <ZoomControl zoom={zoom} onZoomChange={setZoom} />
+              <div className="w-px h-5 bg-border mx-1" />
+              <button
+                onClick={handlePrint}
+                title={t('print')}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Printer className="w-4.5 h-4.5" />
+              </button>
+              <ShareActions
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/bayan/${bayan.id}`}
+                title={bayan.title}
+                content={shareContent}
+              />
+            </div>
+          </div>
+
+          <div
+            className="flex-1 min-h-0 overflow-y-auto p-6 print:overflow-visible print:h-auto"
+            style={{ zoom: `${zoom}%` }}
+          >
+            {bayan.excerpt && (
+              <p className="text-base text-muted-foreground mb-6 leading-relaxed">{bayan.excerpt}</p>
+            )}
+
+            {bayan.audioUrl && (
+              <>
+                <audio
+                  ref={audioRef}
+                  src={bayan.audioUrl}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onEnded={() => setIsPlaying(false)}
+                  onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+                  onTimeUpdate={e => setCurrentTime(e.currentTarget.currentTime)}
+                  onError={() => setAudioError(true)}
+                />
+
+                <div className="flex items-center gap-4 print:hidden">
+                  <button
+                    onClick={togglePlay}
+                    className="w-14 h-14 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
+                  >
+                    {isPlaying ? <Pause className="w-5.5 h-5.5" /> : <Play className="w-5.5 h-5.5 ml-0.5" />}
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <div
+                      ref={progressRef}
+                      onClick={e => seek(e.clientX)}
+                      className="relative h-2 rounded-full bg-muted cursor-pointer group"
+                    >
+                      <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width]" style={{ width: `${pct}%` }} />
+                      <div className="absolute top-1/2 -translate-y-1/2 -ml-1.5 w-3 h-3 rounded-full bg-primary shadow opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `${pct}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5 text-sm text-muted-foreground tabular-nums">
+                      <span>{formatTime(currentTime, locale)}</span>
+                      <span>{formatTime(duration, locale)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {audioError && (
+                  <p className="text-sm text-destructive mt-3">{t('audioError')}</p>
+                )}
+
+                {duration > 0 && (
+                  <div className="flex items-center gap-2 mt-6 text-base">
+                    <span className="text-muted-foreground">{t('audioDuration')}:</span>
+                    <span className="font-medium text-foreground">
+                      {t('audioDurationValue', { minutes: Math.max(1, Math.round(duration / 60)) })}
+                    </span>
+                  </div>
+                )}
+
+                <a
+                  href={bayan.audioUrl}
+                  download
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-base font-medium text-foreground hover:bg-muted transition-colors print:hidden"
+                >
+                  <Download className="w-4 h-4" /> {t('download')}
+                </a>
+              </>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4 mt-6 pt-6 border-t border-border/60 text-sm text-muted-foreground">
+              {bayan.location && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> {bayan.location}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> {formatDate(bayan.publishedAt, locale)}
               </span>
+            </div>
+
+            {bayan.categories.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-4">
+                {bayan.categories.map(c => (
+                  <span key={c.id} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">{c.title}</span>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-
-        <div className="hidden sm:block text-xs text-muted-foreground shrink-0 tabular-nums">
-          {formatDate(bayan.publishedAt, locale)}
-        </div>
-
-        <ChevronDown className={cn(
-          'w-4 h-4 text-muted-foreground shrink-0 transition-transform',
-          expanded ? 'rotate-180 text-primary' : 'group-hover:text-foreground'
-        )} />
-      </button>
-
-      {expanded && (
-        <div className="border-t border-border/60 bg-muted/20 p-4 sm:p-6">
-          <BayanPlayerCard bayan={bayan} />
-        </div>
+        </>
       )}
     </div>
   )

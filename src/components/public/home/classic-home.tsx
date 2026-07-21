@@ -80,9 +80,6 @@ function PrayerCard({ width }: { width: number | null }) {
     const now = new Date()
     const slots = calcPrayerSlots(lat, lng, now)
     setState({ slots, activeKey: findActiveSlot(slots, now), now, locationName, hijri: null })
-    // Sighting-aware date from the API; the local tabular date renders meanwhile.
-    // The request counter stops a slow default-location response from
-    // overwriting a later geolocated one.
     const req = ++hijriReq.current
     getHijriToday(lat, lng, country).then(hijri =>
       setState(s => s && hijriReq.current === req ? { ...s, hijri } : s))
@@ -93,13 +90,28 @@ function PrayerCard({ width }: { width: number | null }) {
     const dk = [23.8103, 90.4125] as const
     init(...dk, t('dhakaLocation'), 'BD')
     if (!navigator.geolocation) return
+    let cancelled = false
     navigator.geolocation.getCurrentPosition(
-      p => init(p.coords.latitude, p.coords.longitude, t('yourLocation')),
+      p => {
+        const { latitude, longitude } = p.coords
+        init(latitude, longitude, t('yourLocation'))
+        // Refine the placeholder label to "City, Country" once reverse geocoding resolves.
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=${locale}`)
+          .then(r => r.json())
+          .then(d => {
+            if (cancelled) return
+            const city = d.address?.city || d.address?.town || d.address?.county || d.address?.state
+            const name = [city, d.address?.country].filter(Boolean).join(', ')
+            if (name) setState(s => s ? { ...s, locationName: name } : s)
+          })
+          .catch(() => {})
+      },
       () => { /* keep the Dhaka default */ },
       { timeout: 5000 }
     )
+    return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [init])
+  }, [init, locale])
 
   useEffect(() => {
     if (!state) return
@@ -143,7 +155,7 @@ function PrayerCard({ width }: { width: number | null }) {
             {locationName}
           </div>
         </div>
-        <Calendar className="w-[clamp(1.1rem,2.4vh,1.5rem)] h-[clamp(1.1rem,2.4vh,1.5rem)] text-foreground/60 dark:text-white/70 shrink-0" />
+        {/* <Calendar className="w-[clamp(1.1rem,2.4vh,1.5rem)] h-[clamp(1.1rem,2.4vh,1.5rem)] text-foreground/60 dark:text-white/70 shrink-0" /> */}
       </div>
 
       {/* Prayer times */}

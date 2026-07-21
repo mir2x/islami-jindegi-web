@@ -35,7 +35,7 @@ export default async function MalfuzatPage({
   ])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:h-[calc(100vh-68px)] lg:flex lg:flex-col">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8 lg:h-[calc(100vh-68px)] lg:flex lg:flex-col">
       <MalfuzatClient
         initialItems={result?.data ?? []}
         initialTotal={result?.total ?? 0}

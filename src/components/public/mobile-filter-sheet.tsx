@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Check, ChevronDown, X } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { SearchInput } from '@/components/public/search-input'
 
@@ -27,7 +27,7 @@ export function MobileFilterTrigger({ label, activeLabel, onClick, className }: 
       type="button"
       onClick={onClick}
       className={cn(
-        'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-3.5 py-2.5 rounded-xl border text-sm font-medium transition-colors',
+        'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-3.5 py-2.5 rounded-xl border text-base font-medium transition-colors',
         active ? 'border-primary bg-primary/8 text-primary' : 'border-border bg-muted text-muted-foreground',
         className
       )}
@@ -57,6 +57,7 @@ export function MobileFilterSheet({
   open, onClose, title, options, fetchOptions, selected, onSelect, emptyText, searchPlaceholder,
 }: SheetProps) {
   const t = useTranslations('Common')
+  const locale = useLocale()
   const [query, setQuery] = useState('')
   const [items, setItems] = useState(options)
   const [loading, setLoading] = useState(false)
@@ -107,7 +108,7 @@ export function MobileFilterSheet({
           <button
             onClick={() => { onSelect(''); onClose() }}
             className={cn(
-              'w-full flex items-center gap-2.5 text-left px-3 py-3 rounded-xl text-sm transition-colors',
+              'w-full flex items-center gap-2.5 text-left px-3 py-3 rounded-xl text-base transition-colors',
               selected === '' ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-muted'
             )}
           >
@@ -122,19 +123,19 @@ export function MobileFilterSheet({
               ))}
             </div>
           ) : items.length === 0 ? (
-            <p className="text-sm text-muted-foreground px-3 py-6 text-center">{emptyText}</p>
+            <p className="text-base text-muted-foreground px-3 py-6 text-center">{emptyText}</p>
           ) : items.map(item => (
             <button
               key={item.id}
               onClick={() => { onSelect(item.id); onClose() }}
               className={cn(
-                'w-full flex items-center gap-2.5 text-left px-3 py-3 rounded-xl text-sm transition-colors',
+                'w-full flex items-center gap-2.5 text-left px-3 py-3 rounded-xl text-base transition-colors',
                 selected === item.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-muted'
               )}
             >
               <Check className={cn('w-4 h-4 shrink-0', selected === item.id ? 'opacity-100' : 'opacity-0')} />
               <span>
-                {item.label} <span className="text-muted-foreground tabular-nums">({item.count.toLocaleString('bn-BD')})</span>
+                {item.label} <span className="text-muted-foreground tabular-nums">({item.count.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-US')})</span>
               </span>
             </button>
           ))}

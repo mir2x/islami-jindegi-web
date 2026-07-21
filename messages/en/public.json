@@ -1,4 +1,12 @@
 {
+  "ShareMenu": {
+    "share": "Share",
+    "copyContent": "Copy content",
+    "copyLink": "Copy link",
+    "facebook": "Share on Facebook",
+    "x": "Share on X",
+    "whatsapp": "Share on WhatsApp"
+  },
   "Nav": {
     "quran": "Quran",
     "books": "Books",
@@ -25,7 +33,10 @@
     "emptyTitle": "No articles found",
     "emptyHint": "Try a different search term or filter",
     "clearFilters": "Clear all filters",
-    "noDetail": "Details not available."
+    "noDetail": "Details not available.",
+    "selectPrompt": "Select an article to view its details",
+    "print": "Print",
+    "share": "Share"
   },
   "ArticleDetail": {
     "moreArticles": "More articles"
@@ -46,7 +57,16 @@
     "resultCount": "{count, plural, one {# bayan} other {# bayan}}",
     "emptyTitle": "No bayan found",
     "emptyHint": "Try a different search term or filter",
-    "clearFilters": "Clear all filters"
+    "clearFilters": "Clear all filters",
+    "selectPrompt": "Select a bayan to view its details",
+    "print": "Print",
+    "share": "Share",
+    "download": "Download",
+    "audioError": "Could not load audio. Please try again.",
+    "location": "Location",
+    "date": "Date",
+    "audioDuration": "Audio duration",
+    "audioDurationValue": "{minutes, number} min"
   },
   "BayanDetail": {
     "metaDescription": "A bayan delivered by {name}",
@@ -98,7 +118,17 @@
     "audioError": "Could not load audio.",
     "noDetail": "Details not available.",
     "tabText": "Text",
-    "tabAudio": "Audio"
+    "tabAudio": "Audio",
+    "selectPrompt": "Select a dua to view its details",
+    "print": "Print",
+    "share": "Share",
+    "download": "Download",
+    "audioDuration": "Audio duration",
+    "audioDurationValue": "{minutes, number} min"
+  },
+  "DuaDetail": {
+    "audioLabel": "Audio",
+    "moreItems": "More dua"
   },
   "MadrasahPage": {
     "metaTitle": "Madrasah",
@@ -120,9 +150,10 @@
     "calculating": "Calculating prayer times...",
     "hijri": "Hijri",
     "endsAt": "Ends",
-    "defaultLocation": "Dhaka",
+    "defaultLocation": "Dhaka, Bangladesh",
     "countdownHM": "{hours}h {minutes}m left",
-    "countdownM": "{minutes}m left"
+    "countdownM": "{minutes}m left",
+    "selectPrompt": "Select a prayer time to view its masail"
   },
   "NamazTimesDetail": {
     "backToList": "Prayer Times",
@@ -147,7 +178,13 @@
     "emptyHint": "Try a different search term or filter",
     "clearFilters": "Clear all filters",
     "audioError": "Could not load audio.",
-    "detailNotFound": "Details not available."
+    "detailNotFound": "Details not available.",
+    "selectPrompt": "Select a malfuzat to view its details",
+    "print": "Print",
+    "share": "Share",
+    "download": "Download",
+    "audioDuration": "Audio duration",
+    "audioDurationValue": "{minutes, number} min"
   },
   "MalfuzatDetail": {
     "audioLabel": "Audio",
@@ -173,7 +210,17 @@
     "audioError": "Could not load audio.",
     "detailNotFound": "Details not available.",
     "question": "Question",
-    "answer": "Answer"
+    "answer": "Answer",
+    "selectPrompt": "Select a masail to view its details",
+    "print": "Print",
+    "share": "Share",
+    "download": "Download",
+    "audioDuration": "Audio duration",
+    "audioDurationValue": "{minutes, number} min"
+  },
+  "MasailDetail": {
+    "audioLabel": "Audio",
+    "moreItems": "More masail"
   },
   "DonatePage": {
     "metaTitle": "Donate | Islami Jindegi",

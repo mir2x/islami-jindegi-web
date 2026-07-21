@@ -29,6 +29,16 @@
   font-display: swap;
   unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
 }
+/* Same font file as above, scaled up — Noorehuda's glyphs render visibly smaller than
+   SolaimanLipi/Latin at a shared font-size. Kept separate so the Quran reader (which
+   references 'Noorehuda' directly at a size already tuned for it) is unaffected. */
+@font-face {
+  font-family: 'NoorehudaProse';
+  src: url('/fonts/Noorehuda.ttf') format('truetype');
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  size-adjust: 175%;
+}
 @font-face {
   font-family: 'AlMushafQuran';
   src: url('/fonts/AlMushafQuran.ttf') format('truetype');
@@ -115,9 +125,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'SolaimanLipi', var(--font-poppins), sans-serif;
+  --font-sans: 'SolaimanLipi', 'NoorehudaProse', var(--font-poppins), sans-serif;
   --font-mono: var(--font-mono);
-  --font-heading: 'SolaimanLipi', var(--font-poppins), sans-serif;
+  --font-heading: 'SolaimanLipi', 'NoorehudaProse', var(--font-poppins), sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

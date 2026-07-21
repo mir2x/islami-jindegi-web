@@ -12,8 +12,8 @@ export default async function NamazTimesPage() {
   const namazTimes = await getNamazTimes()
 
   return (
-    <div className="overflow-y-auto px-4 py-6" style={{ height: 'calc(100dvh - 68px)' }}>
-      <div className="max-w-2xl mx-auto">
+    <div className="overflow-y-auto lg:overflow-hidden px-4 py-6 lg:flex lg:flex-col" style={{ height: 'calc(100dvh - 68px)' }}>
+      <div className="max-w-2xl lg:max-w-7xl mx-auto w-full lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
         <NamazTimesClient namazTimes={namazTimes} />
       </div>
     </div>

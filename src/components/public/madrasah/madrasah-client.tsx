@@ -92,7 +92,7 @@ export function MadrasahClient({ initialItems, initialTotal, initialSearch }: Pr
         />
       </div>
 
-      <p className="text-sm text-muted-foreground mb-4">
+      <p className="text-base text-muted-foreground mb-4">
         {loading ? tCommon('loading') : t('resultCount', { count: total })}
       </p>
 
@@ -112,9 +112,9 @@ export function MadrasahClient({ initialItems, initialTotal, initialSearch }: Pr
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <School className="w-14 h-14 text-muted-foreground/25 mb-4" />
-          <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
+          <p className="text-xl font-medium text-foreground">{t('emptyTitle')}</p>
           {search && (
-            <button onClick={() => { setSearch(''); setPage(1) }} className="mt-4 text-sm text-primary hover:underline">
+            <button onClick={() => { setSearch(''); setPage(1) }} className="mt-4 text-base text-primary hover:underline">
               {t('clearSearch')}
             </button>
           )}
@@ -175,11 +175,11 @@ function MadrasahRow({ item, expanded, onToggle }: {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
+          <p className="text-[17px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
             {item.title}
           </p>
           {item.infoCount > 0 && (
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {t('chapterCount', { count: item.infoCount })}
             </p>
           )}
@@ -208,7 +208,7 @@ function MadrasahRow({ item, expanded, onToggle }: {
                     className="group flex items-center gap-3 px-5 py-3.5 hover:bg-primary/5 transition-colors"
                   >
                     <BookOpen className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
-                    <span className="flex-1 text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
+                    <span className="flex-1 text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
                       {info.label}
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
@@ -217,7 +217,7 @@ function MadrasahRow({ item, expanded, onToggle }: {
               ))}
             </ul>
           ) : (
-            <p className="p-4 text-sm text-muted-foreground">{item.excerpt ?? t('noChaptersFound')}</p>
+            <p className="p-4 text-base text-muted-foreground">{item.excerpt ?? t('noChaptersFound')}</p>
           )}
         </div>
       )}

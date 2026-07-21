@@ -1,4 +1,12 @@
 {
+  "ShareMenu": {
+    "share": "শেয়ার করুন",
+    "copyContent": "কনটেন্ট কপি করুন",
+    "copyLink": "লিংক কপি করুন",
+    "facebook": "ফেসবুকে শেয়ার করুন",
+    "x": "এক্স-এ শেয়ার করুন",
+    "whatsapp": "হোয়াটসঅ্যাপে শেয়ার করুন"
+  },
   "Nav": {
     "quran": "কুরআন",
     "books": "কিতাব",
@@ -21,11 +29,14 @@
     "searchPlaceholder": "প্রবন্ধ খুঁজুন...",
     "clearAll": "সব মুছুন",
     "loading": "লোড হচ্ছে...",
-    "resultCount": "{count} টি প্রবন্ধ",
+    "resultCount": "{count, number} টি প্রবন্ধ",
     "emptyTitle": "কোনো প্রবন্ধ পাওয়া যায়নি",
     "emptyHint": "ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন",
     "clearFilters": "সব ফিল্টার মুছুন",
-    "noDetail": "বিস্তারিত পাওয়া যায়নি।"
+    "noDetail": "বিস্তারিত পাওয়া যায়নি।",
+    "selectPrompt": "বিস্তারিত দেখতে একটি প্রবন্ধ নির্বাচন করুন",
+    "print": "প্রিন্ট করুন",
+    "share": "শেয়ার করুন"
   },
   "ArticleDetail": {
     "moreArticles": "আরও প্রবন্ধ"
@@ -43,10 +54,19 @@
     "searchPlaceholder": "বয়ান খুঁজুন...",
     "clearAll": "সব মুছুন",
     "loading": "লোড হচ্ছে...",
-    "resultCount": "{count} টি বয়ান",
+    "resultCount": "{count, number} টি বয়ান",
     "emptyTitle": "কোনো বয়ান পাওয়া যায়নি",
     "emptyHint": "ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন",
-    "clearFilters": "সব ফিল্টার মুছুন"
+    "clearFilters": "সব ফিল্টার মুছুন",
+    "selectPrompt": "বিস্তারিত দেখতে একটি বয়ান নির্বাচন করুন",
+    "print": "প্রিন্ট করুন",
+    "share": "শেয়ার করুন",
+    "download": "ডাউনলোড করুন",
+    "audioError": "অডিও লোড করা যায়নি। আবার চেষ্টা করুন।",
+    "location": "স্থান",
+    "date": "তারিখ",
+    "audioDuration": "অডিও সময়",
+    "audioDurationValue": "{minutes, number} মিনিট"
   },
   "BayanDetail": {
     "metaDescription": "{name} কর্তৃক প্রদত্ত বয়ান",
@@ -70,7 +90,7 @@
     "searchPlaceholder": "কিতাব খুঁজুন...",
     "clearAll": "সব মুছুন",
     "loading": "লোড হচ্ছে...",
-    "resultCount": "{count} টি কিতাব",
+    "resultCount": "{count, number} টি কিতাব",
     "emptyTitle": "কোনো কিতাব পাওয়া যায়নি",
     "emptyHint": "ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন",
     "clearFilters": "সব ফিল্টার মুছুন"
@@ -91,24 +111,34 @@
     "categoryEmpty": "কোনো বিষয় পাওয়া যায়নি",
     "searchPlaceholder": "দু'আ খুঁজুন...",
     "clearAll": "সব মুছুন",
-    "resultCount": "{count} টি দু'আ",
+    "resultCount": "{count, number} টি দু'আ",
     "emptyTitle": "কোনো দু'আ পাওয়া যায়নি",
     "emptyHint": "ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন",
     "clearFilters": "সব ফিল্টার মুছুন",
     "audioError": "অডিও লোড করা যায়নি।",
     "noDetail": "বিস্তারিত পাওয়া যায়নি।",
     "tabText": "লিখন",
-    "tabAudio": "অডিও"
+    "tabAudio": "অডিও",
+    "selectPrompt": "বিস্তারিত দেখতে একটি দু'আ নির্বাচন করুন",
+    "print": "প্রিন্ট করুন",
+    "share": "শেয়ার করুন",
+    "download": "ডাউনলোড করুন",
+    "audioDuration": "অডিও সময়",
+    "audioDurationValue": "{minutes, number} মিনিট"
+  },
+  "DuaDetail": {
+    "audioLabel": "অডিও",
+    "moreItems": "আরও দু'আ"
   },
   "MadrasahPage": {
     "metaTitle": "মাদ্রাসা",
     "heading": "মাদ্রাসা",
     "subheading": "ইসলামি শিক্ষা প্রতিষ্ঠানের তথ্য",
     "searchPlaceholder": "মাদ্রাসা খুঁজুন...",
-    "resultCount": "{count} টি মাদ্রাসা",
+    "resultCount": "{count, number} টি মাদ্রাসা",
     "emptyTitle": "কোনো মাদ্রাসা পাওয়া যায়নি",
     "clearSearch": "অনুসন্ধান মুছুন",
-    "chapterCount": "{count} টি অধ্যায়",
+    "chapterCount": "{count, number} টি অধ্যায়",
     "noChaptersFound": "কোনো অধ্যায় পাওয়া যায়নি।"
   },
   "MadrasahChapter": {
@@ -120,9 +150,10 @@
     "calculating": "নামাযের সময় গণনা হচ্ছে...",
     "hijri": "হিজরি",
     "endsAt": "শেষ",
-    "defaultLocation": "ঢাকা",
+    "defaultLocation": "ঢাকা, বাংলাদেশ",
     "countdownHM": "{hours} ঘণ্টা {minutes} মিনিট বাকি",
-    "countdownM": "{minutes} মিনিট বাকি"
+    "countdownM": "{minutes} মিনিট বাকি",
+    "selectPrompt": "মাসাইল দেখতে একটি নামাযের সময় নির্বাচন করুন"
   },
   "NamazTimesDetail": {
     "backToList": "নামাযের সময়",
@@ -139,7 +170,7 @@
     "searchPlaceholder": "মালফুযাত খুঁজুন...",
     "clearAll": "সব মুছুন",
     "loading": "লোড হচ্ছে...",
-    "resultCount": "{count} টি মালফুযাত",
+    "resultCount": "{count, number} টি মালফুযাত",
     "tabAll": "সব",
     "tabText": "লিখন",
     "tabAudio": "অডিও",
@@ -147,7 +178,13 @@
     "emptyHint": "ভিন্ন শব্দ বা ফিল্টার দিয়ে চেষ্টা করুন",
     "clearFilters": "সব ফিল্টার মুছুন",
     "audioError": "অডিও লোড করা যায়নি।",
-    "detailNotFound": "বিস্তারিত পাওয়া যায়নি।"
+    "detailNotFound": "বিস্তারিত পাওয়া যায়নি।",
+    "selectPrompt": "বিস্তারিত দেখতে একটি মালফুযাত নির্বাচন করুন",
+    "print": "প্রিন্ট করুন",
+    "share": "শেয়ার করুন",
+    "download": "ডাউনলোড করুন",
+    "audioDuration": "অডিও সময়",
+    "audioDurationValue": "{minutes, number} মিনিট"
   },
   "MalfuzatDetail": {
     "audioLabel": "অডিও",
@@ -163,7 +200,7 @@
     "searchPlaceholder": "মাসাইল খুঁজুন...",
     "clearAll": "সব মুছুন",
     "loading": "লোড হচ্ছে...",
-    "resultCount": "{count} টি মাসাইল",
+    "resultCount": "{count, number} টি মাসাইল",
     "tabAll": "সব",
     "tabText": "লিখন",
     "tabAudio": "অডিও",
@@ -173,7 +210,17 @@
     "audioError": "অডিও লোড করা যায়নি।",
     "detailNotFound": "বিস্তারিত পাওয়া যায়নি।",
     "question": "প্রশ্ন",
-    "answer": "উত্তর"
+    "answer": "উত্তর",
+    "selectPrompt": "বিস্তারিত দেখতে একটি মাসাইল নির্বাচন করুন",
+    "print": "প্রিন্ট করুন",
+    "share": "শেয়ার করুন",
+    "download": "ডাউনলোড করুন",
+    "audioDuration": "অডিও সময়",
+    "audioDurationValue": "{minutes, number} মিনিট"
+  },
+  "MasailDetail": {
+    "audioLabel": "অডিও",
+    "moreItems": "আরও মাসাইল"
   },
   "DonatePage": {
     "metaTitle": "অনুদান | ইসলামী যিন্দেগী",
@@ -186,7 +233,7 @@
     "title": "সংবাদ",
     "subtitle": "ইসলামি সংবাদ ও তথ্য",
     "searchPlaceholder": "সংবাদ খুঁজুন...",
-    "resultCount": "{count} টি সংবাদ",
+    "resultCount": "{count, number} টি সংবাদ",
     "emptyTitle": "কোনো সংবাদ পাওয়া যায়নি",
     "clearSearch": "অনুসন্ধান মুছুন",
     "noDetail": "বিস্তারিত পাওয়া যায়নি।"

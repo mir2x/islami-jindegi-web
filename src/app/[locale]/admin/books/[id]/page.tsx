@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useChapterStore } from '@/store/chapter-store'
 import { useSubChapterStore } from '@/store/subchapter-store'
+import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -264,10 +265,13 @@ export default function BookDetailPage() {
           <ArrowLeft className="w-4 h-4" />
           {t('title')}
         </button>
-        <Button onClick={() => router.push(`/admin/books/${id}/edit`)} variant="outline" className="gap-2">
-          <Pencil className="w-3.5 h-3.5" />
-          {t('editBook')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <PublicViewButton href={`/books/${id}`} />
+          <Button onClick={() => router.push(`/admin/books/${id}/edit`)} variant="outline" className="gap-2">
+            <Pencil className="w-3.5 h-3.5" />
+            {t('editBook')}
+          </Button>
+        </div>
       </div>
 
       {/* Book header */}

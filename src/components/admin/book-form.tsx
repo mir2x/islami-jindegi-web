@@ -9,6 +9,7 @@ import { useBookStore } from '@/store/book-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
 import { MediaField } from '@/components/admin/media-field'
+import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -130,13 +131,16 @@ export function BookForm({ book }: Props) {
     <div className="px-4 py-6">
       {/* Header */}
       <div className="mb-5">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {isEdit ? t('backToBook') : t('backToBooks')}
-        </button>
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {isEdit ? t('backToBook') : t('backToBooks')}
+          </button>
+          {isEdit && book && <PublicViewButton href={`/books/${book.id}`} />}
+        </div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {isEdit ? t('editBook') : t('addNewBook')}
         </p>

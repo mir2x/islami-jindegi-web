@@ -20,7 +20,7 @@ export function Footer() {
   ]
 
   return (
-    <footer className="mt-20 border-t border-border/60 bg-muted/30">
+    <footer className="mt-20 border-t border-border/60 bg-muted/30 print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
@@ -78,9 +78,9 @@ export function Footer() {
             {tFooter('copyright', { year: new Date().getFullYear(), brand: tMeta('title') })}
           </p>
           <div className="flex items-center gap-4">
-            <a href="https://twitter.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Twitter</a>
-            <a href="https://facebook.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Facebook</a>
-            <a href="https://youtube.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">YouTube</a>
+            <a href="https://x.com/IJindegi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Twitter</a>
+            <a href="https://www.facebook.com/islamijindegiii" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Facebook</a>
+            <a href="https://www.youtube.com/@IslamiJindegi" className="text-xs text-muted-foreground hover:text-foreground transition-colors">YouTube</a>
           </div>
         </div>
       </div>

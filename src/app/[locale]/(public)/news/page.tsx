@@ -18,14 +18,9 @@ export default async function NewsPage({
   const page = Number(sp.page ?? 1)
 
   const result = await getNewsList({ search: search || undefined, page })
-  const t = await getTranslations('NewsPage')
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">{t('subtitle')}</p>
-      </div>
       <NewsClient
         initialItems={result?.data ?? []}
         initialTotal={result?.total ?? 0}

@@ -1,24 +1,40 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   HelpCircle, Mic, X,
-  ChevronDown,
   Play, Pause, Volume2,
+  Printer, Download,
 } from 'lucide-react'
 import type { MasailListItem, MasailDetail, MasailAuthorOption, MasailCategoryOption, PagedResult } from '@/types'
 import { cn } from '@/lib/utils'
 import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
+import { ShareActions, htmlToText } from '@/components/public/share-actions'
+import { ZoomControl } from '@/components/public/zoom-control'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 const PAGE_SIZE = 20
 
 type Tab = 'all' | 'text' | 'audio'
+
+const DESKTOP_QUERY = '(min-width: 1024px)'
+function subscribeDesktopQuery(callback: () => void) {
+  const mql = window.matchMedia(DESKTOP_QUERY)
+  mql.addEventListener('change', callback)
+  return () => mql.removeEventListener('change', callback)
+}
+const getDesktopSnapshot = () => window.matchMedia(DESKTOP_QUERY).matches
+const getDesktopServerSnapshot = () => false
+
+/** True on viewports with the 3-column layout. False during SSR/hydration to avoid a mismatch. */
+function useIsDesktop() {
+  return useSyncExternalStore(subscribeDesktopQuery, getDesktopSnapshot, getDesktopServerSnapshot)
+}
 
 async function fetchMasails(opts: {
   search?: string; categoryId?: string; authorId?: string; page?: number; hasAudio?: boolean
@@ -44,9 +60,15 @@ async function fetchMasailDetail(id: string): Promise<MasailDetail | null> {
   } catch { return null }
 }
 
-function formatTime(s: number) {
-  if (!Number.isFinite(s)) return '0:00'
-  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯']
+function toLocaleDigits(value: string, locale: string) {
+  return locale === 'bn' ? value.replace(/[0-9]/g, d => BN_DIGITS[Number(d)]) : value
+}
+
+function formatTime(s: number, locale: string) {
+  const clamped = Number.isFinite(s) ? s : 0
+  const raw = `${Math.floor(clamped / 60)}:${String(Math.floor(clamped % 60)).padStart(2, '0')}`
+  return toLocaleDigits(raw, locale)
 }
 
 interface Props {
@@ -80,17 +102,26 @@ export function MasailClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [authorSheetOpen, setAuthorSheetOpen] = useState(false)
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [fetchedDetail, setFetchedDetail] = useState<{ id: string; data: MasailDetail | null } | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mounted = useRef(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const isDesktop = useIsDesktop()
+
   const hasMore = items.length < total
   const hasFilters = !!(search || selectedCategory || selectedAuthor)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
+
+  // Nothing explicitly selected yet → default to the first row on desktop, where
+  // there's a detail panel to fill; leave it empty on mobile, which navigates instead.
+  const effectiveSelectedId = selectedId ?? (isDesktop ? items[0]?.id ?? null : null)
+  const detail = fetchedDetail && fetchedDetail.id === effectiveSelectedId ? fetchedDetail.data : null
+  const detailLoading = effectiveSelectedId !== null && fetchedDetail?.id !== effectiveSelectedId
 
   const tabToHasAudio = (t: Tab): boolean | undefined =>
     t === 'audio' ? true : t === 'text' ? false : undefined
@@ -109,7 +140,7 @@ export function MasailClient({
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
-      setExpandedId(null)
+      setSelectedId(null)
       const result = await fetchMasails({
         search: search || undefined,
         categoryId: selectedCategory || undefined,
@@ -168,10 +199,26 @@ export function MasailClient({
     return () => io.disconnect()
   }, [hasMore, loading, loadingMore])
 
-  const switchTab = (t: Tab) => { setTab(t); setExpandedId(null) }
+  // Load the detail for whichever row is selected (desktop panel only)
+  useEffect(() => {
+    if (!effectiveSelectedId) return
+    let cancelled = false
+    fetchMasailDetail(effectiveSelectedId).then(d => {
+      if (cancelled) return
+      setFetchedDetail({ id: effectiveSelectedId, data: d })
+    })
+    return () => { cancelled = true }
+  }, [effectiveSelectedId])
+
+  const switchTab = (t: Tab) => { setTab(t); setSelectedId(null) }
   const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id) }
   const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id) }
   const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
+
+  const selectItem = (id: string) => {
+    setSelectedId(id)
+    if (!isDesktop) router.push(`/masail/${id}`)
+  }
 
   const filteredAuthors = authorSearch.trim()
     ? authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()))
@@ -189,8 +236,8 @@ export function MasailClient({
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
-      {/* ── Sidebar — both filters share one card ───────────────────── */}
-      <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:min-h-0">
+      {/* ── Column 1 — author & category share one card ──────────────── */}
+      <aside className="hidden lg:flex print:hidden lg:w-[280px] lg:shrink-0 lg:min-h-0">
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           {authors.length > 0 && (
             <SidebarOptionSection
@@ -221,9 +268,8 @@ export function MasailClient({
         </div>
       </aside>
 
-      {/* ── Main ────────────────────────────────────────────────────── */}
-      <div className="min-w-0 flex flex-col lg:flex-1 lg:min-h-0">
-        {/* Everything below lives in one card, same height as the sidebar card */}
+      {/* ── Column 2 — search, tabs, list ─────────────────────────────── */}
+      <div className="min-w-0 flex flex-col lg:w-[460px] lg:shrink-0 lg:min-h-0 print:hidden">
         <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="shrink-0 p-4">
         {/* Tabs */}
@@ -233,7 +279,7 @@ export function MasailClient({
               key={key}
               onClick={() => switchTab(key)}
               className={cn(
-                'inline-flex items-center gap-1.5 px-5 py-1.5 rounded-full text-sm font-medium transition-all',
+                'inline-flex items-center gap-1.5 px-5 py-1.5 rounded-full text-base font-medium transition-all',
                 tab === key
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -291,22 +337,22 @@ export function MasailClient({
         {(activeCategoryName || activeAuthorName) && (
           <div className="flex items-center gap-1.5 flex-wrap mt-4">
             {activeCategoryName && (
-              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {activeCategoryName}
                 <button onClick={() => setCategory('')} className="hover:bg-primary/20 rounded-full p-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
             {activeAuthorName && (
-              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 {activeAuthorName}
                 <button onClick={() => setAuthor('')} className="hover:bg-primary/20 rounded-full p-0.5"><X className="w-3 h-3" /></button>
               </span>
             )}
-            <button onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground hover:underline ml-1">{t('clearAll')}</button>
+            <button onClick={clearAll} className="text-sm text-muted-foreground hover:text-foreground hover:underline ml-1">{t('clearAll')}</button>
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-base text-muted-foreground mt-4">
           {loading ? t('loading') : t('resultCount', { count: total })}
         </p>
         </div>
@@ -328,10 +374,10 @@ export function MasailClient({
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <HelpCircle className="w-14 h-14 text-muted-foreground/25 mb-4" />
-            <p className="text-lg font-medium text-foreground">{t('emptyTitle')}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t('emptyHint')}</p>
+            <p className="text-xl font-medium text-foreground">{t('emptyTitle')}</p>
+            <p className="text-base text-muted-foreground mt-1">{t('emptyHint')}</p>
             {hasFilters && (
-              <button onClick={clearAll} className="mt-4 text-sm text-primary hover:underline">{t('clearFilters')}</button>
+              <button onClick={clearAll} className="mt-4 text-base text-primary hover:underline">{t('clearFilters')}</button>
             )}
           </div>
         ) : (
@@ -340,8 +386,8 @@ export function MasailClient({
               <MasailRow
                 key={item.id}
                 item={item}
-                expanded={expandedId === item.id}
-                onToggle={() => setExpandedId(id => id === item.id ? null : item.id)}
+                selected={effectiveSelectedId === item.id}
+                onSelect={() => selectItem(item.id)}
               />
             ))}
           </div>
@@ -349,79 +395,149 @@ export function MasailClient({
 
         {/* Scroll sentinel — pulls in the next page */}
         {hasMore && !loading && (
-          <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
+          <div ref={sentinelRef} className="py-6 text-center text-base text-muted-foreground">
             {loadingMore ? t('loading') : ''}
           </div>
         )}
         </div>
         </div>
       </div>
+
+      {/* ── Column 3 — detail panel (desktop only, and always for print) ─ */}
+      <div className="hidden lg:flex print:flex lg:flex-1 lg:min-h-0 print:w-full print:h-auto">
+        <MasailDetailPanel detail={detail} loading={detailLoading} hasSelection={!!effectiveSelectedId} />
+      </div>
     </div>
   )
 }
 
-// ── Single row ──────────────────────────────────────────────────────────────
+// ── Single list row ──────────────────────────────────────────────────────────
 
-function MasailRow({ item, expanded, onToggle }: {
+function MasailRow({ item, selected, onSelect }: {
   item: MasailListItem
-  expanded: boolean
-  onToggle: () => void
+  selected: boolean
+  onSelect: () => void
 }) {
   const isAudio = item.hasAudio && !!item.audioUrl
 
   return (
-    <div className={cn(
-      'rounded-xl border bg-card overflow-hidden transition-colors',
-      expanded ? 'border-primary/50' : 'border-border'
-    )}>
-      <button
-        onClick={onToggle}
-        className="group w-full flex items-center gap-4 p-4 text-left hover:bg-primary/5 transition-colors"
-      >
-        <div className={cn(
-          'w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors',
-          expanded ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+    <button
+      onClick={onSelect}
+      className={cn(
+        'group w-full flex items-center gap-4 p-4 text-left rounded-xl border transition-colors',
+        selected ? 'border-primary/50 bg-primary/5' : 'border-border bg-card hover:bg-primary/5'
+      )}
+    >
+      <div className={cn(
+        'w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors',
+        selected ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+      )}>
+        {isAudio ? <Mic className="w-4.5 h-4.5" /> : <HelpCircle className="w-4.5 h-4.5" />}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          'text-[17px] font-semibold leading-snug transition-colors line-clamp-2',
+          selected ? 'text-primary' : 'text-foreground group-hover:text-primary'
         )}>
-          {isAudio ? <Mic className="w-4.5 h-4.5" /> : <HelpCircle className="w-4.5 h-4.5" />}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-2">
-            {item.title}
-          </p>
-          {item.author && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.author.name}</p>
-          )}
-        </div>
-
-        {item.categories.length > 0 && (
-          <span className="hidden sm:block shrink-0 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[120px]">
-            {item.categories[0].title}
-          </span>
+          {item.title}
+        </p>
+        {item.author && (
+          <p className="text-sm text-muted-foreground mt-0.5 truncate">{item.author.name}</p>
         )}
+      </div>
 
-        <ChevronDown className={cn(
-          'w-4 h-4 text-muted-foreground shrink-0 transition-transform',
-          expanded ? 'rotate-180 text-primary' : 'group-hover:text-foreground'
-        )} />
-      </button>
+      {item.categories.length > 0 && (
+        <span className="hidden sm:block shrink-0 text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[120px]">
+          {item.categories[0].title}
+        </span>
+      )}
+    </button>
+  )
+}
 
-      {expanded && (
-        <div className="border-t border-border/60 bg-muted/20">
-          {isAudio
-            ? <AudioExpand audioUrl={item.audioUrl!} item={item} />
-            : <TextExpand item={item} />
-          }
+// ── Detail panel (column 3) ─────────────────────────────────────────────────
+
+function MasailDetailPanel({ detail, loading, hasSelection }: {
+  detail: MasailDetail | null
+  loading: boolean
+  hasSelection: boolean
+}) {
+  const t = useTranslations('MasailPage')
+  const [zoom, setZoom] = useState(100)
+
+  const handlePrint = () => window.print()
+
+  const shareContent = detail
+    ? [
+        detail.title,
+        `${t('question')}: ${htmlToText(detail.question)}`,
+        detail.answer ? `${t('answer')}: ${htmlToText(detail.answer)}` : null,
+      ].filter(Boolean).join('\n\n')
+    : ''
+
+  return (
+    <div className="flex flex-col w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden print:overflow-visible print:border-none print:rounded-none">
+      {!hasSelection ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 print:hidden">
+          <HelpCircle className="w-14 h-14 text-muted-foreground/25 mb-4" />
+          <p className="text-base text-muted-foreground">{t('selectPrompt')}</p>
         </div>
+      ) : loading || !detail ? (
+        <div className="p-6 space-y-4 animate-pulse">
+          <div className="h-6 bg-muted rounded w-2/3" />
+          <div className="h-3 bg-muted rounded w-1/3" />
+          <div className="space-y-2 pt-4">
+            <div className="h-3 bg-muted rounded w-full" />
+            <div className="h-3 bg-muted rounded w-5/6" />
+            <div className="h-3 bg-muted rounded w-4/5" />
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="shrink-0 flex items-start justify-between gap-4 p-6 pb-4 border-b border-border/60">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold text-foreground leading-snug">{detail.title}</h2>
+              {detail.author && (
+                <p className="text-base text-muted-foreground mt-1">{detail.author.name}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0 print:hidden">
+              <ZoomControl zoom={zoom} onZoomChange={setZoom} />
+              <div className="w-px h-5 bg-border mx-1" />
+              <button
+                onClick={handlePrint}
+                title={t('print')}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Printer className="w-4.5 h-4.5" />
+              </button>
+              <ShareActions
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/masail/${detail.id}`}
+                title={detail.title}
+                content={shareContent}
+              />
+            </div>
+          </div>
+
+          <div
+            className="flex-1 min-h-0 overflow-y-auto p-6 print:overflow-visible print:h-auto"
+            style={{ zoom: `${zoom}%` }}
+          >
+            {detail.hasAudio && detail.audioUrl
+              ? <AudioDetail detail={detail} audioUrl={detail.audioUrl} />
+              : <TextDetail detail={detail} />
+            }
+          </div>
+        </>
       )}
     </div>
   )
 }
 
-// ── Audio inline player ─────────────────────────────────────────────────────
-
-function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListItem }) {
+function AudioDetail({ detail, audioUrl }: { detail: MasailDetail; audioUrl: string }) {
   const t = useTranslations('MasailPage')
+  const locale = useLocale()
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -447,7 +563,14 @@ function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListIte
   const pct = duration ? (currentTime / duration) * 100 : 0
 
   return (
-    <div className="p-4 sm:p-6">
+    <div>
+      {detail.question && (
+        <div
+          className="prose-content text-base text-muted-foreground mb-6 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: detail.question }}
+        />
+      )}
+
       <audio
         ref={audioRef}
         src={audioUrl}
@@ -459,12 +582,12 @@ function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListIte
         onError={() => setAudioError(true)}
       />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 print:hidden">
         <button
           onClick={togglePlay}
-          className="w-12 h-12 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
+          className="w-14 h-14 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity shadow-sm"
         >
-          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+          {isPlaying ? <Pause className="w-5.5 h-5.5" /> : <Play className="w-5.5 h-5.5 ml-0.5" />}
         </button>
 
         <div className="flex-1 min-w-0">
@@ -476,19 +599,38 @@ function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListIte
             <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width]" style={{ width: `${pct}%` }} />
             <div className="absolute top-1/2 -translate-y-1/2 -ml-1.5 w-3 h-3 rounded-full bg-primary shadow opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `${pct}%` }} />
           </div>
-          <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground tabular-nums">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+          <div className="flex items-center justify-between mt-1.5 text-sm text-muted-foreground tabular-nums">
+            <span>{formatTime(currentTime, locale)}</span>
+            <span>{formatTime(duration, locale)}</span>
           </div>
         </div>
       </div>
 
-      {audioError && <p className="text-xs text-destructive mt-3">{t('audioError')}</p>}
+      {audioError && (
+        <p className="text-sm text-destructive mt-3">{t('audioError')}</p>
+      )}
 
-      {item.categories.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-4">
-          {item.categories.map(c => (
-            <span key={c.id} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{c.title}</span>
+      {duration > 0 && (
+        <div className="flex items-center gap-2 mt-6 text-base">
+          <span className="text-muted-foreground">{t('audioDuration')}:</span>
+          <span className="font-medium text-foreground">
+            {t('audioDurationValue', { minutes: Math.max(1, Math.round(duration / 60)) })}
+          </span>
+        </div>
+      )}
+
+      <a
+        href={audioUrl}
+        download
+        className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-base font-medium text-foreground hover:bg-muted transition-colors print:hidden"
+      >
+        <Download className="w-4 h-4" /> {t('download')}
+      </a>
+
+      {detail.categories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-6 pt-6 border-t border-border/60">
+          {detail.categories.map(c => (
+            <span key={c.id} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">{c.title}</span>
           ))}
         </div>
       )}
@@ -496,62 +638,36 @@ function AudioExpand({ audioUrl, item }: { audioUrl: string; item: MasailListIte
   )
 }
 
-// ── Q&A inline expand ───────────────────────────────────────────────────────
-
-function TextExpand({ item }: { item: MasailListItem }) {
+function TextDetail({ detail }: { detail: MasailDetail }) {
   const t = useTranslations('MasailPage')
-  const [detail, setDetail] = useState<MasailDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchMasailDetail(item.id).then(d => {
-      setDetail(d)
-      setLoading(false)
-    })
-  }, [item.id])
-
   return (
-    <div className="p-4 sm:p-6 space-y-4">
-      {loading ? (
-        <div className="space-y-2 animate-pulse">
-          <div className="h-3 bg-muted rounded w-full" />
-          <div className="h-3 bg-muted rounded w-5/6" />
-          <div className="h-3 bg-muted rounded w-4/5" />
-          <div className="h-3 bg-muted rounded w-full" />
-          <div className="h-3 bg-muted rounded w-3/4" />
+    <div className="space-y-4">
+      {/* Question */}
+      <div className="rounded-lg bg-primary/5 border border-primary/15 p-4">
+        <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-2">{t('question')}</p>
+        <div
+          className="prose-content text-base text-foreground leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: detail.question }}
+        />
+      </div>
+
+      {/* Answer */}
+      {detail.answer && (
+        <div className="rounded-lg bg-muted/50 border border-border p-4">
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('answer')}</p>
+          <div
+            className="prose-content text-base text-foreground leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: detail.answer }}
+          />
         </div>
-      ) : detail ? (
-        <>
-          {/* Question */}
-          <div className="rounded-lg bg-primary/5 border border-primary/15 p-4">
-            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">{t('question')}</p>
-            <div
-              className="prose-content text-sm text-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: detail.question }}
-            />
-          </div>
+      )}
 
-          {/* Answer */}
-          {detail.answer && (
-            <div className="rounded-lg bg-muted/50 border border-border p-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('answer')}</p>
-              <div
-                className="prose-content text-sm text-foreground leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: detail.answer }}
-              />
-            </div>
-          )}
-
-          {detail.categories.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-2">
-              {detail.categories.map(c => (
-                <span key={c.id} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{c.title}</span>
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="text-sm text-muted-foreground">{t('detailNotFound')}</p>
+      {detail.categories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-2">
+          {detail.categories.map(c => (
+            <span key={c.id} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">{c.title}</span>
+          ))}
+        </div>
       )}
     </div>
   )

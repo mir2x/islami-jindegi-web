@@ -39,7 +39,7 @@ export function Header() {
 
   return (
     <header className={cn(
-      'sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md transition-shadow duration-200',
+      'sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md transition-shadow duration-200 print:hidden',
       scrolled && 'shadow-sm border-b border-border/60'
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -50,11 +50,11 @@ export function Header() {
             <Image
               src="/logo-icon.png"
               alt={tMeta('title')}
-              width={36}
-              height={36}
+              width={52}
+              height={52}
               className="rounded-xl shadow-sm"
             />
-            <span className="text-[17px] font-bold text-foreground leading-tight hidden sm:block">
+            <span className="text-[21px] font-bold text-foreground leading-tight hidden sm:block">
               {tMeta('title')}
             </span>
           </Link>
@@ -68,10 +68,10 @@ export function Header() {
                   key={href}
                   href={href}
                   className={cn(
-                    'px-3 py-2 rounded-md text-[15px] font-medium transition-colors whitespace-nowrap',
+                    'px-3 py-2 rounded-md text-[17px] font-medium transition-colors whitespace-nowrap',
                     active
                       ? 'text-primary bg-primary/8 font-semibold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      : 'text-foreground hover:text-foreground hover:bg-muted'
                   )}
                 >
                   {label}
@@ -106,7 +106,7 @@ export function Header() {
                   key={href}
                   href={href}
                   className={cn(
-                    'px-3 py-3 rounded-lg text-base font-medium transition-colors',
+                    'px-3 py-3 rounded-lg text-lg font-medium transition-colors',
                     active
                       ? 'text-primary bg-primary/8 font-semibold'
                       : 'text-foreground hover:bg-muted'

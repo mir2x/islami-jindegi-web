@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Trash2, GripVertical } from 'lucide-react'
 import { useMadrasahStore } from '@/store/madrasah-store'
 import { RichEditor } from '@/components/admin/rich-editor'
 import { MediaField } from '@/components/admin/media-field'
+import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -115,13 +116,16 @@ export function MadrasahForm({ madrasah }: Props) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="mb-6">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to madrasahs
-        </button>
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to madrasahs
+          </button>
+          {madrasah && <PublicViewButton href={`/madrasah/${madrasah.id}`} />}
+        </div>
         <h1 className="text-lg font-semibold">{isEdit ? 'Edit Madrasah' : 'Add Madrasah'}</h1>
       </div>
 

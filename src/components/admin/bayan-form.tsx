@@ -8,6 +8,7 @@ import { useBayanStore } from '@/store/bayan-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
 import { MediaField } from '@/components/admin/media-field'
+import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -104,10 +105,13 @@ export function BayanForm({ item }: Props) {
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-8">
       <div className="mb-8">
-        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Bayan
-        </button>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Bayan
+          </button>
+          {item && <PublicViewButton href={`/bayan/${item.id}`} />}
+        </div>
         <h1 className="text-2xl font-bold">{isEdit ? 'Edit Bayan' : 'Add New Bayan'}</h1>
       </div>
 

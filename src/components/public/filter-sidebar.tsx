@@ -1,7 +1,7 @@
 'use client'
 
 import { Search } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 export interface FilterOption {
@@ -33,11 +33,12 @@ export function SidebarOptionSection({
   title, items, search, onSearch, selected, onSelect, emptyText, listClassName, fill, inlineSearch,
 }: Props) {
   const t = useTranslations('Common')
+  const locale = useLocale()
   return (
     <div className={cn('flex flex-col', fill && 'flex-1 min-h-0 basis-0')}>
       <div className={cn('px-4 pt-4 pb-3 shrink-0', inlineSearch && 'flex items-center gap-3')}>
         <p className={cn(
-          'text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+          'text-lg font-semibold uppercase tracking-wider text-foreground',
           !inlineSearch && 'mb-2.5'
         )}>
           {title}
@@ -48,7 +49,7 @@ export function SidebarOptionSection({
             value={search}
             onChange={e => onSearch(e.target.value)}
             placeholder={t('searchPlaceholder')}
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-border bg-muted text-base focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>
@@ -65,7 +66,7 @@ export function SidebarOptionSection({
             key={item.id}
             onClick={() => onSelect(item.id)}
             className={cn(
-              'w-full flex items-center justify-between gap-2 text-left px-2.5 py-2 text-sm transition-colors',
+              'w-full flex items-center justify-between gap-2 text-left px-2.5 py-2 text-base transition-colors',
               'snap-start border-b border-border/60 h-9',
               selected === item.id
                 ? 'bg-primary/10 text-primary font-medium'
@@ -73,11 +74,11 @@ export function SidebarOptionSection({
             )}
           >
             <span className="truncate">{item.label}</span>
-            <span className="text-xs tabular-nums shrink-0 opacity-70">({item.count.toLocaleString('bn-BD')})</span>
+            <span className="text-sm tabular-nums shrink-0 opacity-70">({item.count.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-US')})</span>
           </button>
         ))}
         {items.length === 0 && (
-          <p className="text-xs text-muted-foreground px-2.5 py-2">{emptyText}</p>
+          <p className="text-sm text-muted-foreground px-2.5 py-2">{emptyText}</p>
         )}
       </div>
     </div>
