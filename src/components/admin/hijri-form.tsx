@@ -115,7 +115,7 @@ export function HijriForm({ item }: Props) {
   const selectedMonth = HIJRI_MONTHS.find(m => m.value === parseInt(hijriMonth))
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-8">
+    <div className="max-w-3xl mx-auto p-4 sm:p-5">
       <button
         onClick={() => router.back()}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -124,7 +124,7 @@ export function HijriForm({ item }: Props) {
         Back
       </button>
 
-      <div className="mb-8">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold tracking-tight">
           {isEdit ? 'Edit Hijri Sighting' : 'Add Hijri Sighting'}
         </h1>
@@ -133,8 +133,8 @@ export function HijriForm({ item }: Props) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-card border rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Sighting Details</h2>
 
           {/* Country code */}

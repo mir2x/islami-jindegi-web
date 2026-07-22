@@ -28,19 +28,13 @@ function BookCard({ book }: { book: Awaited<ReturnType<typeof getRecentBooks>>[n
   return (
     <Link href={`/books/${book.id}`} className="group shrink-0 w-40 snap-start">
       <div className="aspect-[3/4] relative rounded-xl overflow-hidden bg-muted mb-3 shadow-sm group-hover:shadow-md transition-all duration-200">
-        {book.coverUrl ? (
-          <Image
-            src={book.coverUrl}
-            alt={book.title}
-            fill
-            className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-            sizes="160px"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 bg-primary/5">
-            <BookOpen className="w-12 h-12" />
-          </div>
-        )}
+        <Image
+          src={book.coverUrl || '/images/default-book.png'}
+          alt={book.title}
+          fill
+          className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+          sizes="160px"
+        />
       </div>
       <p className="text-[15px] font-semibold leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
         {book.title}

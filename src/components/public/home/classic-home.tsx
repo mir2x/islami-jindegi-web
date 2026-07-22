@@ -223,10 +223,13 @@ function BooksGrid({ books }: { books: Book[] }) {
         <Link key={b.id} href={`/books/${b.id}`} className="group flex gap-4 py-4 first:pt-0 -mx-4 px-4 hover:bg-muted/30 transition-colors rounded-xl">
           {/* Cover */}
           <div className="relative w-20 sm:w-24 shrink-0 rounded-lg overflow-hidden bg-muted shadow-sm group-hover:shadow-md transition-shadow" style={{ aspectRatio: '3/4' }}>
-            {b.coverUrl
-              ? <Image src={b.coverUrl} alt={b.title} fill className="object-cover" sizes="96px" />
-              : <div className="w-full h-full bg-primary/8 flex items-center justify-center"><BookOpen className="w-6 h-6 text-primary/30" /></div>
-            }
+            <Image 
+              src={b.coverUrl || '/images/default-book.png'} 
+              alt={b.title} 
+              fill 
+              className="object-cover" 
+              sizes="96px" 
+            />
           </div>
           {/* Info */}
           <div className="flex-1 min-w-0 py-1">

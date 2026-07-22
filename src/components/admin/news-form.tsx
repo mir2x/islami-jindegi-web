@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { NewsDetail } from '@/types'
 
@@ -81,24 +82,28 @@ export function NewsForm({ news }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to news
-          </button>
-          {news && <PublicViewButton href={`/news/${news.id}`} />}
-        </div>
-        <h1 className="text-lg font-semibold">{isEdit ? 'Edit News' : 'Add News'}</h1>
+    <div className="w-full p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to news
+        </button>
+        {news && <PublicViewButton href={`/news/${news.id}`} />}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="bg-card border rounded-xl p-5 space-y-4">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Content</h2>
+      <form onSubmit={handleSubmit}>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="mb-4 bg-card border">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-4">
+            <div className="bg-card border rounded-xl p-5 space-y-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
           <div className="space-y-1.5">
             <Label>Title <span className="text-destructive">*</span></Label>
@@ -111,11 +116,6 @@ export function NewsForm({ news }: Props) {
               <span className="ml-2 text-xs text-muted-foreground font-normal">for SEO & social media</span>
             </Label>
             <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short summary..." rows={2} maxLength={300} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Body <span className="text-destructive">*</span></Label>
-            <RichEditor value={body} onChange={setBody} placeholder="Full news content..." editorKey={news?.id} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -135,22 +135,31 @@ export function NewsForm({ news }: Props) {
           </div>
         </div>
 
-        <div className="bg-card border rounded-xl p-5 space-y-4">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Position</Label>
-              <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+          <div className="bg-card border rounded-xl p-5 space-y-4">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Position</Label>
+                <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
+              <Label htmlFor="published" className="cursor-pointer">Published</Label>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
-            <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
-            <Label htmlFor="published" className="cursor-pointer">Published</Label>
-          </div>
-        </div>
+        </TabsContent>
 
-        <div className="flex gap-3">
-          <Button type="submit" disabled={loading} className="sm:px-8">
+        <TabsContent value="content" className="space-y-4">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Body <span className="text-destructive">*</span></h2>
+            <RichEditor value={body} onChange={setBody} placeholder="Full news content..." editorKey={news?.id} className="h-[500px]" />
+          </div>
+        </TabsContent>
+        </Tabs>
+
+        <div className="flex gap-3 mt-6">
+          <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
             {loading ? 'Saving...' : isEdit ? 'Update News' : 'Create News'}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>

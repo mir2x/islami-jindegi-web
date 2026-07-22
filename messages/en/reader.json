@@ -20,7 +20,7 @@
     "meccan": "Meccan",
     "medinan": "Medinan",
     "searchSurah": "Search surah...",
-    "surahMeta": "{ayahCount, plural, one {# ayah} other {# ayahs}} · {revelation} · Para {para}",
+    "surahMeta": "Ayah {ayahCount} · {revelation} · Para {para}",
     "noSurahFound": "No surah found."
   },
   "BookReader": {
@@ -86,7 +86,7 @@
     "navTabPage": "Page",
     "meccan": "Meccan",
     "medinan": "Medinan",
-    "surahMeta": "{ayahCount, plural, one {# ayah} other {# ayahs}} · {revelation} · Para {para}",
+    "surahMeta": "Ayah {ayahCount} · {revelation} · Para {para}",
     "tilawatMode": "Tilawat mode",
     "bookmarksList": "Bookmarks list",
     "searchQuran": "Search the Quran",

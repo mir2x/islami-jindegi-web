@@ -24,14 +24,28 @@ const PAGE_SIZE = 20
 
 export default function NewsPage() {
   const router = useRouter()
-  const { result, loading, fetch, remove } = useNewsStore()
+  const { result, loading, fetch, remove, lastParams, setLastParams } = useNewsStore()
 
-  const [search, setSearch] = useState('')
-  const [published, setPublished] = useState('')
-  const [page, setPage] = useState(1)
-  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>('position')
+  const [search, setSearch] = useState(lastParams.search || '')
+  const [published, setPublished] = useState(lastParams.published || '')
+  const [page, setPage] = useState(Number(lastParams.page) || 1)
+  
+  // Extract initial sort state from lastParams (e.g. 'position_desc' -> { key: 'position', dir: 'desc' })
+  const initialSort = (lastParams.sort || 'position_asc').split('_')
+  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>(
+    initialSort[0] as SortKey,
+    initialSort[1] as 'asc' | 'desc'
+  )
   const [deleting, setDeleting] = useState<NewsListItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  useEffect(() => {
+    setLastParams({
+      search, published,
+      page: String(page),
+      sort: sortParam,
+    })
+  }, [search, published, page, sortParam, setLastParams])
 
   const load = useCallback(() => {
     fetch({ page, pageSize: PAGE_SIZE, search: search || undefined, published: published === '' ? undefined : published === 'true', sort: sortParam })

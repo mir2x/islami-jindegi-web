@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
+import { ThemeProvider } from '@/components/theme-provider'
 import '../globals.css'
 
 const poppins = Poppins({
@@ -37,10 +38,6 @@ export async function generateMetadata({
   }
 }
 
-// Inline script runs before paint — reads localStorage and applies dark class
-// to avoid flash of wrong theme on public pages
-const themeScript = `(function(){try{var t=localStorage.getItem('ij-theme');if(t==='dark'||(t===null&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();`
-
 export default async function RootLayout({
   children,
   params,
@@ -60,11 +57,18 @@ export default async function RootLayout({
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            storageKey="ij-theme"
+          >
+            {children}
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

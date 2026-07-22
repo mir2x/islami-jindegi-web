@@ -28,16 +28,16 @@ const PAGE_SIZE = 20
 
 export default function MasailPage() {
   const router = useRouter()
-  const { result, loading, fetch, remove } = useMasailStore()
+  const { result, loading, fetch, remove, lastParams, setLastParams } = useMasailStore()
   const { fetchAll, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
 
-  const [search, setSearch] = useState('')
-  const [authorId, setAuthorId] = useState('')
-  const [categoryId, setCategoryId] = useState('')
-  const [published, setPublished] = useState('')
-  const [page, setPage] = useState(1)
-  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>('position')
+  const [search, setSearch] = useState(lastParams.search || '')
+  const [authorId, setAuthorId] = useState(lastParams.authorId || '')
+  const [categoryId, setCategoryId] = useState(lastParams.categoryId || '')
+  const [published, setPublished] = useState(lastParams.published !== undefined ? String(lastParams.published) : '')
+  const [page, setPage] = useState(lastParams.page || 1)
+  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>(lastParams.sort as SortKey || 'position')
   const [authorOpen, setAuthorOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [deleting, setDeleting] = useState<MasailListItem | null>(null)
@@ -46,14 +46,16 @@ export default function MasailPage() {
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 
   const load = useCallback(() => {
-    fetch({
+    const params = {
       page, pageSize: PAGE_SIZE, search: search || undefined,
       authorId: authorId || undefined,
       categoryId: categoryId || undefined,
       published: published === '' ? undefined : published === 'true',
       sort: sortParam,
-    })
-  }, [fetch, page, search, authorId, categoryId, published, sortParam])
+    }
+    setLastParams(params)
+    fetch(params)
+  }, [fetch, setLastParams, page, search, authorId, categoryId, published, sortParam])
 
   useEffect(() => { fetchAll(); fetchCategories() }, [fetchAll, fetchCategories])
   useEffect(() => { load() }, [load])

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
@@ -20,6 +20,8 @@ const MODES: Mode[] = ['mushaf', 'text', 'tilawat']
 
 export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; surahs: QuranSurah[] }) {
   const t = useTranslations('QuranLanding')
+  const locale = useLocale()
+  const n = (val: number | string) => locale === 'bn' ? bn(val) : val
   const searchParams = useSearchParams()
   const initialMode = ((): Mode => {
     const m = searchParams.get('mode')
@@ -46,84 +48,82 @@ export function QuranLanding({ editions, surahs }: { editions: MushafEdition[]; 
   useEffect(() => { setLastReadState(getLastRead()) }, [])
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-
-      {/* ── Hero ── */}
-      <div className="text-center mb-10">
-        <p className="text-3xl text-muted-foreground mb-2" style={{ fontFamily: DEFAULT_ARABIC_FONT }}>
-          القرآن الكريم
-        </p>
-        <h1 className="text-4xl sm:text-5xl font-bold text-foreground mt-1">{t('title')}</h1>
-        <p className="text-muted-foreground mt-3 text-base">{t('subtitle')}</p>
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-sm text-muted-foreground hover:text-primary transition-all"
-          >
-            <Search className="w-4 h-4" />
-            {t('searchQuran')}
-          </button>
-          <button
-            onClick={() => setBookmarksOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-sm text-muted-foreground hover:text-primary transition-all"
-          >
-            <BookMarked className="w-4 h-4" />
-            {t('bookmarks')}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Continue reading ── */}
-      {lastRead && (
-        <Link
-          href={`/quran/surah/${lastRead.surahNumber}?ayah=${lastRead.ayahNumber}`}
-          className="flex items-center gap-3 max-w-lg mx-auto mb-8 p-4 rounded-2xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-            <History className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">{t('continueReading')}</p>
-            <p className="text-sm font-semibold text-foreground truncate">{t('surahAyah', { surahName: lastRead.surahName, ayahNumber: bn(lastRead.ayahNumber) })}</p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-primary shrink-0" />
-        </Link>
-      )}
-
+    <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 py-8 sm:py-10">
       {searchOpen && <QuranSearchModal onClose={() => setSearchOpen(false)} />}
       {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
 
-      {/* ── Mode selector ── */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto mb-12">
-        <ModeCard
-          active={mode === 'mushaf'}
-          onClick={() => setMode('mushaf')}
-          icon={BookOpen}
-          label={t('modeMushaf')}
-          sub={t('modeMushafSub')}
-        />
-        <ModeCard
-          active={mode === 'text'}
-          onClick={() => setMode('text')}
-          icon={AlignLeft}
-          label={t('modeText')}
-          sub={t('modeTextSub')}
-          disabled={surahs.length === 0}
-        />
-        <ModeCard
-          active={mode === 'tilawat'}
-          onClick={() => setMode('tilawat')}
-          icon={AlignJustify}
-          label={t('modeTilawat')}
-          sub={t('modeTilawatSub')}
-          disabled={surahs.length === 0}
-        />
-      </div>
+      <div className="flex flex-col md:flex-row gap-6 lg:gap-10">
+        {/* ── Sidebar (Mode selector) ── */}
+        <div className="w-full md:w-64 shrink-0 flex flex-col gap-3">
+          <ModeCard
+            active={mode === 'mushaf'}
+            onClick={() => setMode('mushaf')}
+            icon={BookOpen}
+            label={t('modeMushaf')}
+            sub={t('modeMushafSub')}
+          />
+          <ModeCard
+            active={mode === 'text'}
+            onClick={() => setMode('text')}
+            icon={AlignLeft}
+            label={t('modeText')}
+            sub={t('modeTextSub')}
+            disabled={surahs.length === 0}
+          />
+          <ModeCard
+            active={mode === 'tilawat'}
+            onClick={() => setMode('tilawat')}
+            icon={AlignJustify}
+            label={t('modeTilawat')}
+            sub={t('modeTilawatSub')}
+            disabled={surahs.length === 0}
+          />
+          <div className="flex flex-col gap-3 mt-4">
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setBookmarksOpen(true)}
+                className="w-full inline-flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-lg text-muted-foreground hover:text-primary transition-all"
+              >
+                <BookMarked className="w-4 h-4" />
+                {t('bookmarks')}
+              </button>
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="w-full inline-flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-lg text-muted-foreground hover:text-primary transition-all"
+              >
+                <Search className="w-4 h-4" />
+                {t('searchQuran')}
+              </button>
+            </div>
 
-      {/* ── Content ── */}
-      {mode === 'mushaf'  && <MushafSection editions={editions} />}
-      {mode === 'text'    && <TextSection surahs={surahs} search={search} onSearch={setSearch} hrefPrefix="/quran/surah" />}
-      {mode === 'tilawat' && <TextSection surahs={surahs} search={search} onSearch={setSearch} hrefPrefix="/quran/tilawat" />}
+            {/* ── Continue reading ── */}
+            {lastRead && (
+              <Link
+                href={`/quran/surah/${lastRead.surahNumber}?ayah=${lastRead.ayahNumber}`}
+                className="flex items-center gap-3 w-full p-4 rounded-2xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                  <History className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base text-muted-foreground">{t('continueReading')}</p>
+                  <p className="text-lg font-semibold text-foreground truncate">{t('surahAyah', { surahName: lastRead.surahName, ayahNumber: n(lastRead.ayahNumber) })}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-primary shrink-0" />
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* ── Main Content ── */}
+        <div className="flex-1 min-w-0">
+
+          {/* ── Content ── */}
+          {mode === 'mushaf'  && <MushafSection editions={editions} />}
+          {mode === 'text'    && <TextSection surahs={surahs} search={search} onSearch={setSearch} hrefPrefix="/quran/surah" />}
+          {mode === 'tilawat' && <TextSection surahs={surahs} search={search} onSearch={setSearch} hrefPrefix="/quran/tilawat" />}
+        </div>
+      </div>
     </div>
   )
 }
@@ -145,7 +145,7 @@ function ModeCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'relative flex flex-col items-center gap-2.5 p-5 rounded-2xl border-2 transition-all duration-200 text-center',
+        'relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 text-left',
         active
           ? 'border-primary bg-primary/8 shadow-sm'
           : 'border-border bg-card hover:border-primary/40 hover:bg-muted/40',
@@ -153,14 +153,14 @@ function ModeCard({
       )}
     >
       <div className={cn(
-        'w-11 h-11 rounded-xl flex items-center justify-center transition-colors',
+        'w-11 h-11 shrink-0 rounded-xl flex items-center justify-center transition-colors',
         active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
       )}>
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <p className={cn('font-bold text-[15px]', active ? 'text-foreground' : 'text-muted-foreground')}>{label}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+        <p className={cn('font-bold text-lg', active ? 'text-foreground' : 'text-muted-foreground')}>{label}</p>
+        <p className="text-base text-muted-foreground mt-0.5">{sub}</p>
       </div>
     </button>
   )
@@ -178,10 +178,7 @@ function MushafSection({ editions }: { editions: MushafEdition[] }) {
 
   return (
     <div>
-      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-5">
-        {t('chooseMushaf')}
-      </p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5">
         {editions.map(e => <EditionCard key={e.id} edition={e} />)}
       </div>
     </div>
@@ -190,6 +187,8 @@ function MushafSection({ editions }: { editions: MushafEdition[] }) {
 
 function EditionCard({ edition }: { edition: MushafEdition }) {
   const t = useTranslations('QuranLanding')
+  const locale = useLocale()
+  const n = (val: number | string) => locale === 'bn' ? bn(val) : val
   const coverUrl = `${edition.pagesBaseUrl}/qm1.${edition.ext}`
 
   return (
@@ -205,12 +204,12 @@ function EditionCard({ edition }: { edition: MushafEdition }) {
           className="object-cover object-top group-hover:scale-[1.03] transition-transform duration-300"
           sizes="(max-width: 640px) 50vw, 33vw"
         />
-        <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
-          {t('pageCount', { count: bn(edition.totalPages) })}
+        <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-sm font-medium px-2 py-0.5 rounded-full">
+          {t('pageCount', { count: n(edition.totalPages) })}
         </div>
       </div>
       <div className="p-3.5 flex items-start justify-between gap-2">
-        <p className="text-[14px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-2">
+        <p className="text-lg font-semibold leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-2">
           {edition.title}
         </p>
         <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
@@ -228,6 +227,8 @@ function TextSection({ surahs, search, onSearch, hrefPrefix }: {
   hrefPrefix: string
 }) {
   const t = useTranslations('QuranLanding')
+  const locale = useLocale()
+  const n = (val: number | string) => locale === 'bn' ? bn(val) : val
   const REVELATION_LABEL: Record<string, string> = {
     Meccan: t('meccan'),
     Medinan: t('medinan'),
@@ -251,12 +252,12 @@ function TextSection({ surahs, search, onSearch, hrefPrefix }: {
           value={search}
           onChange={e => onSearch(e.target.value)}
           placeholder={t('searchSurah')}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-muted text-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
 
       {/* Surah grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
         {filtered.map(surah => (
           <Link
             key={surah.number}
@@ -264,23 +265,23 @@ function TextSection({ surahs, search, onSearch, hrefPrefix }: {
             className="group flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all"
           >
             {/* Number badge */}
-            <div className="w-9 h-9 shrink-0 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors tabular-nums">
-              {bn(surah.number)}
+            <div className="w-9 h-9 shrink-0 rounded-lg bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors tabular-nums">
+              {n(surah.number)}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1">
-                <p className="text-sm font-semibold text-foreground truncate">{surah.nameBengali}</p>
-                <p className="text-base text-muted-foreground shrink-0" style={{ fontFamily: DEFAULT_ARABIC_FONT, direction: 'rtl' }}>
+                <p className="text-lg font-semibold text-foreground truncate">{surah.nameBengali}</p>
+                <p className="text-xl text-muted-foreground shrink-0" style={{ fontFamily: DEFAULT_ARABIC_FONT, direction: 'rtl' }}>
                   {surah.nameArabic}
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-base text-muted-foreground mt-0.5">
                 {t('surahMeta', {
-                  ayahCount: bn(surah.totalAyahs),
+                  ayahCount: n(surah.totalAyahs),
                   revelation: REVELATION_LABEL[surah.revelationType] ?? surah.revelationType,
-                  para: bn(surah.paraNumber),
+                  para: n(surah.paraNumber),
                 })}
               </p>
             </div>

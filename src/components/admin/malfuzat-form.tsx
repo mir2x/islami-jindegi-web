@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import type { Category, MalfuzatDetail } from '@/types'
 
@@ -109,53 +110,53 @@ export function MalfuzatForm({ item }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Malfuzat
-          </button>
-          {item && <PublicViewButton href={`/malfuzat/${item.id}`} />}
-        </div>
-        <h1 className="text-2xl font-bold">{isEdit ? 'Edit Malfuzat' : 'Add New Malfuzat'}</h1>
+    <div className="w-full p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Malfuzat
+        </button>
+        {item && <PublicViewButton href={`/malfuzat/${item.id}`} />}
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {/* Basic info */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="mb-4 bg-card border">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+          </TabsList>
 
-            <div className="space-y-1.5">
-              <Label>Title <span className="text-destructive">*</span></Label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" />
+          <TabsContent value="general" className="space-y-4">
+            {/* Basic info */}
+            <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
+
+              <div className="space-y-1.5">
+                <Label>Title <span className="text-destructive">*</span></Label>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Excerpt <span className="ml-2 text-xs text-muted-foreground font-normal">short description</span></Label>
+                <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short description..." rows={3} maxLength={160} />
+                <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Language <span className="text-destructive">*</span></Label>
+                <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Excerpt <span className="ml-2 text-xs text-muted-foreground font-normal">short description</span></Label>
-              <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short description..." rows={3} maxLength={160} />
-              <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
-            </div>
 
-            <div className="space-y-1.5">
-              <Label>Language <span className="text-destructive">*</span></Label>
-              <Select value={language} onValueChange={v => setLanguage(v ?? 'Bangla')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          {/* Body */}
-          <div className="bg-card border rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Body</h2>
-            <RichEditor value={body} onChange={setBody} placeholder="Write content..." editorKey={item?.id} />
-          </div>
-
-          {/* Author & Categories */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Author & Categories</h2>
+            {/* Author & Categories */}
+            <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Author & Categories</h2>
 
             <div className="space-y-1.5">
               <Label>Author <span className="text-destructive">*</span></Label>
@@ -212,54 +213,66 @@ export function MalfuzatForm({ item }: Props) {
             </div>
           </div>
 
-          {/* Media */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Media</h2>
-
-            <div className="flex items-center gap-2.5">
-              <Checkbox id="hasAudio" checked={hasAudio} onCheckedChange={v => setHasAudio(!!v)} />
-              <Label htmlFor="hasAudio" className="cursor-pointer">Has Audio</Label>
-            </div>
-
-            {hasAudio && (
-              <div className="space-y-1.5">
-                <Label>Audio File</Label>
-                <MediaField accept="audio" value={audioUrl} onChange={setAudioUrl} placeholder="No audio selected" />
+            {/* Settings */}
+            <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Position</Label>
+                  <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Published At</Label>
+                  <Input type="date" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
+                </div>
               </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label>Document (PDF)</Label>
-              <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" />
-            </div>
-          </div>
-
-          {/* Settings */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Position</Label>
-                <Input type="number" value={position} onChange={e => setPosition(e.target.value)} placeholder="Auto" min={1} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Published At</Label>
-                <Input type="date" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
+              <div className="flex items-center gap-2.5">
+                <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
+                <Label htmlFor="published" className="cursor-pointer">Published</Label>
               </div>
             </div>
-            <div className="flex items-center gap-2.5">
-              <Checkbox id="published" checked={published} onCheckedChange={v => setPublished(!!v)} />
-              <Label htmlFor="published" className="cursor-pointer">Published</Label>
-            </div>
-          </div>
+          </TabsContent>
 
-          <div className="flex gap-3">
+          <TabsContent value="content" className="space-y-4">
+            {/* Body */}
+            <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Body</h2>
+              <RichEditor value={body} onChange={setBody} placeholder="Write content..." editorKey={item?.id} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-4">
+            {/* Media */}
+            <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Media</h2>
+
+              <div className="flex items-center gap-2.5">
+                <Checkbox id="hasAudio" checked={hasAudio} onCheckedChange={v => setHasAudio(!!v)} />
+                <Label htmlFor="hasAudio" className="cursor-pointer">Has Audio</Label>
+              </div>
+
+              {hasAudio && (
+                <div className="space-y-1.5">
+                  <Label>Audio File</Label>
+                  <MediaField accept="audio" value={audioUrl} onChange={setAudioUrl} placeholder="No audio selected" />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>Document (PDF)</Label>
+                <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" />
+              </div>
+            </div>
+          </TabsContent>
+
+
+          <div className="flex gap-3 mt-6">
             <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
               {loading ? 'Saving...' : isEdit ? 'Update' : 'Create'}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
           </div>
-        </div>
+        </Tabs>
       </form>
     </div>
   )

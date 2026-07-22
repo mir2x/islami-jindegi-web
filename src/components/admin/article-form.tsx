@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -102,22 +103,26 @@ export function ArticleForm({ item }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Articles
-          </button>
-          {item && <PublicViewButton href={`/articles/${item.id}`} />}
-        </div>
-        <h1 className="text-2xl font-bold">{isEdit ? 'Edit Article' : 'Add New Article'}</h1>
+    <div className="w-full p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Articles
+        </button>
+        {item && <PublicViewButton href={`/articles/${item.id}`} />}
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="mb-4 bg-card border">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-4">
           {/* Basic info */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
             <div className="space-y-1.5">
@@ -140,14 +145,7 @@ export function ArticleForm({ item }: Props) {
             </div>
           </div>
 
-          {/* Body */}
-          <div className="bg-card border rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Article Body <span className="text-destructive">*</span></h2>
-            <RichEditor value={body} onChange={setBody} placeholder="Write article content..." editorKey={item?.id} />
-          </div>
-
-          {/* Author & Categories */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Author & Categories</h2>
 
             <div className="space-y-1.5">
@@ -205,14 +203,8 @@ export function ArticleForm({ item }: Props) {
             </div>
           </div>
 
-          {/* Document */}
-          <div className="bg-card border rounded-xl p-6 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Document</h2>
-            <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" />
-          </div>
-
           {/* Settings */}
-          <div className="bg-card border rounded-xl p-6 space-y-5">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Settings</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -229,13 +221,30 @@ export function ArticleForm({ item }: Props) {
               <Label htmlFor="published" className="cursor-pointer">Published</Label>
             </div>
           </div>
+        </TabsContent>
 
-          <div className="flex gap-3">
-            <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
-              {loading ? 'Saving...' : isEdit ? 'Update' : 'Create'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <TabsContent value="content" className="space-y-4">
+          {/* Body */}
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Article Body <span className="text-destructive">*</span></h2>
+            <RichEditor value={body} onChange={setBody} placeholder="Write article content..." editorKey={item?.id} className="h-[500px]" />
           </div>
+        </TabsContent>
+
+        <TabsContent value="media" className="space-y-4">
+          {/* Document */}
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Document</h2>
+            <MediaField accept="document" value={documentUrl} onChange={setDocumentUrl} placeholder="No document" />
+          </div>
+        </TabsContent>
+        </Tabs>
+
+        <div className="flex gap-3 mt-6">
+          <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
+            {loading ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
         </div>
       </form>
     </div>

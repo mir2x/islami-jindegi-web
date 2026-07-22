@@ -203,7 +203,7 @@ export function BayanClient({
     <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
       {/* ── Column 1 — author & category share one card ──────────────── */}
-      <aside className="hidden lg:flex print:hidden lg:w-[280px] lg:shrink-0 lg:min-h-0">
+      <aside className="hidden lg:flex print:hidden lg:w-[17.5rem] lg:shrink-0 lg:min-h-0">
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           <SidebarOptionSection
             title={t('speaker')}
@@ -233,7 +233,7 @@ export function BayanClient({
       </aside>
 
       {/* ── Column 2 — search, list ────────────────────────────────────── */}
-      <div className="min-w-0 flex flex-col lg:w-[460px] lg:shrink-0 lg:min-h-0 print:hidden">
+      <div className="min-w-0 flex flex-col lg:w-[24rem] lg:shrink-0 lg:min-h-0 print:hidden">
         <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="shrink-0 p-4">
         {/* Mobile filter row (author / category selects) */}
@@ -365,7 +365,6 @@ function BayanRow({ bayan, selected, onSelect }: {
   selected: boolean
   onSelect: () => void
 }) {
-  const locale = useLocale()
   return (
     <button
       onClick={onSelect}
@@ -383,7 +382,7 @@ function BayanRow({ bayan, selected, onSelect }: {
 
       <div className="flex-1 min-w-0">
         <p className={cn(
-          'text-[17px] font-semibold leading-snug transition-colors line-clamp-1',
+          'text-base font-semibold leading-snug transition-colors line-clamp-1',
           selected ? 'text-primary' : 'text-foreground group-hover:text-primary'
         )}>
           {bayan.title}
@@ -396,10 +395,6 @@ function BayanRow({ bayan, selected, onSelect }: {
             </span>
           )}
         </div>
-      </div>
-
-      <div className="hidden sm:block text-sm text-muted-foreground shrink-0 tabular-nums">
-        {formatDate(bayan.publishedAt, locale)}
       </div>
     </button>
   )

@@ -15,6 +15,8 @@ interface MalfuzatParams {
 interface MalfuzatStore {
   result: PagedResult<MalfuzatListItem> | null
   loading: boolean
+  lastParams: MalfuzatParams
+  setLastParams: (params: MalfuzatParams) => void
   fetch: (params?: MalfuzatParams) => Promise<void>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
@@ -24,6 +26,8 @@ interface MalfuzatStore {
 export const useMalfuzatStore = create<MalfuzatStore>((set) => ({
   result: null,
   loading: false,
+  lastParams: { page: 1 },
+  setLastParams: (params) => set({ lastParams: params }),
 
   fetch: async (params = {}) => {
     set({ loading: true })

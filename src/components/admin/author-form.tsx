@@ -51,8 +51,8 @@ export function AuthorForm({ author }: Props) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-8">
-      <div className="mb-8">
+    <div className="max-w-5xl mx-auto p-4 sm:p-5">
+      <div className="mb-4">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
@@ -67,8 +67,8 @@ export function AuthorForm({ author }: Props) {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div className="bg-card border rounded-xl p-6 space-y-5">
+        <div className="space-y-4">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Basic Information</h2>
 
             <div className="space-y-1.5">
@@ -89,7 +89,7 @@ export function AuthorForm({ author }: Props) {
             </div>
           </div>
 
-          <div className="bg-card border rounded-xl p-6 space-y-3">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Bio</h2>
             <RichEditor
               value={info}

@@ -201,15 +201,9 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
 
         {/* Book info */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {book.coverUrl ? (
-            <div className="w-7 h-9 relative shrink-0 rounded overflow-hidden shadow-sm">
-              <Image src={book.coverUrl} alt={book.title} fill className="object-cover" sizes="28px" />
-            </div>
-          ) : (
-            <div className="w-7 h-9 shrink-0 rounded bg-primary/10 flex items-center justify-center text-primary">
-              <BookOpen className="w-3.5 h-3.5" />
-            </div>
-          )}
+          <div className="w-7 h-9 relative shrink-0 rounded overflow-hidden shadow-sm">
+            <Image src={book.coverUrl || '/images/default-book.png'} alt={book.title} fill className="object-cover" sizes="28px" />
+          </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{book.title}</p>
             {book.authors[0] && <p className="text-xs text-muted-foreground truncate">{book.authors[0].name}</p>}

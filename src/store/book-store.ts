@@ -16,6 +16,8 @@ interface BookStore {
   result: PagedResult<Book> | null
   all: Book[]
   loading: boolean
+  lastParams: Record<string, string>
+  setLastParams: (params: Record<string, string>) => void
   fetch: (params?: BookParams) => Promise<void>
   fetchAll: () => Promise<void>
   create: (data: Partial<Book> & { authorIds: string[]; categoryIds: string[] }) => Promise<void>
@@ -27,6 +29,8 @@ export const useBookStore = create<BookStore>((set) => ({
   result: null,
   all: [],
   loading: false,
+  lastParams: {},
+  setLastParams: (params) => set({ lastParams: params }),
 
   fetch: async (params = {}) => {
     set({ loading: true })

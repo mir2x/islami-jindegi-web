@@ -35,7 +35,7 @@ type SubChapterSortKey = 'position' | 'title' | 'chapter' | 'book'
 export default function BooksPage() {
   const t = useTranslations('BooksAdmin')
   const tc = useTranslations('Common')
-  const { result, all: allBooks, loading, fetch, fetchAll: fetchAllBooks, remove } = useBookStore()
+  const { result, all: allBooks, loading, fetch, fetchAll: fetchAllBooks, remove, lastParams, setLastParams } = useBookStore()
   const { fetchAll: fetchAuthors, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
   const { result: chapterResult, loading: chapterLoading, fetch: fetchChapters, remove: removeChapter } = useChapterStore()
@@ -44,12 +44,18 @@ export default function BooksPage() {
   const router = useRouter()
 
   const [tab, setTab] = useState<Tab>('books')
-  const [search, setSearch] = useState('')
-  const [authorId, setAuthorId] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [search, setSearch] = useState(lastParams.search || '')
+  const [authorId, setAuthorId] = useState(lastParams.authorId || '')
+  const [categoryId, setCategoryId] = useState(lastParams.categoryId || '')
   const [bookFilter, setBookFilter] = useState('')
-  const [page, setPage] = useState(1)
-  const { sort, toggle: toggleSort, reset: resetSort, param: sortParam } = useTableSort<SortKey>('position')
+  const [page, setPage] = useState(Number(lastParams.page) || 1)
+  
+  // Extract initial sort state from lastParams (e.g. 'position_desc' -> { key: 'position', dir: 'desc' })
+  const initialSort = (lastParams.sort || 'position_asc').split('_')
+  const { sort, toggle: toggleSort, reset: resetSort, param: sortParam } = useTableSort<SortKey>(
+    initialSort[0] as SortKey,
+    initialSort[1] as 'asc' | 'desc'
+  )
   const { sort: chSort, toggle: toggleChSort, reset: resetChSort, param: chSortParam } = useTableSort<ChapterSortKey>('position')
   const { sort: subSort, toggle: toggleSubSort, reset: resetSubSort, param: subSortParam } = useTableSort<SubChapterSortKey>('position')
   const [authorOpen, setAuthorOpen] = useState(false)
@@ -58,6 +64,16 @@ export default function BooksPage() {
   const [deleting, setDeleting] = useState<{ id: string; title: string; type: Tab } | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (tab === 'books') {
+      setLastParams({
+        search, authorId, categoryId,
+        page: String(page),
+        sort: sortParam,
+      })
+    }
+  }, [tab, search, authorId, categoryId, page, sortParam, setLastParams])
 
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 
@@ -267,7 +283,7 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{book.position}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        {book.coverUrl ? <img src={book.coverUrl} alt="" className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0 border" /> : <div className="w-10 h-14 bg-muted rounded-lg flex items-center justify-center shrink-0 border"><BookOpen className="w-4 h-4 text-muted-foreground/60" /></div>}
+                        <img src={book.coverUrl || '/images/default-book.png'} alt="" className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0 border bg-muted" />
                         <div className="min-w-0">
                           <p className="font-semibold text-foreground leading-snug truncate">{book.title}</p>
                           {book.excerpt && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{book.excerpt}</p>}

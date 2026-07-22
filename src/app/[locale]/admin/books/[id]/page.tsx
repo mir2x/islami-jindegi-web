@@ -277,13 +277,7 @@ export default function BookDetailPage() {
       {/* Book header */}
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mb-8">
         <div className="shrink-0 mx-auto sm:mx-0">
-          {book.coverUrl ? (
-            <img src={book.coverUrl} alt={book.title} className="w-40 rounded-xl shadow-md border object-cover" />
-          ) : (
-            <div className="w-40 h-56 rounded-xl border bg-muted flex items-center justify-center">
-              <BookOpen className="w-10 h-10 text-muted-foreground/40" />
-            </div>
-          )}
+          <img src={book.coverUrl || '/images/default-book.png'} alt={book.title} className="w-40 rounded-xl shadow-md border object-cover bg-muted" />
         </div>
 
         <div className="flex-1 min-w-0 pt-1">

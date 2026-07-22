@@ -128,6 +128,7 @@ interface RichEditorProps {
   onChange: (html: string) => void
   placeholder?: string
   editorKey?: string | number
+  className?: string
 }
 
 function ToolbarButton({
@@ -158,10 +159,11 @@ function Divider() {
   return <div className="w-px h-5 bg-border mx-0.5 shrink-0" />
 }
 
-export function RichEditor({ value, onChange, placeholder = 'Start writing...', editorKey }: RichEditorProps) {
+export function RichEditor({ value, onChange, placeholder = 'Start writing...', editorKey, className }: RichEditorProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [mode, setMode] = useState<'edit' | 'preview'>('edit')
   const [, forceRender] = useState(0)
+  const prevValue = useRef(value)
 
   const editor = useEditor({
     extensions: [
@@ -186,17 +188,28 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
     content: value || '',
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      onChange(html === '<p></p>' ? '' : html)
+      const newVal = html === '<p></p>' ? '' : html
+      prevValue.current = newVal
+      onChange(newVal)
     },
   }, [editorKey])
 
-  // Sync external value changes (e.g. when editing a different record)
+  // Sync external value changes (e.g. when editing a different record or async loads)
   const prevKey = useRef(editorKey)
   useEffect(() => {
     if (!editor) return
     if (prevKey.current !== editorKey) {
       prevKey.current = editorKey
+      prevValue.current = value
       editor.commands.setContent(value || '')
+    } else if (value !== prevValue.current) {
+      prevValue.current = value
+      const currentHtml = editor.getHTML()
+      const isEditorEmpty = currentHtml === '<p></p>' || currentHtml === ''
+      const isValueEmpty = !value || value === '<p></p>'
+      if (value !== currentHtml && !(isEditorEmpty && isValueEmpty)) {
+        editor.commands.setContent(value || '')
+      }
     }
   }, [editor, editorKey, value])
 
@@ -440,13 +453,13 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
       </div>
 
       {/* Editor — fixed height, scrolls internally */}
-      <div className={cn('h-[640px] overflow-y-auto', mode === 'preview' && 'hidden')}>
+      <div className={cn('overflow-y-auto', className || 'h-[640px]', mode === 'preview' && 'hidden')}>
         <EditorContent editor={editor} />
       </div>
 
       {/* Preview — same fixed height */}
       {mode === 'preview' && (
-        <div className="h-[640px] overflow-y-auto bg-background/50 rounded-b-lg">
+        <div className={cn('overflow-y-auto bg-background/50 rounded-b-lg', className || 'h-[640px]')}>
           <div
             className="prose-content p-5"
             dangerouslySetInnerHTML={{

@@ -308,19 +308,13 @@ function BookCard({ book }: { book: Book }) {
   return (
     <Link href={`/books/${book.id}`} className="group">
       <div className="aspect-[3/4] relative rounded-xl overflow-hidden bg-muted mb-3 shadow-sm group-hover:shadow-md transition-all duration-200">
-        {book.coverUrl ? (
-          <Image
-            src={book.coverUrl}
-            alt={book.title}
-            fill
-            className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/15 text-primary/30">
-            <BookOpen className="w-10 h-10" />
-          </div>
-        )}
+        <Image
+          src={book.coverUrl || '/images/default-book.png'}
+          alt={book.title}
+          fill
+          className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+        />
         {book.documentUrl && book.chapterCount === 0 && (
           <div className="absolute top-2 right-2 bg-black/55 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm">
             <FileText className="w-2.5 h-2.5" /> PDF

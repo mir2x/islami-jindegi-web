@@ -92,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         onClick={onNavigate}
         title={collapsedMode ? label : undefined}
         className={cn(
-          'flex items-center gap-2.5 rounded-lg text-[13.5px] font-medium transition-all duration-150',
+          'flex items-center gap-2.5 rounded-lg text-base font-medium transition-all duration-150',
           collapsedMode ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5',
           active
             ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/25 font-semibold'
@@ -118,13 +118,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           'flex items-center px-3 py-5 h-[74px]',
           collapsed ? 'justify-center' : 'gap-3 px-5'
         )}>
-          <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-[11px] font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30">
+          <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30">
             IJ
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-bold leading-tight text-sidebar-foreground truncate">{t('brand')}</p>
-              <p className="text-[10px] font-semibold tracking-[0.16em] uppercase text-sidebar-foreground/45 mt-0.5">{t('brandSub')}</p>
+              <p className="text-lg font-bold leading-tight text-sidebar-foreground truncate">{t('brand')}</p>
+              <p className="text-sm font-semibold tracking-[0.16em] uppercase text-sidebar-foreground/45 mt-0.5">{t('brandSub')}</p>
             </div>
           )}
           {!collapsed && (
@@ -157,7 +157,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Nav */}
         <nav className={cn('flex-1 pt-4 pb-4 flex flex-col gap-0.5 overflow-y-auto', collapsed ? 'px-2' : 'px-3')}>
           {!collapsed && (
-            <p className="px-2 pt-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/35">
+            <p className="px-2 pt-1 pb-2.5 text-sm font-bold uppercase tracking-[0.18em] text-sidebar-foreground/35">
               {t('navigation')}
             </p>
           )}
@@ -176,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
-              <p className="text-[11px] font-medium text-sidebar-foreground/30">v1</p>
+              <p className="text-sm font-medium text-sidebar-foreground/30">v1</p>
             </>
           ) : (
             <>
@@ -184,12 +184,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="flex items-center justify-between">
                 <button
                   onClick={toggleTheme}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] font-medium text-sidebar-foreground/65 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-base font-medium text-sidebar-foreground/65 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
                 >
                   {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
                   <span>{theme === 'dark' ? t('lightMode') : t('darkMode')}</span>
                 </button>
-                <span className="text-[11px] font-medium text-sidebar-foreground/30 pr-1">v1.0.0</span>
+                <span className="text-sm font-medium text-sidebar-foreground/30 pr-1">v1.0.0</span>
               </div>
             </>
           )}
@@ -201,17 +201,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <SheetContent side="left" className="w-[240px] p-0 gap-0 flex flex-col bg-sidebar border-sidebar-border">
           <SheetTitle className="sr-only">{t('navigation')}</SheetTitle>
           <div className="flex items-center gap-3 px-5 py-5 h-[74px] shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-[11px] font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30">
+            <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30">
               IJ
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-bold leading-tight text-sidebar-foreground truncate">{t('brand')}</p>
-              <p className="text-[10px] font-semibold tracking-[0.16em] uppercase text-sidebar-foreground/45 mt-0.5">{t('brandSub')}</p>
+              <p className="text-lg font-bold leading-tight text-sidebar-foreground truncate">{t('brand')}</p>
+              <p className="text-sm font-semibold tracking-[0.16em] uppercase text-sidebar-foreground/45 mt-0.5">{t('brandSub')}</p>
             </div>
           </div>
           <div className="mx-4 h-px bg-sidebar-border" />
           <nav className="flex-1 pt-4 pb-4 px-3 flex flex-col gap-0.5 overflow-y-auto">
-            <p className="px-2 pt-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/35">
+            <p className="px-2 pt-1 pb-2.5 text-sm font-bold uppercase tracking-[0.18em] text-sidebar-foreground/35">
               {t('navigation')}
             </p>
             {navLinks(false, () => setMobileNavOpen(false))}
@@ -221,12 +221,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center justify-between">
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] font-medium text-sidebar-foreground/65 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-base font-medium text-sidebar-foreground/65 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
                 <span>{theme === 'dark' ? t('lightMode') : t('darkMode')}</span>
               </button>
-              <span className="text-[11px] font-medium text-sidebar-foreground/30 pr-1">v1.0.0</span>
+              <span className="text-sm font-medium text-sidebar-foreground/30 pr-1">v1.0.0</span>
             </div>
           </div>
         </SheetContent>
@@ -243,10 +243,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-[10px] font-black shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black shrink-0">
             IJ
           </div>
-          <p className="text-sm font-bold text-sidebar-foreground truncate">{t('brand')} {t('brandSub')}</p>
+          <p className="text-lg font-bold text-sidebar-foreground truncate">{t('brand')} {t('brandSub')}</p>
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? t('switchToLight') : t('switchToDark')}

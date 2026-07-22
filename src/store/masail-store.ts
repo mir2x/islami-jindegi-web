@@ -15,6 +15,8 @@ interface MasailParams {
 interface MasailStore {
   result: PagedResult<MasailListItem> | null
   loading: boolean
+  lastParams: MasailParams
+  setLastParams: (params: MasailParams) => void
   fetch: (params?: MasailParams) => Promise<void>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
@@ -24,6 +26,8 @@ interface MasailStore {
 export const useMasailStore = create<MasailStore>((set) => ({
   result: null,
   loading: false,
+  lastParams: { page: 1 },
+  setLastParams: (params) => set({ lastParams: params }),
 
   fetch: async (params = {}) => {
     set({ loading: true })

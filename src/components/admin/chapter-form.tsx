@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { RichEditor } from '@/components/admin/rich-editor'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import type { ChapterDetail } from '@/types'
 
@@ -74,8 +75,8 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-8">
-      <div className="mb-8">
+    <div className="w-full p-6 lg:p-8">
+      <div className="mb-4">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
@@ -83,15 +84,17 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
           <ArrowLeft className="w-4 h-4" />
           {tc('back')}
         </button>
-        <h1 className="text-2xl font-bold">{isEdit ? t('editChapter') : t('addNewChapter')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {isEdit ? t('editingChapter', { title: chapter.title }) : t('fillDetailsChapter')}
-        </p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div className="bg-card border rounded-xl p-6 space-y-5">
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="mb-4 bg-card border">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-4">
+            <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('basicInformation')}</h2>
 
             {isEdit ? (
@@ -151,25 +154,29 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
               />
             </div>
           </div>
+        </TabsContent>
 
-          <div className="bg-card border rounded-xl p-6 space-y-3">
+        <TabsContent value="content" className="space-y-4">
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{t('content')}</h2>
             <RichEditor
               value={form.body}
               onChange={body => setForm(f => ({ ...f, body }))}
               placeholder={t('chapterContentPlaceholder')}
               editorKey={editorKey}
+              className="h-[500px]"
             />
           </div>
+        </TabsContent>
+        </Tabs>
 
-          <div className="flex gap-3">
-            <Button type="submit" disabled={loading} className="sm:px-8">
-              {loading ? t('saving') : isEdit ? t('updateChapter') : t('createChapter')}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              {tc('cancel')}
-            </Button>
-          </div>
+        <div className="flex gap-3 mt-6">
+          <Button type="submit" disabled={loading} className="flex-1 sm:flex-none sm:px-8">
+            {loading ? t('saving') : isEdit ? t('updateChapter') : t('createChapter')}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            {tc('cancel')}
+          </Button>
         </div>
       </form>
     </div>

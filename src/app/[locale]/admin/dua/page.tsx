@@ -27,17 +27,31 @@ const PAGE_SIZE = 20
 
 export default function DuaPage() {
   const router = useRouter()
-  const { result, loading, fetch, remove } = useDuaStore()
+  const { result, loading, fetch, remove, lastParams, setLastParams } = useDuaStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
 
-  const [search, setSearch] = useState('')
-  const [categoryId, setCategoryId] = useState('')
-  const [published, setPublished] = useState('')
-  const [page, setPage] = useState(1)
-  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>('position')
+  const [search, setSearch] = useState(lastParams.search || '')
+  const [categoryId, setCategoryId] = useState(lastParams.categoryId || '')
+  const [published, setPublished] = useState(lastParams.published || '')
+  const [page, setPage] = useState(Number(lastParams.page) || 1)
+  
+  // Extract initial sort state from lastParams (e.g. 'position_desc' -> { key: 'position', dir: 'desc' })
+  const initialSort = (lastParams.sort || 'position_asc').split('_')
+  const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>(
+    initialSort[0] as SortKey,
+    initialSort[1] as 'asc' | 'desc'
+  )
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [deleting, setDeleting] = useState<DuaListItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  useEffect(() => {
+    setLastParams({
+      search, categoryId, published,
+      page: String(page),
+      sort: sortParam,
+    })
+  }, [search, categoryId, published, page, sortParam, setLastParams])
 
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 

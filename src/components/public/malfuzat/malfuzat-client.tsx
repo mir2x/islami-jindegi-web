@@ -237,7 +237,7 @@ export function MalfuzatClient({
     <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
       {/* ── Column 1 — author & category share one card ──────────────── */}
-      <aside className="hidden lg:flex print:hidden lg:w-[280px] lg:shrink-0 lg:min-h-0">
+      <aside className="hidden lg:flex print:hidden lg:w-[17.5rem] lg:shrink-0 lg:min-h-0">
         <div className="flex flex-col gap-12 w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden">
           <SidebarOptionSection
             title={t('speaker')}
@@ -267,7 +267,7 @@ export function MalfuzatClient({
       </aside>
 
       {/* ── Column 2 — search, tabs, list ─────────────────────────────── */}
-      <div className="min-w-0 flex flex-col lg:w-[460px] lg:shrink-0 lg:min-h-0 print:hidden">
+      <div className="min-w-0 flex flex-col lg:w-[24rem] lg:shrink-0 lg:min-h-0 print:hidden">
         <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="shrink-0 p-4">
         {/* Tabs */}
@@ -429,19 +429,13 @@ function MalfuzatRow({ item, selected, onSelect }: {
 
       <div className="flex-1 min-w-0">
         <p className={cn(
-          'text-[17px] font-semibold leading-snug transition-colors line-clamp-1',
+          'text-base font-semibold leading-snug transition-colors line-clamp-1',
           selected ? 'text-primary' : 'text-foreground group-hover:text-primary'
         )}>
           {item.title}
         </p>
         <p className="text-sm text-muted-foreground mt-0.5 truncate">{item.author.name}</p>
       </div>
-
-      {item.categories.length > 0 && (
-        <span className="hidden sm:block shrink-0 text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[120px]">
-          {item.categories[0].title}
-        </span>
-      )}
     </button>
   )
 }

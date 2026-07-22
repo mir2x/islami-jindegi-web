@@ -15,6 +15,8 @@ interface BayanParams {
 interface BayanStore {
   result: PagedResult<BayanListItem> | null
   loading: boolean
+  lastParams: Record<string, string>
+  setLastParams: (params: Record<string, string>) => void
   fetch: (params?: BayanParams) => Promise<void>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
@@ -24,6 +26,8 @@ interface BayanStore {
 export const useBayanStore = create<BayanStore>((set) => ({
   result: null,
   loading: false,
+  lastParams: {},
+  setLastParams: (params) => set({ lastParams: params }),
 
   fetch: async (params = {}) => {
     set({ loading: true })

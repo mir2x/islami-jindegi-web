@@ -53,13 +53,7 @@ export default async function BookReaderPage({
         {/* Cover */}
         <div className="shrink-0 w-40 sm:w-48">
           <div className="aspect-[3/4] relative rounded-xl overflow-hidden bg-muted shadow-md">
-            {book.coverUrl ? (
-              <Image src={book.coverUrl} alt={book.title} fill className="object-cover" sizes="192px" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                <BookOpen className="w-12 h-12" />
-              </div>
-            )}
+            <Image src={book.coverUrl || '/images/default-book.png'} alt={book.title} fill className="object-cover" sizes="192px" />
           </div>
         </div>
 

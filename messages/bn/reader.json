@@ -20,7 +20,7 @@
     "meccan": "মক্কী",
     "medinan": "মাদানী",
     "searchSurah": "সূরা খুঁজুন...",
-    "surahMeta": "{ayahCount} আয়াত · {revelation} · পারা {para}",
+    "surahMeta": "আয়াত {ayahCount} · {revelation} · পারা {para}",
     "noSurahFound": "কোনো সূরা পাওয়া যায়নি।"
   },
   "BookReader": {
@@ -86,7 +86,7 @@
     "navTabPage": "পৃষ্ঠা",
     "meccan": "মক্কী",
     "medinan": "মাদানী",
-    "surahMeta": "{ayahCount} আয়াত · {revelation} · পারা {para}",
+    "surahMeta": "আয়াত {ayahCount} · {revelation} · পারা {para}",
     "tilawatMode": "তিলাওয়াত মোড",
     "bookmarksList": "বুকমার্ক তালিকা",
     "searchQuran": "কুরআন অনুসন্ধান করুন",

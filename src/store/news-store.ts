@@ -13,6 +13,8 @@ interface NewsParams {
 interface NewsStore {
   result: PagedResult<NewsListItem> | null
   loading: boolean
+  lastParams: Record<string, string>
+  setLastParams: (params: Record<string, string>) => void
   fetch: (params?: NewsParams) => Promise<void>
   getById: (id: string) => Promise<NewsDetail>
   create: (data: unknown) => Promise<void>
@@ -20,12 +22,14 @@ interface NewsStore {
   remove: (id: string) => Promise<void>
 }
 
-export const useNewsStore = create<NewsStore>(() => ({
+export const useNewsStore = create<NewsStore>((set) => ({
   result: null,
   loading: false,
+  lastParams: {},
+  setLastParams: (params) => set({ lastParams: params }),
 
   fetch: async (params = {}) => {
-    useNewsStore.setState({ loading: true })
+    set({ loading: true })
     try {
       const q = new URLSearchParams()
       if (params.page) q.set('page', String(params.page))

@@ -94,7 +94,7 @@ export function MobileFilterSheet({
           would fight the animation and render off-center mid-transition. */}
       <div className="absolute top-20 left-0 right-0 mx-auto w-[calc(100%-2rem)] max-w-sm max-h-[75vh] flex flex-col rounded-2xl bg-card border border-border shadow-2xl animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0 border-b border-border/60">
-          <h3 className="text-[15px] font-semibold text-foreground">{title}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           <button onClick={onClose} className="p-1 -m-1 text-muted-foreground hover:text-foreground">
             <X className="w-4.5 h-4.5" />
           </button>

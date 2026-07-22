@@ -15,6 +15,8 @@ interface ArticleParams {
 interface ArticleStore {
   result: PagedResult<ArticleListItem> | null
   loading: boolean
+  lastParams: Record<string, string>
+  setLastParams: (params: Record<string, string>) => void
   fetch: (params?: ArticleParams) => Promise<void>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
@@ -24,6 +26,8 @@ interface ArticleStore {
 export const useArticleStore = create<ArticleStore>((set) => ({
   result: null,
   loading: false,
+  lastParams: {},
+  setLastParams: (params) => set({ lastParams: params }),
 
   fetch: async (params = {}) => {
     set({ loading: true })
