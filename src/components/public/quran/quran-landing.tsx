@@ -189,7 +189,8 @@ function EditionCard({ edition }: { edition: MushafEdition }) {
   const t = useTranslations('QuranLanding')
   const locale = useLocale()
   const n = (val: number | string) => locale === 'bn' ? bn(val) : val
-  const coverUrl = `${edition.pagesBaseUrl}/qm1.${edition.ext}`
+  const coverPageName = edition.id === 'nurani' ? 'qm2' : 'qm1'
+  const coverUrl = `${edition.pagesBaseUrl}/${coverPageName}.${edition.ext}`
 
   return (
     <Link

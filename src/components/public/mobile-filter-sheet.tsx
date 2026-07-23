@@ -135,7 +135,7 @@ export function MobileFilterSheet({
             >
               <Check className={cn('w-4 h-4 shrink-0', selected === item.id ? 'opacity-100' : 'opacity-0')} />
               <span>
-                {item.label} <span className="text-muted-foreground tabular-nums">({item.count.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-US')})</span>
+                {item.label} {/* <span className="text-muted-foreground tabular-nums">({item.count.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-US')})</span> */}
               </span>
             </button>
           ))}

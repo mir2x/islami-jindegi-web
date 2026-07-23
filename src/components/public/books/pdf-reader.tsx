@@ -181,10 +181,10 @@ export function PdfReader({ book, pdfUrl, onSwitchToText }: Props) {
 
   // ── Render ────────────────────────────────────────────────
   return (
-    <div ref={containerRef} className="flex flex-col bg-background overflow-hidden h-screen">
+    <div ref={containerRef} className="flex flex-col bg-background overflow-hidden h-full">
 
       {/* ── Toolbar ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-border bg-background shrink-0 flex-wrap gap-y-2">
+      <div className="flex items-center gap-2 px-3 sm:px-4 min-h-14 py-2 border-b border-border bg-card shrink-0 flex-wrap gap-y-2">
 
         {/* Back / switch to text */}
         {onSwitchToText ? (

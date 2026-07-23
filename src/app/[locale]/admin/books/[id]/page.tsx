@@ -224,18 +224,24 @@ export default function BookDetailPage() {
     return (
       <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6">
         <Skeleton className="h-5 w-32" />
-        <div className="flex gap-6">
-          <Skeleton className="w-40 h-56 rounded-xl shrink-0" />
-          <div className="flex-1 space-y-3 pt-2">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-1/3" />
-            <div className="flex gap-2 pt-2">
-              <Skeleton className="h-6 w-20 rounded-full" />
-              <Skeleton className="h-6 w-24 rounded-full" />
-            </div>
+        
+        <div className="p-4 sm:p-5 border border-border rounded-xl space-y-4 bg-card shadow-sm">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-7 w-1/3" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Skeleton className="h-5 w-32 rounded-full" />
+            <Skeleton className="h-5 w-40 rounded-full" />
           </div>
         </div>
+
         <div className="space-y-3 pt-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-14 w-full rounded-xl" />
@@ -257,7 +263,7 @@ export default function BookDetailPage() {
   return (
     <div className="p-4 sm:p-8 max-w-5xl mx-auto">
       {/* Top bar */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => router.push('/admin/books')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -275,93 +281,84 @@ export default function BookDetailPage() {
       </div>
 
       {/* Book header */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mb-8">
-        <div className="shrink-0 mx-auto sm:mx-0">
-          <img src={book.coverUrl || '/images/default-book.png'} alt={book.title} className="w-40 rounded-xl shadow-md border object-cover bg-muted" />
-        </div>
-
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex items-start gap-3 mb-2">
-            <h1 className="text-2xl font-bold leading-tight">{book.title}</h1>
-            {book.published ? (
-              <span className="mt-1 shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{t('published')}
-              </span>
-            ) : (
-              <span className="mt-1 shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{t('draft')}
-              </span>
+      <div className="mb-6 p-4 sm:p-5 bg-card border border-border rounded-xl shadow-sm">
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold leading-tight">{book.title}</h1>
+              {book.published ? (
+                <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{t('published')}
+                </span>
+              ) : (
+                <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{t('draft')}
+                </span>
+              )}
+            </div>
+            {book.documentUrl && (
+              <a
+                href={book.documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline bg-primary/10 px-2.5 py-1.5 rounded-md"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                {t('openDocument')}
+              </a>
             )}
           </div>
 
           {book.excerpt && (
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4 max-w-lg">{book.excerpt}</p>
+            <p className="text-muted-foreground text-sm leading-relaxed">{book.excerpt}</p>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-sm mb-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-medium text-foreground">{book.language}</span>
+              <span className="text-foreground">{book.language}</span>
             </div>
             {book.publisher && (
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-1.5">
                 <BookMarked className="w-3.5 h-3.5 shrink-0" />
-                <span className="font-medium text-foreground">{book.publisher}</span>
+                <span className="text-foreground">{book.publisher}</span>
               </div>
             )}
             {book.price && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span className="text-xs">{t('priceLabelShort')}</span>
-                <span className="font-medium text-foreground">{book.price}</span>
+              <div className="flex items-center gap-1.5">
+                <span>{t('priceLabelShort')}: <span className="text-foreground">{book.price}</span></span>
               </div>
             )}
             {book.publishedAt && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span className="text-xs">{t('publishedLabelShort')}</span>
-                <span className="font-medium text-foreground">
-                  {new Date(book.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
+              <div className="flex items-center gap-1.5">
+                <span>{t('publishedLabelShort')}: <span className="text-foreground">{new Date(book.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span></span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span className="text-xs">{t('positionLabelShort')}</span>
-              <span className="font-medium text-foreground">{book.position}</span>
+            <div className="flex items-center gap-1.5">
+              <span>{t('positionLabelShort')}: <span className="text-foreground">{book.position}</span></span>
             </div>
+
+            {book.authors.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 shrink-0" />
+                <div className="flex flex-wrap gap-1">
+                  {book.authors.map(a => (
+                    <Badge key={a.id} variant="secondary" className="text-[11px] px-2 py-0 h-5">{a.name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {book.categories.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 shrink-0" />
+                <div className="flex flex-wrap gap-1">
+                  {book.categories.map(c => (
+                    <Badge key={c.id} variant="outline" className="text-[11px] px-2 py-0 h-5">{c.title}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          {book.authors.length > 0 && (
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <div className="flex flex-wrap gap-1.5">
-                {book.authors.map(a => (
-                  <Badge key={a.id} variant="secondary" className="text-xs">{a.name}</Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {book.categories.length > 0 && (
-            <div className="flex items-center gap-2 mb-4">
-              <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <div className="flex flex-wrap gap-1.5">
-                {book.categories.map(c => (
-                  <Badge key={c.id} variant="outline" className="text-xs">{c.title}</Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {book.documentUrl && (
-            <a
-              href={book.documentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              {t('openDocument')}
-            </a>
-          )}
         </div>
       </div>
 

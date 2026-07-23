@@ -74,7 +74,7 @@ export function SidebarOptionSection({
             )}
           >
             <span className="truncate">{item.label}</span>
-            <span className="text-sm tabular-nums shrink-0 opacity-70">({item.count.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-US')})</span>
+            {/* <span className="text-sm tabular-nums shrink-0 opacity-70">({item.count.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-US')})</span> */}
           </button>
         ))}
         {items.length === 0 && (

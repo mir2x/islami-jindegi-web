@@ -120,7 +120,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
   const nextItem = currentIdx < flatItems.length - 1 ? flatItems[currentIdx + 1] : null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-full overflow-hidden bg-background">
       {/* ── Mobile overlay ────────────────────────────────── */}
       {drawerOpen && (
         <div
@@ -135,7 +135,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
         drawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}>
         {/* Back + close */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
           <Link
             href="/books"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -222,7 +222,7 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Top bar */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-background shrink-0">
+        <div className="flex items-center gap-3 px-4 h-14 border-b border-border bg-card shrink-0">
           <button
             onClick={() => setDrawerOpen(true)}
             className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
