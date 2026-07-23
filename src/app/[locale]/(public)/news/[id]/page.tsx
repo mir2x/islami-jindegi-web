@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation'
 import { ArrowLeft, Calendar } from 'lucide-react'
 import { getNewsItem, getNewsList } from '@/lib/public-api'
 import { getTranslations } from 'next-intl/server'
+import { AdminEditButton } from '@/components/public/admin-edit-button'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string; locale: string }> }): Promise<Metadata> {
   const { id, locale } = await params
@@ -30,6 +31,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <AdminEditButton entity="news" id={item.id} />
       <Link href="/news" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-6">
         <ArrowLeft className="w-4 h-4" /> {tNav('news')}
       </Link>

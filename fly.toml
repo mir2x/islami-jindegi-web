@@ -4,6 +4,7 @@ primary_region = 'bom'
 [build]
   [build.args]
     NEXT_PUBLIC_API_URL = 'https://islami-jindegi-dotnet-api.fly.dev'
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID = '218822188400-325p6t97csen9e944piah1h6ludvmoo6.apps.googleusercontent.com'
 
 [http_service]
   internal_port = 3000

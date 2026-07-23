@@ -15,6 +15,7 @@ import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/store/auth-store'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3,
@@ -253,7 +254,12 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
     const form = new FormData()
     form.append('file', file)
     try {
-      const res = await fetch(`${BASE}/api/upload/image`, { method: 'POST', body: form })
+      const token = useAuthStore.getState().token
+      const res = await fetch(`${BASE}/api/upload/image`, {
+        method: 'POST',
+        body: form,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
       if (!res.ok) throw new Error('Upload failed')
       const { url } = await res.json()
       editor?.chain().focus().setImage({ src: url }).run()

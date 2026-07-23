@@ -175,8 +175,8 @@ export function BookSheet({ open, onOpenChange, book, onSuccess }: Props) {
             <div className="space-y-1.5">
               <Label>Excerpt <span className="text-xs text-muted-foreground">(for SEO & social media)</span></Label>
               <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)}
-                placeholder="Short description..." rows={2} maxLength={160} />
-              <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
+                placeholder="Short description..." rows={2} maxLength={500} />
+              <p className="text-xs text-muted-foreground text-right">{excerpt.length}/500</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

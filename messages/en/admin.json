@@ -15,6 +15,7 @@
     "namazTimes": "Namaz Times",
     "pages": "Pages",
     "hijri": "Hijri Sightings",
+    "admins": "Admins",
     "brand": "Islami Jindegi",
     "brandSub": "Admin",
     "navigation": "Navigation",
@@ -24,7 +25,9 @@
     "darkMode": "Dark mode",
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "signInPrompt": "Sign in with an admin Google account to continue",
+    "signOut": "Sign out"
   },
   "BooksAdmin": {
     "title": "Books",

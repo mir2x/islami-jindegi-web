@@ -174,9 +174,9 @@ export function BookForm({ book }: Props) {
                   onChange={e => setExcerpt(e.target.value)}
                   placeholder={t('shortDescriptionPlaceholder')}
                   rows={3}
-                  maxLength={160}
+                  maxLength={500}
                 />
-                <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
+                <p className="text-xs text-muted-foreground text-right">{excerpt.length}/500</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

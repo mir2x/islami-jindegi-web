@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { ArrowLeft, BookOpen, Tag, User } from 'lucide-react'
 import { getBook } from '@/lib/public-api'
 import { BookReaderWrapper } from '@/components/public/books/book-reader-wrapper'
+import { AdminEditButton } from '@/components/public/admin-edit-button'
 
 export async function generateMetadata({
   params,
@@ -36,12 +37,15 @@ export default async function BookReaderPage({
   const hasPdf = Boolean(book.documentUrl)
 
   if (hasChapters || hasPdf) {
+    // ChapterReader and PdfReaderLoader each render their own AdminEditButton,
+    // pointed at whatever chapter/subchapter/book is actually on screen.
     return <BookReaderWrapper book={book} hasChapters={hasChapters} hasPdf={hasPdf} />
   }
 
   // Fallback: book detail / description page
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      <AdminEditButton entity="books" id={book.id} />
       <Link
         href="/books"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"

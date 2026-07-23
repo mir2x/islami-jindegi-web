@@ -44,6 +44,13 @@ export interface Author {
   updatedAt: string
 }
 
+export interface Admin {
+  id: string
+  email: string
+  displayName: string | null
+  createdAt: string
+}
+
 export interface Category {
   id: string
   title: string

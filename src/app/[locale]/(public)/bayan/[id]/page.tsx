@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getBayan, getBayans } from '@/lib/public-api'
 import { BayanPlayer } from '@/components/public/bayan/bayan-player'
 import { getTranslations } from 'next-intl/server'
+import { AdminEditButton } from '@/components/public/admin-edit-button'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string; locale: string }> }): Promise<Metadata> {
   const { id, locale } = await params
@@ -24,5 +25,10 @@ export default async function BayanDetailPage({ params }: { params: Promise<{ id
   const related = await getBayans({ authorId: bayan.author.id, pageSize: 6 })
   const moreBayans = (related?.data ?? []).filter(b => b.id !== bayan.id).slice(0, 5)
 
-  return <BayanPlayer bayan={bayan} related={moreBayans} />
+  return (
+    <>
+      <AdminEditButton entity="bayan" id={bayan.id} />
+      <BayanPlayer bayan={bayan} related={moreBayans} />
+    </>
+  )
 }

@@ -19,7 +19,10 @@
     "madrasah": "মাদরাসা",
     "namazTimes": "নামাযের সময়",
     "settings": "সেটিংস",
-    "toggleMenu": "মেনু টগল করুন"
+    "toggleMenu": "মেনু টগল করুন",
+    "googlePlay": "Google Play থেকে নিন",
+    "appStore": "App Store থেকে ডাউনলোড করুন",
+    "microsoftStore": "Microsoft Store থেকে নিন"
   },
   "ArticlesPage": {
     "metaTitle": "প্রবন্ধ",

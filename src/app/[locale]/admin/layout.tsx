@@ -4,10 +4,12 @@ import { Link } from '@/i18n/navigation'
 import { usePathname } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { BookOpen, Users, Tag, LayoutDashboard, ScrollText, HelpCircle, Sparkles, Mic, Newspaper, Images, School, Clock, Rss, Moon, Sun, FileText, PanelLeftClose, PanelLeftOpen, Menu } from 'lucide-react'
+import { BookOpen, Users, Tag, LayoutDashboard, ScrollText, HelpCircle, Sparkles, Mic, Newspaper, Images, School, Clock, Rss, Moon, Sun, FileText, PanelLeftClose, PanelLeftOpen, Menu, ShieldCheck, LogOut } from 'lucide-react'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { LocaleSwitcher } from '@/components/locale-switcher'
+import { GoogleSignInButton } from '@/components/admin/google-sign-in-button'
+import { useAuthStore } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -28,8 +30,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: t('namazTimes'), href: '/admin/namaz-times', icon: Clock },
     { label: t('pages'), href: '/admin/pages', icon: FileText },
     { label: t('hijri'), href: '/admin/hijri', icon: Moon },
+    { label: t('admins'), href: '/admin/admins', icon: ShieldCheck },
   ]
 
+  const token = useAuthStore((s) => s.token)
+  const clearSession = useAuthStore((s) => s.clearSession)
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -82,6 +87,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
+
+  // Real enforcement lives in the API's [Authorize] attributes — this is a UX
+  // gate only, so a signed-out visitor sees a sign-in screen instead of the
+  // dashboard chrome rather than a flash of admin content followed by 401s.
+  if (!token) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-sidebar">
+        <div className="flex flex-col items-center gap-6 p-10 rounded-2xl border border-sidebar-border bg-background shadow-xl">
+          <div className="w-12 h-12 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-base font-black tracking-wider shadow-lg shadow-sidebar-primary/30">
+            IJ
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold">{t('brand')} {t('brandSub')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('signInPrompt')}</p>
+          </div>
+          <GoogleSignInButton />
+        </div>
+      </div>
+    )
+  }
 
   const navLinks = (collapsedMode: boolean, onNavigate?: () => void) => nav.map(({ label, href, icon: Icon, exact }) => {
     const active = exact ? pathname === href : pathname.startsWith(href)
@@ -176,6 +201,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
+              <button
+                onClick={clearSession}
+                aria-label={t('signOut')}
+                title={t('signOut')}
+                className="p-1.5 rounded-lg text-sidebar-foreground/55 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
               <p className="text-sm font-medium text-sidebar-foreground/30">v1</p>
             </>
           ) : (
@@ -189,7 +222,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
                   <span>{theme === 'dark' ? t('lightMode') : t('darkMode')}</span>
                 </button>
-                <span className="text-sm font-medium text-sidebar-foreground/30 pr-1">v1.0.0</span>
+                <button
+                  onClick={clearSession}
+                  title={t('signOut')}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-base font-medium text-sidebar-foreground/65 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                </button>
               </div>
             </>
           )}
@@ -226,7 +265,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
                 <span>{theme === 'dark' ? t('lightMode') : t('darkMode')}</span>
               </button>
-              <span className="text-sm font-medium text-sidebar-foreground/30 pr-1">v1.0.0</span>
+              <button
+                onClick={clearSession}
+                title={t('signOut')}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-base font-medium text-sidebar-foreground/65 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+              </button>
             </div>
           </div>
         </SheetContent>

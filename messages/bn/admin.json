@@ -15,6 +15,7 @@
     "namazTimes": "নামাযের সময়",
     "pages": "পেজ",
     "hijri": "হিজরি চাঁদ দেখা",
+    "admins": "অ্যাডমিন তালিকা",
     "brand": "ইসলামী যিন্দেগী",
     "brandSub": "অ্যাডমিন",
     "navigation": "নেভিগেশন",
@@ -24,7 +25,9 @@
     "darkMode": "ডার্ক মোড",
     "switchToLight": "লাইট মোডে যান",
     "switchToDark": "ডার্ক মোডে যান",
-    "openMenu": "মেনু খুলুন"
+    "openMenu": "মেনু খুলুন",
+    "signInPrompt": "চালিয়ে যেতে একটি অ্যাডমিন Google অ্যাকাউন্ট দিয়ে সাইন ইন করুন",
+    "signOut": "সাইন আউট"
   },
   "BooksAdmin": {
     "title": "বই",

@@ -15,6 +15,7 @@ import { SearchInput } from '@/components/public/search-input'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
 import { ShareActions, htmlToText } from '@/components/public/share-actions'
 import { ZoomControl } from '@/components/public/zoom-control'
+import { AdminEditButton } from '@/components/public/admin-edit-button'
 import { fetchTitledOptions } from '@/lib/public-filter-options'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -435,6 +436,7 @@ function DuaDetailPanel({ detail, loading, hasSelection }: {
         </div>
       ) : (
         <>
+          <AdminEditButton entity="dua" id={detail.id} />
           <div className="shrink-0 flex items-start justify-between gap-4 p-6 pb-4 border-b border-border/60">
             <h2 className="text-2xl font-bold text-foreground leading-snug min-w-0">{detail.title}</h2>
             <div className="flex items-center gap-1 shrink-0 print:hidden">

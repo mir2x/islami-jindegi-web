@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Menu, X, Settings } from 'lucide-react'
 import { ThemeToggle } from './theme-toggle'
 import { LocaleSwitcher } from '@/components/locale-switcher'
+import { StoreBadges } from '@/components/public/store-badges'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -81,6 +82,8 @@ export function Header() {
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
+            <StoreBadges className="hidden lg:flex" />
+            <div className="hidden lg:block w-px h-5 bg-border mx-1" />
             <LocaleSwitcher className="mr-1" />
             <ThemeToggle />
             <Link
@@ -124,6 +127,9 @@ export function Header() {
               )
             })}
           </nav>
+          <div className="max-w-7xl mx-auto px-4 pb-3 pt-1 border-t border-border/60">
+            <StoreBadges variant="list" />
+          </div>
         </div>
       )}
     </header>

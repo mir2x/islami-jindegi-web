@@ -19,7 +19,10 @@
     "madrasah": "Madrasah",
     "namazTimes": "Prayer Times",
     "settings": "Settings",
-    "toggleMenu": "Toggle menu"
+    "toggleMenu": "Toggle menu",
+    "googlePlay": "Get it on Google Play",
+    "appStore": "Download on the App Store",
+    "microsoftStore": "Get it from Microsoft Store"
   },
   "ArticlesPage": {
     "metaTitle": "Articles",

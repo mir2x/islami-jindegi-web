@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { BookDetail, Chapter, SubChapter } from '@/types'
 import { cn } from '@/lib/utils'
+import { AdminEditButton } from '@/components/public/admin-edit-button'
 
 interface Props {
   book: BookDetail
@@ -167,8 +168,17 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
   const prevItem = currentIdx > 0 ? flatItems[currentIdx - 1] : null
   const nextItem = currentIdx < flatItems.length - 1 ? flatItems[currentIdx + 1] : null
 
+  // The edit button should open whatever is actually on screen — the chapter
+  // or subchapter being read, not just the parent book — since those are
+  // separately editable admin records.
+  const editTarget =
+    active.kind === 'chapter' ? { entity: 'chapters' as const, id: active.chapter.id } :
+    active.kind === 'sub' ? { entity: 'subchapters' as const, id: active.sub.id } :
+    { entity: 'books' as const, id: book.id }
+
   return (
     <div className="flex h-full overflow-hidden bg-background">
+      <AdminEditButton entity={editTarget.entity} id={editTarget.id} />
       {/* ── Mobile overlay ────────────────────────────────── */}
       {drawerOpen && (
         <div

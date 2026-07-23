@@ -1,6 +1,7 @@
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
+import { StoreBadges } from '@/components/public/store-badges'
 
 export function Footer() {
   const t = useTranslations('Nav')
@@ -39,6 +40,7 @@ export function Footer() {
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               {tFooter('tagline')}
             </p>
+            <StoreBadges variant="badge" className="mt-4" />
           </div>
 
           {/* Links */}
