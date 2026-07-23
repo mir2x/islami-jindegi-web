@@ -18,6 +18,7 @@
     "news": "সংবাদ",
     "madrasah": "মাদরাসা",
     "namazTimes": "নামাযের সময়",
+    "settings": "সেটিংস",
     "toggleMenu": "মেনু টগল করুন"
   },
   "ArticlesPage": {
@@ -317,7 +318,7 @@
       "বসন্তকাল"
     ],
     "hijriSuffix": "হিজরী",
-    "current": "বর্তমান",
+    "current": "চলমান",
     "next": "পরবর্তী",
     "start": "শুরু",
     "end": "শেষ",
@@ -325,7 +326,7 @@
     "dhakaLocation": "ঢাকা, বাংলাদেশ",
     "latestNews": "সর্বশেষ সংবাদ",
     "viewAllArrow": "সব দেখুন →",
-    "newLayoutLink": "নতুন লেআউট →",
+    "newLayoutLink": "মদিনা থিম →",
     "tabBooks": "নতুন কিতাব",
     "tabBayans": "নতুন বয়ান",
     "tabMalfuzat": "নতুন মালফুযাত",

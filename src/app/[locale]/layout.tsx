@@ -57,7 +57,7 @@ export default async function RootLayout({
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col [&_a]:no-underline">
         <NextIntlClientProvider>
           <ThemeProvider
             attribute="class"

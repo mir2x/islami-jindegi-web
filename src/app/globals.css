@@ -4,6 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
+
 @font-face {
   font-family: 'SolaimanLipi';
   src: url('/fonts/SolaimanLipi.ttf') format('truetype');
@@ -333,12 +334,12 @@
     margin-bottom: 0.5rem;
     line-height: 1.4;
   }
-  .prose-content h1 { font-size: 1.25rem; }
-  .prose-content h2 { font-size: 1.125rem; }
-  .prose-content h3 { font-size: 1rem; }
-  .prose-content h4, .prose-content h5, .prose-content h6 { font-size: 0.875rem; }
-  .prose-content ul, .prose-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
-  .prose-content li { margin-bottom: 0.25rem; }
+  .prose-content h1 { font-size: 1.4em; }
+  .prose-content h2 { font-size: 1.25em; }
+  .prose-content h3 { font-size: 1.1em; }
+  .prose-content h4, .prose-content h5, .prose-content h6 { font-size: 1em; }
+  .prose-content ul, .prose-content ol { padding-left: 1.5em; margin-bottom: 0.75em; }
+  .prose-content li { margin-bottom: 0.25em; }
   .prose-content strong { color: var(--foreground); font-weight: 600; }
   .prose-content em { font-style: italic; }
   .prose-content a { color: var(--primary); text-decoration: underline; }

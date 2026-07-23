@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Link } from '@/i18n/navigation'
+import { Link, usePathname, useRouter } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import {
   ArrowLeft, Menu, X, ChevronRight, ChevronDown,
@@ -41,17 +42,64 @@ function flattenSubs(chapter: Chapter, subs: SubChapter[]): SubChapter[] {
 
 export function ChapterReader({ book, onSwitchToPdf }: Props) {
   const t = useTranslations('BookReader')
+  const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const chapterIdParam = searchParams.get('chapter')
+  const subIdParam = searchParams.get('sub')
+
   const firstReadable = book.chapters.find(c => c.body || c.subChapters.some(s => s.body))
 
-  const [active, setActive] = useState<ActiveContent>(
-    firstReadable ? { kind: 'chapter', chapter: firstReadable } : { kind: 'intro' }
-  )
-  const [expanded, setExpanded] = useState<Set<string>>(
-    new Set(firstReadable ? [firstReadable.id] : [])
-  )
+  const [active, setActive] = useState<ActiveContent>(() => {
+    if (subIdParam) {
+      const c = book.chapters.find(c => c.id === chapterIdParam || c.subChapters.some(s => s.id === subIdParam))
+      const sub = c?.subChapters.find(s => s.id === subIdParam)
+      if (c && sub) return { kind: 'sub', chapter: c, sub }
+    }
+    if (chapterIdParam) {
+      const c = book.chapters.find(c => c.id === chapterIdParam)
+      if (c) return { kind: 'chapter', chapter: c }
+    }
+    return firstReadable ? { kind: 'chapter', chapter: firstReadable } : { kind: 'intro' }
+  })
+  
+  const [expanded, setExpanded] = useState<Set<string>>(() => {
+    const set = new Set<string>()
+    if (active.kind === 'chapter') {
+      set.add(active.chapter.id)
+    } else if (active.kind === 'sub') {
+      set.add(active.chapter.id)
+      let current = active.sub.parentSubChapterId
+      while (current) {
+        set.add(current)
+        const p = active.chapter.subChapters.find(s => s.id === current)
+        current = p?.parentSubChapterId || null
+      }
+    } else if (firstReadable) {
+      set.add(firstReadable.id)
+    }
+    return set
+  })
+  
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [fontSize, setFontSize] = useState(18)
   const contentRef = useRef<HTMLDivElement>(null)
+
+  // Sync state to URL without full reload
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (active.kind === 'intro') {
+      params.delete('chapter')
+      params.delete('sub')
+    } else if (active.kind === 'chapter') {
+      params.set('chapter', active.chapter.id)
+      params.delete('sub')
+    } else if (active.kind === 'sub') {
+      params.set('chapter', active.chapter.id)
+      params.set('sub', active.sub.id)
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [active, pathname, router, searchParams])
 
   // Scroll content to top when chapter changes
   useEffect(() => {
@@ -308,8 +356,14 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
             {content.body ? (
               <div
                 className="prose-content"
-                style={{ fontSize: `${fontSize}px`, lineHeight: 1.9 }}
-                dangerouslySetInnerHTML={{ __html: content.body }}
+                style={{
+                  '--text-scale': fontSize / 18,
+                  fontSize: `${fontSize}px`,
+                  lineHeight: 1.9,
+                } as React.CSSProperties}
+                dangerouslySetInnerHTML={{
+                  __html: content.body.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, "font-size: calc($1px * var(--text-scale))")
+                }}
               />
             ) : childIndexItems.length > 0 ? (
               <div>

@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from '@/i18n/navigation'
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Settings } from 'lucide-react'
 import { ThemeToggle } from './theme-toggle'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { cn } from '@/lib/utils'
@@ -83,6 +83,13 @@ export function Header() {
           <div className="ml-auto flex items-center gap-1">
             <LocaleSwitcher className="mr-1" />
             <ThemeToggle />
+            <Link
+              href="/settings"
+              className="flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label={t('settings')}
+            >
+              <Settings className="w-5 h-5" />
+            </Link>
             <button
               type="button"
               className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

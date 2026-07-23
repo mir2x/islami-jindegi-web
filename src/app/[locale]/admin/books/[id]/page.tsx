@@ -26,11 +26,15 @@ function SubChapterRow({
   childSubs,
   onDelete,
   depth = 0,
+  bookId,
+  chapterId,
 }: {
   sub: SubChapter
   childSubs?: SubChapter[]
   onDelete: (item: Deleting) => void
   depth?: number
+  bookId: string
+  chapterId: string
 }) {
   const t = useTranslations('BooksAdmin')
   const router = useRouter()
@@ -64,6 +68,15 @@ function SubChapterRow({
           >
             <Pencil className="w-3 h-3" />
           </button>
+          <a
+            href={`/books/${bookId}?chapter=${chapterId}&sub=${sub.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+            title="Public View"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
           <button
             onClick={() => onDelete({ id: sub.id, title: sub.title, type: 'subchapter' })}
             className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
@@ -83,7 +96,7 @@ function SubChapterRow({
           {hasChildren && (
             <div className="space-y-0.5">
               {childSubs.map(child => (
-                <SubChapterRow key={child.id} sub={child} onDelete={onDelete} depth={depth + 1} />
+                <SubChapterRow key={child.id} sub={child} childSubs={undefined} onDelete={onDelete} depth={depth + 1} bookId={bookId} chapterId={chapterId} />
               ))}
             </div>
           )}
@@ -98,11 +111,13 @@ function ChapterRowControlled({
   index,
   forceExpanded,
   onDelete,
+  bookId,
 }: {
   chapter: Chapter
   index: number
   forceExpanded: boolean
   onDelete: (item: Deleting) => void
+  bookId: string
 }) {
   const t = useTranslations('BooksAdmin')
   const router = useRouter()
@@ -139,6 +154,15 @@ function ChapterRowControlled({
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
+          <a
+            href={`/books/${bookId}?chapter=${chapter.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+            title="Public View"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
           <button
             onClick={() => onDelete({ id: chapter.id, title: chapter.title, type: 'chapter' })}
             className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
@@ -168,7 +192,7 @@ function ChapterRowControlled({
                 }
                 const rows = topLevel.length > 0 ? topLevel : chapter.subChapters
                 return rows.map(sub => (
-                  <SubChapterRow key={sub.id} sub={sub} childSubs={childMap.get(sub.id) ?? []} onDelete={onDelete} />
+                  <SubChapterRow key={sub.id} sub={sub} childSubs={childMap.get(sub.id) ?? []} onDelete={onDelete} bookId={bookId} chapterId={chapter.id} />
                 ))
               })()}
             </div>
@@ -326,16 +350,16 @@ export default function BookDetailPage() {
             )}
             {book.price && (
               <div className="flex items-center gap-1.5">
-                <span>{t('priceLabelShort')}: <span className="text-foreground">{book.price}</span></span>
+                <span>{t('priceLabelShort')} <span className="text-foreground">{book.price}</span></span>
               </div>
             )}
             {book.publishedAt && (
               <div className="flex items-center gap-1.5">
-                <span>{t('publishedLabelShort')}: <span className="text-foreground">{new Date(book.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span></span>
+                <span>{t('publishedLabelShort')} <span className="text-foreground">{new Date(book.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span></span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
-              <span>{t('positionLabelShort')}: <span className="text-foreground">{book.position}</span></span>
+              <span>{t('positionLabelShort')} <span className="text-foreground">{book.position}</span></span>
             </div>
 
             {book.authors.length > 0 && (
@@ -404,6 +428,7 @@ export default function BookDetailPage() {
                 index={i + 1}
                 forceExpanded={expandAll}
                 onDelete={setDeleting}
+                bookId={id}
               />
             ))}
           </div>

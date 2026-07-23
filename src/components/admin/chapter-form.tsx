@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { PublicViewButton } from '@/components/admin/public-view-button'
 import { RichEditor } from '@/components/admin/rich-editor'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
@@ -76,14 +77,19 @@ export function ChapterForm({ chapter, defaultBookId }: Props) {
 
   return (
     <div className="w-full p-6 lg:p-8">
-      <div className="mb-4">
+      <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {tc('back')}
         </button>
+        {isEdit && chapter && (
+          <div className="flex items-center gap-2">
+            <PublicViewButton href={`/books/${chapter.bookId}?chapter=${chapter.id}`} />
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>

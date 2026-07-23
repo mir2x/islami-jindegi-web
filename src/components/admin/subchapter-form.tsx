@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { RichEditor } from '@/components/admin/rich-editor'
+import { ChapterTreePicker } from '@/components/admin/chapter-tree-picker'
+import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import type { Chapter, SubChapterDetail } from '@/types'
@@ -33,7 +35,6 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
 
   const [loading, setLoading] = useState(false)
   const [bookOpen, setBookOpen] = useState(false)
-  const [parentOpen, setParentOpen] = useState(false)
   const [bookChapters, setBookChapters] = useState<Chapter[]>([])
   const [editorKey] = useState(subChapter?.id ?? 'new')
   const [form, setForm] = useState({
@@ -97,14 +98,19 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
 
   return (
     <div className="w-full p-6 lg:p-8">
-      <div className="mb-4">
+      <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {tc('back')}
         </button>
+        {isEdit && subChapter && (
+          <div className="flex items-center gap-2">
+            <PublicViewButton href={`/books/${subChapter.bookId}?chapter=${subChapter.chapterId}&sub=${subChapter.id}`} />
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -154,49 +160,16 @@ export function SubChapterForm({ subChapter, defaultBookId }: Props) {
             {/* Parent picker — always editable */}
             <div className="space-y-1.5">
               <Label>{t('parentLabel')} <span className="text-destructive">*</span></Label>
-              <Popover open={parentOpen} onOpenChange={setParentOpen}>
-                <PopoverTrigger disabled={!form.bookId} className={cn(
-                  'flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm disabled:opacity-50',
-                  (form.chapterId || form.parentSubChapterId) ? 'text-foreground' : 'text-muted-foreground'
-                )}>
-                  <span className="truncate">{parentLabel}</span>
-                  <ChevronsUpDown className="w-3.5 h-3.5 opacity-50 shrink-0" />
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder={tc('search')} />
-                    <CommandList>
-                      <CommandEmpty>{tc('noResults')}</CommandEmpty>
-                      {bookChapters.length > 0 && (
-                        <CommandGroup heading={t('chapterHeading')}>
-                          {bookChapters.map(c => (
-                            <CommandItem key={c.id} value={c.title} onSelect={() => {
-                              setForm(f => ({ ...f, chapterId: c.id, parentSubChapterId: '' }))
-                              setParentOpen(false)
-                            }}>
-                              <Check className={cn('mr-2 w-4 h-4', form.chapterId === c.id && !form.parentSubChapterId ? 'opacity-100' : 'opacity-0')} />
-                              {c.title}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
-                      {allSubChapters.length > 0 && (
-                        <CommandGroup heading={t('subchapterHeading')}>
-                          {allSubChapters.filter(s => s.id !== subChapter?.id).map(s => (
-                            <CommandItem key={s.id} value={s.title} onSelect={() => {
-                              setForm(f => ({ ...f, chapterId: s.chapterId, parentSubChapterId: s.id }))
-                              setParentOpen(false)
-                            }}>
-                              <Check className={cn('mr-2 w-4 h-4', form.parentSubChapterId === s.id ? 'opacity-100' : 'opacity-0')} />
-                              <span className="pl-2">{s.title}</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <ChapterTreePicker
+                bookChapters={bookChapters}
+                selectedChapterId={form.chapterId}
+                selectedParentSubChapterId={form.parentSubChapterId}
+                onSelect={(chapterId, parentSubChapterId) => setForm(f => ({ ...f, chapterId, parentSubChapterId: parentSubChapterId ?? '' }))}
+                disabled={!form.bookId}
+                triggerLabel={parentLabel}
+                title={t('selectParentPlaceholder')}
+                subChapterIdToExclude={subChapter?.id}
+              />
             </div>
 
             <div className="space-y-1.5">

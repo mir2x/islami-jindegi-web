@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import Image from 'next/image'
-import { BookOpen, Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin } from 'lucide-react'
+import { Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin } from 'lucide-react'
 import {
   calcPrayerSlots, findActiveSlot, findNextSlot,
   toHijri, toBanglaDate, formatNum, formatTime,
@@ -57,14 +57,13 @@ function useInfiniteList<T>(initialItems: T[], initialTotal: number, path: strin
 
 // ── Prayer card ───────────────────────────────────────────────────────────────
 
-function PrayerCard({ width }: { width: number | null }) {
+function PrayerCard() {
   const t = useTranslations('Home')
   const tCommon = useTranslations('Common')
   const locale = useLocale()
   const days = t.raw('days') as string[]
   const months = t.raw('months') as string[]
   const seasons = t.raw('seasons') as string[]
-  const style = width ? { width } : undefined
 
   const [state, setState] = useState<{
     slots: PrayerSlot[]
@@ -123,7 +122,7 @@ function PrayerCard({ width }: { width: number | null }) {
   }, [state?.slots]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!state) return (
-    <div className="mx-auto rounded-2xl bg-card dark:bg-[#163f4f] border border-foreground/15 shadow-sm px-5 py-4 flex items-center gap-3 text-muted-foreground shrink-0" style={style}>
+    <div className="rounded-2xl bg-card dark:bg-[#163f4f] border border-foreground/15 shadow-sm px-5 py-4 flex items-center gap-3 text-muted-foreground shrink-0 w-full">
       <Loader2 className="w-4 h-4 animate-spin shrink-0 text-primary" />
       <span className="text-sm">{tCommon('loading')}</span>
     </div>
@@ -136,81 +135,78 @@ function PrayerCard({ width }: { width: number | null }) {
   const next   = findNextSlot(slots, now)
   const season = seasons[bangla.monthIdx] ?? ''
 
-  return (
-    <Link href="/namaz-times" className="mx-auto block bg-card dark:bg-[#163f4f] p-[clamp(0.625rem,2vh,1.5rem)] rounded-2xl shadow-sm border border-border/60 dark:border-foreground/15 hover:border-primary/50 hover:shadow-md transition-all shrink-0" style={style}>
-      {/* Header: dates + calendar */}
-      <div className="flex justify-between items-start mb-[clamp(0.5rem,1.8vh,1.5rem)]">
-        <div>
-          <h2 className="text-[clamp(1rem,2.5vh,1.5rem)] font-bold text-primary dark:text-white mb-1 leading-snug">
-            {formatNum(hijri.day, locale)} {locale === 'bn' ? hijri.monthBn : hijri.monthEn}, {formatNum(hijri.year, locale)} {t('hijriSuffix')}
-          </h2>
-          <p className="text-[clamp(0.75rem,1.8vh,1rem)] text-foreground/70 dark:text-white/80 font-semibold">
-            {days[now.getDay()]}, {formatNum(now.getDate(), locale)} {months[now.getMonth()]} {formatNum(now.getFullYear(), locale)}
-          </p>
-          <p className="text-[clamp(0.75rem,1.8vh,1rem)] text-foreground/70 dark:text-white/70">
-            {formatNum(bangla.day, locale)} {locale === 'bn' ? bangla.monthBn : bangla.monthEn}, {formatNum(bangla.year, locale)} — {season}
-          </p>
-          <div className="flex items-center text-foreground/70 dark:text-white/70 mt-[clamp(0.25rem,0.7vh,0.5rem)] text-[clamp(0.65rem,1.5vh,0.875rem)]">
-            <MapPin className="w-[1.1em] h-[1.1em] mr-1 shrink-0" />
-            {locationName}
-          </div>
-        </div>
-        {/* <Calendar className="w-[clamp(1.1rem,2.4vh,1.5rem)] h-[clamp(1.1rem,2.4vh,1.5rem)] text-foreground/60 dark:text-white/70 shrink-0" /> */}
-      </div>
+  const iconBtn = 'inline-flex items-center justify-center rounded-lg border border-foreground/25 text-foreground/60 group-hover:border-primary/60 group-hover:text-primary transition-colors shrink-0'
 
-      {/* Prayer times */}
-      <div className="grid grid-cols-2 gap-[clamp(0.5rem,1.4vh,1rem)]">
-        {/* Current */}
-        <div className="bg-emerald-50 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] p-[clamp(0.5rem,1.5vh,1rem)] rounded-xl border border-emerald-100 dark:border-white/10">
-          <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-primary dark:text-amber-200">{t('current')}</span>
+  return (
+    <div className="shrink-0 w-full flex flex-col gap-3 lg:gap-4">
+      {/* Dates: plain left-aligned masthead, no card (matches the app) */}
+      <Link href="/namaz-times" className="group block px-1">
+        <h2 className="flex items-center gap-2.5 text-2xl sm:text-3xl font-bold text-primary dark:text-white leading-snug">
+          <span>{formatNum(hijri.day, locale)} {locale === 'bn' ? hijri.monthBn : hijri.monthEn}, {formatNum(hijri.year, locale)} {t('hijriSuffix')}</span>
+          <span className={cn(iconBtn, 'w-8 h-8')}><Calendar className="w-4 h-4" /></span>
+        </h2>
+        <p className="mt-1.5 flex items-center gap-2.5 text-base sm:text-lg text-foreground/80 dark:text-white/80 font-semibold">
+          <span>{days[now.getDay()]}, {formatNum(now.getDate(), locale)} {months[now.getMonth()]}, {formatNum(now.getFullYear(), locale)}</span>
+          <span className={cn(iconBtn, 'w-7 h-7')}><Calendar className="w-3.5 h-3.5" /></span>
+        </p>
+        <p className="mt-1 text-base sm:text-lg text-foreground/70 dark:text-white/70">
+          {formatNum(bangla.day, locale)} {locale === 'bn' ? bangla.monthBn : bangla.monthEn}, {formatNum(bangla.year, locale)} {season}
+        </p>
+        <p className="mt-1.5 flex items-center gap-2.5 text-base sm:text-lg text-foreground/70 dark:text-white/70">
+          <span>{locationName}</span>
+          <span className={cn(iconBtn, 'w-7 h-7')}><MapPin className="w-3.5 h-3.5" /></span>
+        </p>
+      </Link>
+
+      {/* Prayer times: one full-width card, current | next columns (matches the app) */}
+      <Link href="/namaz-times" className="group rounded-2xl bg-card dark:bg-[#163f4f] border border-border/60 dark:border-foreground/15 shadow-sm hover:border-primary/50 hover:shadow-md transition-all p-4 lg:p-5 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-base lg:text-lg font-bold text-primary dark:text-amber-300">{t('current')}</p>
           {active ? (
             <>
-              <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-primary dark:text-white">{locale === 'bn' ? active.nameBn : active.nameEn}</h3>
-              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">{t('start')} <span className="font-bold text-primary dark:text-white">{formatTime(active.start, locale)}</span></p>
-              <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">{t('end')} <span className="font-bold text-primary dark:text-white">{formatTime(active.end, locale)}</span></p>
+              <div className="mt-1 flex items-center gap-x-4 gap-y-0.5 flex-wrap">
+                <span className="text-xl lg:text-2xl font-bold text-foreground dark:text-white leading-snug">{locale === 'bn' ? active.nameBn : active.nameEn}</span>
+                <span className="text-sm lg:text-base text-foreground/70 dark:text-white/70">
+                  {t('start')} <span className="text-2xl lg:text-3xl font-extrabold text-foreground dark:text-white tracking-tight">{formatTime(active.start, locale)}</span>
+                </span>
+              </div>
+              <p className="mt-0.5 text-sm lg:text-base text-foreground/70 dark:text-white/70">
+                {t('end')} <span className="text-2xl lg:text-3xl font-extrabold text-foreground dark:text-white tracking-tight">{formatTime(active.end, locale)}</span>
+              </p>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground mt-1">—</p>
+            <p className="mt-1 text-base text-muted-foreground">—</p>
           )}
         </div>
-        {/* Next */}
         {next && (
-          <div className="bg-gray-50 dark:bg-gradient-to-br dark:from-[#357f92] dark:to-[#153a48] p-[clamp(0.5rem,1.5vh,1rem)] rounded-xl border border-gray-200 dark:border-white/10">
-            <span className="text-[clamp(0.65rem,1.5vh,0.875rem)] font-medium text-foreground/70 dark:text-amber-200">{t('next')}</span>
-            <h3 className="text-[clamp(0.85rem,2vh,1.125rem)] font-bold text-foreground/80 dark:text-white">{locale === 'bn' ? next.nameBn : next.nameEn}</h3>
-            <p className="text-foreground/70 dark:text-white/80 text-[clamp(0.7rem,1.6vh,0.875rem)]">{t('start')} <span className="font-bold text-foreground dark:text-white">{formatTime(next.start, locale)}</span></p>
+          <div className="text-right shrink-0">
+            <p className="text-base lg:text-lg font-bold text-primary dark:text-amber-300">{t('next')}</p>
+            <p className="mt-1 text-xl lg:text-2xl font-bold text-foreground dark:text-white leading-snug">{locale === 'bn' ? next.nameBn : next.nameEn}</p>
+            <p className="mt-0.5 text-sm lg:text-base text-foreground/70 dark:text-white/70">
+              {t('start')} <span className="text-xl lg:text-2xl font-extrabold text-foreground dark:text-white tracking-tight">{formatTime(next.start, locale)}</span>
+            </p>
           </div>
         )}
-      </div>
-    </Link>
+      </Link>
+    </div>
   )
 }
 
 // ── News card ─────────────────────────────────────────────────────────────────
 
-function NewsCard({ news, width }: { news: NewsListItem[]; width: number | null }) {
+function NewsCard({ news }: { news: NewsListItem[] }) {
   const t = useTranslations('Home')
   if (news.length === 0) return null
   const latest = news[0]
 
   return (
-    <div
-      className="mx-auto shrink-0 flex items-center gap-[clamp(0.5rem,1.2vh,0.75rem)] px-[clamp(0.625rem,1.6vh,1rem)] py-[clamp(0.375rem,1.2vh,0.75rem)] rounded-2xl bg-gradient-to-r from-primary/12 to-primary/5 border border-primary/25 shadow-sm hover:shadow-md transition-all"
-      style={width ? { width } : undefined}
+    <Link
+      href={`/news/${latest.id}`}
+      className="group shrink-0 w-full flex items-center gap-3 lg:gap-4 px-4 lg:px-5 py-3 lg:py-3.5 rounded-2xl bg-gradient-to-r from-primary/12 to-primary/5 border border-primary/25 shadow-sm hover:shadow-md hover:border-primary/50 transition-all"
     >
-      <Link href={`/news/${latest.id}`} className="group flex items-center gap-[clamp(0.5rem,1.2vh,0.75rem)] flex-1 min-w-0">
-        <div className="w-[clamp(1.6rem,3.4vh,2.25rem)] h-[clamp(1.6rem,3.4vh,2.25rem)] rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-          <Newspaper className="w-[45%] h-[45%]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[clamp(0.5rem,1.1vh,0.625rem)] font-bold text-primary uppercase tracking-wider mb-0.5">{t('latestNews')}</p>
-          <p className="text-[clamp(0.7rem,1.5vh,0.875rem)] font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</p>
-        </div>
-      </Link>
-      <Link href="/news" className="text-[clamp(0.6rem,1.3vh,0.75rem)] text-primary font-medium hover:underline whitespace-nowrap shrink-0">
-        {t('viewAllArrow')}
-      </Link>
-    </div>
+      <span className="text-base lg:text-lg font-bold text-primary dark:text-amber-300 whitespace-nowrap shrink-0">{t('latestNews')}</span>
+      <span className="text-base lg:text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</span>
+    </Link>
   )
 }
 
@@ -233,9 +229,9 @@ function BooksGrid({ books }: { books: Book[] }) {
           </div>
           {/* Info */}
           <div className="flex-1 min-w-0 py-1">
-            <p className="font-semibold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">{b.title}</p>
-            {b.authors[0] && <p className="text-sm text-foreground/70 mt-1">{b.authors[0].name}</p>}
-            {b.excerpt && <p className="text-sm text-foreground/60 mt-1.5 line-clamp-2 leading-relaxed">{b.excerpt}</p>}
+            <p className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">{b.title}</p>
+            {b.authors[0] && <p className="text-lg text-foreground/70 mt-1">{b.authors[0].name}</p>}
+            {b.excerpt && <p className="text-lg text-foreground/60 mt-1.5 line-clamp-2 leading-relaxed">{b.excerpt}</p>}
           </div>
         </Link>
       ))}
@@ -256,8 +252,8 @@ function CompactList({ items, href, icon: Icon }: {
             <Icon className="w-4 h-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium line-clamp-1 group-hover:text-primary transition-colors">{item.title}</p>
-            {item.subtitle && <p className="text-xs text-foreground/60 truncate">{item.subtitle}</p>}
+            <p className="text-lg font-medium line-clamp-1 group-hover:text-primary transition-colors">{item.title}</p>
+            {item.subtitle && <p className="text-base text-foreground/60 truncate">{item.subtitle}</p>}
           </div>
         </Link>
       ))}
@@ -342,30 +338,6 @@ export function ClassicHome({
     return () => io.disconnect()
   }, [tab, activeLoadMore])
 
-  // Size the prayer/news cards to match the icon row exactly (first icon's left
-  // edge to the third icon's right edge) — the icons sit centered inside wider,
-  // equal-width grid cells, so this can't be expressed as a fixed CSS width.
-  // Re-measured via ResizeObserver on the nav itself (not just window resize),
-  // since the nav's width — and therefore the icons' positions — can also shift
-  // from layout causes that aren't a viewport resize (e.g. a scrollbar appearing
-  // once the prayer card finishes loading and grows taller).
-  const navRef = useRef<HTMLElement>(null)
-  const iconRefs = useRef<(HTMLDivElement | null)[]>([])
-  const [cardWidth, setCardWidth] = useState<number | null>(null)
-
-  useEffect(() => {
-    function measure() {
-      const first = iconRefs.current[0]
-      const third = iconRefs.current[2]
-      if (!first || !third) return
-      setCardWidth(Math.round(third.getBoundingClientRect().right - first.getBoundingClientRect().left))
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    if (navRef.current) ro.observe(navRef.current)
-    return () => ro.disconnect()
-  }, [])
-
   const currentTabHref = TABS.find(tab_ => tab_.key === tab)?.href ?? '/'
 
   const bayansForList   = bayansList.items.map(b   => ({ id: b.id, title: b.title, subtitle: b.author?.name }))
@@ -379,33 +351,28 @@ export function ClassicHome({
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 lg:p-4">
 
         {/* ── LEFT: full-width on mobile, 50% on desktop ─────────── */}
-        <div className="w-full flex-1 min-h-0 lg:flex-none lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-[clamp(0.5rem,1.6vh,1rem)] gap-[clamp(0.375rem,1.2vh,0.75rem)] lg:overflow-hidden">
-          <PrayerCard width={cardWidth} />
+        <div className="w-full flex-1 min-h-0 lg:flex-none lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-3 lg:p-4 gap-3 lg:gap-4 overflow-hidden">
+          <PrayerCard />
 
-          <nav ref={navRef} className="flex-1 min-h-0 grid grid-cols-3 auto-rows-fr gap-[clamp(0.25rem,1vh,0.5rem)] mb-[clamp(0.375rem,1.2vh,0.75rem)]">
-            {SECTIONS.map(({ label, href, icon }, i) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex flex-col items-center justify-center min-h-0 gap-[clamp(0.2rem,0.8vh,0.75rem)] px-1 rounded-2xl transition-colors text-center"
-              >
-                {/* The square sizes itself to whatever height the row can spare (capped at
-                    the old 96px look), so the grid can never overflow its column. */}
-                <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-                  <div
-                    ref={el => { iconRefs.current[i] = el }}
-                    className="h-full max-h-24 aspect-square max-w-full rounded-xl lg:rounded-2xl bg-primary/5 dark:bg-white/10 border border-primary/25 dark:border-transparent shadow-sm dark:shadow-none flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-white/20 group-hover:shadow-md dark:group-hover:shadow-none group-hover:border-primary/60 dark:group-hover:border-transparent transition-all"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={icon} alt={label} className="w-[66%] h-[66%] object-contain" />
-                  </div>
-                </div>
-                <span className="shrink-0 text-[clamp(0.55rem,1.5vh,1rem)] font-semibold text-primary dark:text-foreground leading-tight">{label}</span>
-              </Link>
-            ))}
-          </nav>
+          {/* 3×4 tile grid on a rounded sheet — label inside each tile. The grid
+              absorbs all leftover height (tiles stretch, icons capped) so the
+              column always fits the viewport without scrolling. */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-3xl bg-primary/[0.04] dark:bg-white/5 border border-border/40 p-2.5 lg:p-3">
+            <nav className="flex-1 min-h-0 grid grid-cols-3 grid-rows-4 gap-2.5 lg:gap-3">
+              {SECTIONS.map(({ label, href, icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="group flex flex-col items-center justify-center min-h-0 gap-1.5 sm:gap-2 rounded-2xl sm:rounded-3xl bg-primary/5 dark:bg-white/10 border border-primary/25 dark:border-white/10 shadow-sm dark:shadow-none p-2 text-center hover:bg-primary/10 dark:hover:bg-white/20 hover:border-primary/60 hover:shadow-md dark:hover:shadow-none transition-all"
+                >
+                  <img src={icon} alt="" className="flex-1 min-h-0 w-full max-h-12 sm:max-h-16 lg:max-h-20 object-contain" />
+                  <span className="shrink-0 text-sm sm:text-base lg:text-lg font-semibold text-primary dark:text-foreground leading-tight px-1">{label}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
 
-          <NewsCard news={news} width={cardWidth} />
+          <NewsCard news={news} />
         </div>
 
         {/* ── RIGHT: hidden on mobile, shown on desktop ───────────── */}
@@ -419,7 +386,7 @@ export function ClassicHome({
                   key={key}
                   onClick={() => setTab(key)}
                   className={cn(
-                    'px-2.5 lg:px-3 py-1.5 rounded-lg text-[12px] lg:text-[13px] font-medium transition-all whitespace-nowrap',
+                    'px-2.5 lg:px-3 py-1.5 rounded-lg text-base lg:text-lg font-medium transition-all whitespace-nowrap',
                     tab === key
                       ? 'bg-background text-primary shadow-sm'
                       : 'text-foreground/55 hover:text-foreground'
@@ -429,10 +396,12 @@ export function ClassicHome({
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link href={currentTabHref} className="text-xs text-primary font-medium hover:underline whitespace-nowrap">{t('viewAllArrow')}</Link>
-              <span className="text-border/60 text-xs hidden sm:block">|</span>
-              <Link href="/explore" className="text-xs text-foreground/60 hover:text-primary transition-colors hidden sm:block whitespace-nowrap">{t('newLayoutLink')}</Link>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href={currentTabHref} className="text-base text-primary font-medium hover:underline whitespace-nowrap">{t('viewAllArrow')}</Link>
+              <div className="w-px h-3 bg-border/60 hidden sm:block" />
+              <Link href="/explore" className="group flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-base font-semibold hover:bg-primary/20 transition-colors hidden sm:flex whitespace-nowrap">
+                {t('newLayoutLink')}
+              </Link>
             </div>
           </div>
 
