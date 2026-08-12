@@ -24,6 +24,9 @@
     "searchShort": "সার্চ",
     "all": "সব",
     "previous": "আগের",
-    "next": "পরের"
+    "next": "পরের",
+    "offlineColumn": "অফলাইন",
+    "offlineFilterLabel": "শুধু অফলাইন",
+    "offlineUpdateFailed": "অফলাইন সুবিধা আপডেট করতে ব্যর্থ হয়েছে"
   }
 }

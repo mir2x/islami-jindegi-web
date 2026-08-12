@@ -7,6 +7,7 @@ import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { FontSize } from '@tiptap/extension-font-size'
+import { Color } from '@tiptap/extension-color'
 import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableHeader } from '@tiptap/extension-table-header'
@@ -23,7 +24,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Table as TableIcon, Image as ImageIcon, Link as LinkIcon,
   Undo, Redo, RowsIcon, Columns3, Trash2,
-  Eye, PenLine,
+  Eye, PenLine, Baseline,
 } from 'lucide-react'
 
 // Custom text-direction extension — adds dir="ltr"|"rtl" to block nodes
@@ -122,6 +123,91 @@ function FontSizeSelector({ editor }: { editor: Editor }) {
   )
 }
 
+const FONT_COLORS = [
+  '#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#d9d9d9', '#efefef', '#ffffff',
+  '#dc2626', '#ea580c', '#d97706', '#ca8a04', '#65a30d', '#16a34a', '#059669', '#0d9488',
+  '#0891b2', '#0284c7', '#2563eb', '#4f46e5', '#7c3aed', '#9333ea', '#c026d3', '#db2777',
+]
+
+function FontColorSelector({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const currentColor: string = editor.getAttributes('textStyle').color || ''
+
+  const apply = (color: string) => {
+    if (color) editor.chain().focus().setColor(color).run()
+    else editor.chain().focus().unsetColor().run()
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        title="Text Color"
+        onMouseDown={e => { e.preventDefault(); setOpen(o => !o) }}
+        className={cn(
+          'flex flex-col items-center justify-center w-7 h-7 rounded text-sm transition-colors',
+          open ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        )}
+      >
+        <Baseline className="w-3.5 h-3.5" />
+        <span
+          className="block w-3.5 h-[3px] rounded-full -mt-0.5"
+          style={{ backgroundColor: currentColor || 'currentColor' }}
+        />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg p-2 w-[184px]">
+          <div className="grid grid-cols-8 gap-1 mb-2">
+            {FONT_COLORS.map(color => (
+              <button
+                key={color}
+                type="button"
+                title={color}
+                onMouseDown={e => { e.preventDefault(); apply(color) }}
+                className={cn(
+                  'w-4.5 h-4.5 rounded-full border border-border/60 transition-transform hover:scale-110',
+                  currentColor === color && 'ring-2 ring-offset-1 ring-primary'
+                )}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <label className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted transition-colors cursor-pointer">
+            <input
+              type="color"
+              value={currentColor || '#000000'}
+              onChange={e => apply(e.target.value)}
+              className="w-4.5 h-4.5 rounded border border-border cursor-pointer bg-transparent p-0"
+            />
+            <span className="text-xs text-muted-foreground">Custom</span>
+          </label>
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); apply('') }}
+            className="w-full text-left px-1 py-1 mt-0.5 rounded text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            Reset to default
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
 interface RichEditorProps {
@@ -176,6 +262,7 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
       Underline,
       TextStyle,
       FontSize,
+      Color,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextDirection,
       Table.configure({ resizable: true }),
@@ -301,6 +388,9 @@ export function RichEditor({ value, onChange, placeholder = 'Start writing...', 
 
         {/* Font size */}
         <FontSizeSelector editor={editor} />
+
+        {/* Font color */}
+        <FontColorSelector editor={editor} />
 
         <Divider />
 

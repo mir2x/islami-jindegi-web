@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from '
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import {
-  Mic, X, MapPin, Calendar,
+  Mic, X, MapPin,
   Play, Pause, Printer, Download,
 } from 'lucide-react'
 import type { BayanListItem, BayanAuthorOption, BayanCategoryOption, PagedResult } from '@/types'
@@ -61,7 +61,17 @@ function formatTime(s: number, locale: string) {
 }
 
 function formatDate(d: string, locale: string) {
-  return new Date(d).toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+  const date = new Date(d)
+  const parts = new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(date)
+  const month = parts.find(p => p.type === 'month')?.value ?? ''
+  const day = parts.find(p => p.type === 'day')?.value ?? ''
+  const year = parts.find(p => p.type === 'year')?.value ?? ''
+  return `${month} ${day}, ${year}`
+}
+
+function formatFileSize(bytes: number, locale: string) {
+  const mb = bytes / (1024 * 1024)
+  return `${toLocaleDigits(mb.toFixed(1), locale)} MB`
 }
 
 interface Props {
@@ -298,9 +308,9 @@ export function BayanClient({
           </div>
         )}
 
-        <p className="text-base text-muted-foreground mt-4">
+        {/* <p className="text-base text-muted-foreground mt-4">
           {loading ? t('loading') : t('resultCount', { count: total })}
-        </p>
+        </p> */}
         </div>
 
         {/* List — scrolls inside the card */}
@@ -411,8 +421,22 @@ function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [audioError, setAudioError] = useState(false)
+  const [audioSize, setAudioSize] = useState<number | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    setAudioSize(null)
+    if (!bayan?.audioUrl) return
+    let cancelled = false
+    fetch(bayan.audioUrl, { method: 'HEAD' })
+      .then(res => {
+        const len = res.headers.get('content-length')
+        if (!cancelled && len) setAudioSize(Number(len))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [bayan?.audioUrl])
 
   const handlePrint = () => window.print()
 
@@ -475,7 +499,10 @@ function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
             style={{ zoom: `${zoom}%` }}
           >
             {bayan.excerpt && (
-              <p className="text-base text-muted-foreground mb-6 leading-relaxed">{bayan.excerpt}</p>
+              <p className="text-base leading-relaxed mb-6">
+                <span className="font-semibold text-foreground">{t('topics')}: </span>
+                <span className="text-foreground/70">{bayan.excerpt}</span>
+              </p>
             )}
 
             {bayan.audioUrl && (
@@ -518,36 +545,45 @@ function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
                 {audioError && (
                   <p className="text-sm text-destructive mt-3">{t('audioError')}</p>
                 )}
-
-                {duration > 0 && (
-                  <div className="flex items-center gap-2 mt-6 text-base">
-                    <span className="text-muted-foreground">{t('audioDuration')}:</span>
-                    <span className="font-medium text-foreground">
-                      {t('audioDurationValue', { minutes: Math.max(1, Math.round(duration / 60)) })}
-                    </span>
-                  </div>
-                )}
-
-                <a
-                  href={bayan.audioUrl}
-                  download
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-base font-medium text-foreground hover:bg-muted transition-colors print:hidden"
-                >
-                  <Download className="w-4 h-4" /> {t('download')}
-                </a>
               </>
             )}
 
-            <div className="flex flex-wrap items-center gap-4 mt-6 pt-6 border-t border-border/60 text-sm text-muted-foreground">
+            <div className="mt-6 space-y-2 text-sm">
               {bayan.location && (
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" /> {bayan.location}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="w-28 shrink-0 text-muted-foreground">{t('location')}:</span>
+                  <span className="font-medium text-foreground">{bayan.location}</span>
+                </div>
               )}
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" /> {formatDate(bayan.publishedAt, locale)}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="w-28 shrink-0 text-muted-foreground">{t('date')}:</span>
+                <span className="font-medium text-foreground">{formatDate(bayan.publishedAt, locale)}</span>
+              </div>
+              {duration > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="w-28 shrink-0 text-muted-foreground">{t('audioDuration')}:</span>
+                  <span className="font-medium text-foreground">
+                    {t('audioDurationValue', { minutes: Math.max(1, Math.round(duration / 60)) })}
+                  </span>
+                </div>
+              )}
+              {audioSize != null && (
+                <div className="flex items-center gap-3">
+                  <span className="w-28 shrink-0 text-muted-foreground">{t('audioSize')}:</span>
+                  <span className="font-medium text-foreground">{formatFileSize(audioSize, locale)}</span>
+                </div>
+              )}
             </div>
+
+            {bayan.audioUrl && (
+              <a
+                href={bayan.audioUrl}
+                download
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-base font-medium text-foreground hover:bg-muted transition-colors print:hidden"
+              >
+                <Download className="w-4 h-4" /> {t('download')}
+              </a>
+            )}
 
             {bayan.categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-4">

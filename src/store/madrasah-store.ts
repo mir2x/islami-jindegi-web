@@ -6,6 +6,7 @@ interface MadrasahParams {
   page?: number
   pageSize?: number
   search?: string
+  offlineAvailable?: boolean
 }
 
 interface MadrasahStore {
@@ -15,6 +16,7 @@ interface MadrasahStore {
   getById: (id: string) => Promise<MadrasahDetail>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
+  setOfflineAvailable: (id: string, value: boolean) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 
@@ -29,6 +31,7 @@ export const useMadrasahStore = create<MadrasahStore>(() => ({
       if (params.page) q.set('page', String(params.page))
       if (params.pageSize) q.set('pageSize', String(params.pageSize))
       if (params.search) q.set('search', params.search)
+      if (params.offlineAvailable !== undefined) q.set('offlineAvailable', String(params.offlineAvailable))
       const result = await api.get<PagedResult<MadrasahListItem>>(`/api/madrasahs?${q}`)
       useMadrasahStore.setState({ result, loading: false })
     } catch {
@@ -39,5 +42,19 @@ export const useMadrasahStore = create<MadrasahStore>(() => ({
   getById: (id) => api.get<MadrasahDetail>(`/api/madrasahs/${id}`),
   create: (data) => api.post('/api/madrasahs', data),
   update: (id, data) => api.put(`/api/madrasahs/${id}`, data),
+
+  setOfflineAvailable: async (id, value) => {
+    const prev = useMadrasahStore.getState().result
+    useMadrasahStore.setState(state => ({ result: state.result
+      ? { ...state.result, data: state.result.data.map(m => m.id === id ? { ...m, isOfflineAvailable: value } : m) }
+      : state.result }))
+    try {
+      await api.patch(`/api/madrasahs/${id}/offline-availability`, { isOfflineAvailable: value })
+    } catch (e) {
+      useMadrasahStore.setState({ result: prev })
+      throw e
+    }
+  },
+
   remove: (id) => api.delete(`/api/madrasahs/${id}`),
 }))

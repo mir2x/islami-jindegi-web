@@ -98,7 +98,10 @@ export function BayanPlayerCard({ bayan, className }: Props) {
       </div>
 
       {bayan.excerpt && (
-        <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{bayan.excerpt}</p>
+        <p className="text-sm leading-relaxed mt-3">
+          <span className="font-semibold text-foreground">{t('topics')}: </span>
+          <span className="text-foreground/70">{bayan.excerpt}</span>
+        </p>
       )}
 
       {bayan.audioUrl ? (

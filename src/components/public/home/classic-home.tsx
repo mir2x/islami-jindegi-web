@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import Image from 'next/image'
-import { Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin } from 'lucide-react'
+import { Mic, ScrollText, Newspaper, Loader2, Calendar, MapPin, ChevronRight } from 'lucide-react'
 import {
   calcPrayerSlots, findActiveSlot, findNextSlot,
   toHijri, toBanglaDate, formatNum, formatTime,
@@ -161,18 +161,20 @@ function PrayerCard() {
       {/* Prayer times: one full-width card, current | next columns (matches the app) */}
       <Link href="/namaz-times" className="group rounded-2xl bg-card dark:bg-[#163f4f] border border-border/60 dark:border-foreground/15 shadow-sm hover:border-primary/50 hover:shadow-md transition-all p-4 lg:p-5 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-base lg:text-lg font-bold text-primary dark:text-amber-300">{t('current')}</p>
+          <p className="text-sm lg:text-base font-semibold text-primary dark:text-amber-300">{t('current')}</p>
           {active ? (
             <>
-              <div className="mt-1 flex items-center gap-x-4 gap-y-0.5 flex-wrap">
-                <span className="text-xl lg:text-2xl font-bold text-foreground dark:text-white leading-snug">{locale === 'bn' ? active.nameBn : active.nameEn}</span>
-                <span className="text-sm lg:text-base text-foreground/70 dark:text-white/70">
-                  {t('start')} <span className="text-2xl lg:text-3xl font-extrabold text-foreground dark:text-white tracking-tight">{formatTime(active.start, locale)}</span>
-                </span>
+              <p className="mt-0.5 text-xl lg:text-2xl font-semibold text-foreground dark:text-white leading-snug">{locale === 'bn' ? active.nameBn : active.nameEn}</p>
+              <div className="mt-2 flex items-end gap-5 lg:gap-6">
+                <div>
+                  <p className="text-xs lg:text-sm text-foreground/60 dark:text-white/60">{t('start')}</p>
+                  <p className="text-lg lg:text-xl font-medium tabular-nums text-foreground/80 dark:text-white/80">{formatTime(active.start, locale)}</p>
+                </div>
+                <div>
+                  <p className="text-xs lg:text-sm text-foreground/60 dark:text-white/60">{t('end')}</p>
+                  <p className="text-xl lg:text-2xl font-semibold tabular-nums text-foreground dark:text-white">{formatTime(active.end, locale)}</p>
+                </div>
               </div>
-              <p className="mt-0.5 text-sm lg:text-base text-foreground/70 dark:text-white/70">
-                {t('end')} <span className="text-2xl lg:text-3xl font-extrabold text-foreground dark:text-white tracking-tight">{formatTime(active.end, locale)}</span>
-              </p>
             </>
           ) : (
             <p className="mt-1 text-base text-muted-foreground">—</p>
@@ -180,11 +182,12 @@ function PrayerCard() {
         </div>
         {next && (
           <div className="text-right shrink-0">
-            <p className="text-base lg:text-lg font-bold text-primary dark:text-amber-300">{t('next')}</p>
-            <p className="mt-1 text-xl lg:text-2xl font-bold text-foreground dark:text-white leading-snug">{locale === 'bn' ? next.nameBn : next.nameEn}</p>
-            <p className="mt-0.5 text-sm lg:text-base text-foreground/70 dark:text-white/70">
-              {t('start')} <span className="text-xl lg:text-2xl font-extrabold text-foreground dark:text-white tracking-tight">{formatTime(next.start, locale)}</span>
-            </p>
+            <p className="text-sm lg:text-base font-semibold text-primary dark:text-amber-300">{t('next')}</p>
+            <p className="mt-0.5 text-lg lg:text-xl font-semibold text-foreground dark:text-white leading-snug">{locale === 'bn' ? next.nameBn : next.nameEn}</p>
+            <div className="mt-2">
+              <p className="text-xs lg:text-sm text-foreground/60 dark:text-white/60">{t('start')}</p>
+              <p className="text-lg lg:text-xl font-medium tabular-nums text-foreground/80 dark:text-white/80">{formatTime(next.start, locale)}</p>
+            </div>
           </div>
         )}
       </Link>
@@ -196,16 +199,43 @@ function PrayerCard() {
 
 function NewsCard({ news }: { news: NewsListItem[] }) {
   const t = useTranslations('Home')
+  // Ticker: rotate through the headlines, the outgoing one rolling up while
+  // the next rolls in from below. `prev` stays null until the first rotation
+  // so the initial render is static.
+  const [ticker, setTicker] = useState<{ idx: number; prev: number | null }>({ idx: 0, prev: null })
+
+  useEffect(() => {
+    if (news.length < 2) return
+    const id = setInterval(() => {
+      setTicker(s => ({ idx: (s.idx + 1) % news.length, prev: s.idx }))
+    }, 4000)
+    return () => clearInterval(id)
+  }, [news.length])
+
   if (news.length === 0) return null
-  const latest = news[0]
+  const { idx, prev } = ticker
+  const current = news[idx]
+  const headline = 'absolute inset-x-0 top-0 truncate leading-6 lg:leading-7 text-base lg:text-lg font-semibold text-foreground'
 
   return (
     <Link
-      href={`/news/${latest.id}`}
+      href={`/news/${current.id}`}
       className="group shrink-0 w-full flex items-center gap-3 lg:gap-4 px-4 lg:px-5 py-3 lg:py-3.5 rounded-2xl bg-gradient-to-r from-primary/12 to-primary/5 border border-primary/25 shadow-sm hover:shadow-md hover:border-primary/50 transition-all"
     >
       <span className="text-base lg:text-lg font-bold text-primary dark:text-amber-300 whitespace-nowrap shrink-0">{t('latestNews')}</span>
-      <span className="text-base lg:text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">{latest.title}</span>
+      <span className="relative flex-1 min-w-0 h-6 lg:h-7 overflow-hidden">
+        {prev !== null && (
+          <span key={`out-${prev}`} className={cn(headline, 'animate-ticker-out motion-reduce:hidden')}>
+            {news[prev].title}
+          </span>
+        )}
+        <span
+          key={`in-${idx}`}
+          className={cn(headline, 'group-hover:text-primary transition-colors', prev !== null && 'animate-ticker-in motion-reduce:animate-none')}
+        >
+          {current.title}
+        </span>
+      </span>
     </Link>
   )
 }
@@ -345,28 +375,36 @@ export function ClassicHome({
   const articlesForList = articlesList.items.map(a => ({ id: a.id, title: a.title, subtitle: a.author?.name ?? null }))
 
   return (
-    <div className="flex flex-col bg-background h-[calc(100vh-68px)] overflow-y-auto lg:overflow-hidden">
+    <div className="flex flex-col bg-background min-h-[calc(100dvh-68px)] tall:h-[calc(100dvh-68px)] tall:justify-center overflow-y-auto tall:lg:overflow-hidden">
 
-      {/* ── Main row: stacked on mobile, side-by-side on desktop ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row lg:gap-4 lg:p-4">
+      {/* ── Main row: stacked on mobile, side-by-side on desktop.
+          Capped at 1920×1200 and centered so 4K/ultra-wide screens get the
+          same composition as a full-HD desktop instead of stretched tiles. ─── */}
+      <div className="tall:flex-1 tall:min-h-0 tall:max-h-[75rem] w-full max-w-[120rem] mx-auto flex flex-col lg:flex-row lg:gap-4 lg:p-4">
 
         {/* ── LEFT: full-width on mobile, 50% on desktop ─────────── */}
-        <div className="w-full flex-1 min-h-0 lg:flex-none lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-3 lg:p-4 gap-3 lg:gap-4 overflow-hidden">
+        <div className="w-full tall:flex-1 tall:min-h-0 lg:flex-none lg:w-[50%] lg:shrink-0 flex flex-col border-b lg:border-b-0 lg:border lg:rounded-2xl border-border/40 p-3 lg:p-4 gap-3 lg:gap-4 tall:overflow-hidden">
           <PrayerCard />
 
-          {/* 3×4 tile grid on a rounded sheet — label inside each tile. The grid
-              absorbs all leftover height (tiles stretch, icons capped) so the
-              column always fits the viewport without scrolling. */}
-          <div className="flex-1 min-h-0 flex flex-col rounded-3xl bg-primary/[0.04] dark:bg-white/5 border border-border/40 p-2.5 lg:p-3">
-            <nav className="flex-1 min-h-0 grid grid-cols-3 grid-rows-4 gap-2.5 lg:gap-3">
+          {/* 3×4 tile grid on a rounded sheet — label inside each tile. On tall
+              viewports the grid absorbs all leftover height (tiles stretch, icons
+              capped high, floored low) so the column fits without scrolling; on
+              short viewports icons take a fixed height and the page scrolls. */}
+          <div className="tall:flex-1 tall:min-h-0 flex flex-col rounded-3xl border border-border/40 p-2.5 lg:p-3">
+            <nav className="tall:flex-1 tall:min-h-0 grid grid-cols-3 grid-rows-4 lg:grid-cols-4 lg:grid-rows-3 gap-2.5 lg:gap-3">
               {SECTIONS.map(({ label, href, icon }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="group flex flex-col items-center justify-center min-h-0 gap-1.5 sm:gap-2 rounded-2xl sm:rounded-3xl bg-primary/5 dark:bg-white/10 border border-primary/25 dark:border-white/10 shadow-sm dark:shadow-none p-2 text-center hover:bg-primary/10 dark:hover:bg-white/20 hover:border-primary/60 hover:shadow-md dark:hover:shadow-none transition-all"
+                  className="group relative flex flex-col min-h-0 gap-1.5 sm:gap-2 rounded-2xl bg-card border border-border/40 shadow-sm dark:shadow-none p-2.5 sm:p-3 hover:border-primary/50 hover:shadow-md dark:hover:shadow-none transition-all"
                 >
-                  <img src={icon} alt="" className="flex-1 min-h-0 w-full max-h-12 sm:max-h-16 lg:max-h-20 object-contain" />
-                  <span className="shrink-0 text-sm sm:text-base lg:text-lg font-semibold text-primary dark:text-foreground leading-tight px-1">{label}</span>
+                  <span className="absolute right-2 top-[62%] -translate-y-1/2 w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-primary/15 hidden sm:flex items-center justify-center group-hover:bg-primary transition-colors">
+                    <ChevronRight className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary group-hover:text-primary-foreground transition-colors" />
+                  </span>
+                  <span className="flex-1 min-h-0 flex items-center justify-center">
+                    <img src={icon} alt="" className="h-12 sm:h-14 lg:h-20 sm:short:h-12 lg:short:h-12 max-h-full w-auto object-contain" />
+                  </span>
+                  <span className="shrink-0 text-center text-sm sm:text-base lg:text-lg font-semibold text-foreground leading-tight">{label}</span>
                 </Link>
               ))}
             </nav>
@@ -375,8 +413,12 @@ export function ClassicHome({
           <NewsCard news={news} />
         </div>
 
-        {/* ── RIGHT: hidden on mobile, shown on desktop ───────────── */}
-        <div className="hidden lg:flex flex-1 min-w-0 flex-col lg:overflow-hidden lg:border lg:border-border/40 lg:rounded-2xl">
+        {/* ── RIGHT: hidden on mobile, shown on desktop ─────────────
+            Explicit height (= viewport minus header and row padding) rather than
+            flex-stretch: on short viewports the row is content-sized, and without
+            a definite height the inner infinite-scroll pane would grow unbounded
+            and keep fetching pages. Under `tall` this equals the stretched size. */}
+        <div className="hidden lg:flex flex-1 min-w-0 flex-col lg:h-[min(calc(100dvh-68px-2rem),73rem)] lg:overflow-hidden lg:border lg:border-border/40 lg:rounded-2xl">
 
           {/* Tab bar */}
           <div className="shrink-0 flex items-center justify-between gap-2 px-4 lg:px-5 pt-4 pb-3 border-b border-border/30">

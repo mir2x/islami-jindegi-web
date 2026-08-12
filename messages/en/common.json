@@ -24,6 +24,9 @@
     "searchShort": "Search",
     "all": "All",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "offlineColumn": "Offline",
+    "offlineFilterLabel": "Offline only",
+    "offlineUpdateFailed": "Failed to update offline availability"
   }
 }

@@ -86,7 +86,12 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
   const [fontSize, setFontSize] = useState(18)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  // Sync state to URL without full reload
+  // Sync state to URL without full reload.
+  // `searchParams` is a dependency (we need its current value to build the
+  // next query string), but router.replace() below is *what changes*
+  // searchParams — without the guard, every replace makes searchParams a
+  // new object, which re-fires this effect, which replaces again forever
+  // (same URL, endless network requests, tab spinner stuck flickering).
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
     if (active.kind === 'intro') {
@@ -99,7 +104,9 @@ export function ChapterReader({ book, onSwitchToPdf }: Props) {
       params.set('chapter', active.chapter.id)
       params.set('sub', active.sub.id)
     }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    const nextQuery = params.toString()
+    if (nextQuery === searchParams.toString()) return
+    router.replace(`${pathname}?${nextQuery}`, { scroll: false })
   }, [active, pathname, router, searchParams])
 
   // Scroll content to top when chapter changes

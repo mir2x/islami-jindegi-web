@@ -9,6 +9,7 @@ interface BookParams {
   authorId?: string
   categoryId?: string
   published?: boolean
+  offlineAvailable?: boolean
   sort?: string
 }
 
@@ -22,10 +23,11 @@ interface BookStore {
   fetchAll: () => Promise<void>
   create: (data: Partial<Book> & { authorIds: string[]; categoryIds: string[] }) => Promise<void>
   update: (id: string, data: Partial<Book> & { authorIds: string[]; categoryIds: string[] }) => Promise<void>
+  setOfflineAvailable: (id: string, value: boolean) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 
-export const useBookStore = create<BookStore>((set) => ({
+export const useBookStore = create<BookStore>((set, get) => ({
   result: null,
   all: [],
   loading: false,
@@ -41,6 +43,7 @@ export const useBookStore = create<BookStore>((set) => ({
     if (params.authorId) query.set('authorId', params.authorId)
     if (params.categoryId) query.set('categoryId', params.categoryId)
     if (params.published !== undefined) query.set('published', String(params.published))
+    if (params.offlineAvailable !== undefined) query.set('offlineAvailable', String(params.offlineAvailable))
     if (params.sort) query.set('sort', params.sort)
     const result = await api.get<PagedResult<Book>>(`/api/books?${query}`)
     set({ result, loading: false })
@@ -58,6 +61,19 @@ export const useBookStore = create<BookStore>((set) => ({
 
   update: async (id, data) => {
     await api.put(`/api/books/${id}`, data)
+  },
+
+  setOfflineAvailable: async (id, value) => {
+    const prev = get().result
+    set(state => ({ result: state.result
+      ? { ...state.result, data: state.result.data.map(b => b.id === id ? { ...b, isOfflineAvailable: value } : b) }
+      : state.result }))
+    try {
+      await api.patch(`/api/books/${id}/offline-availability`, { isOfflineAvailable: value })
+    } catch (e) {
+      set({ result: prev })
+      throw e
+    }
   },
 
   remove: async (id) => {

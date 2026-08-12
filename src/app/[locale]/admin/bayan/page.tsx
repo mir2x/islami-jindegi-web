@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -28,7 +29,7 @@ const PAGE_SIZE = 20
 
 export default function BayanPage() {
   const router = useRouter()
-  const { result, loading, fetch, remove, lastParams, setLastParams } = useBayanStore()
+  const { result, loading, fetch, remove, setOfflineAvailable, lastParams, setLastParams } = useBayanStore()
   const { fetchAll, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
 
@@ -36,10 +37,11 @@ export default function BayanPage() {
   const [authorId, setAuthorId] = useState(lastParams.authorId || '')
   const [categoryId, setCategoryId] = useState(lastParams.categoryId || '')
   const [published, setPublished] = useState(lastParams.published || '')
+  const [offlineOnly, setOfflineOnly] = useState(lastParams.offlineAvailable === 'true')
   const [page, setPage] = useState(Number(lastParams.page) || 1)
   
   // Extract initial sort state from lastParams (e.g. 'position_desc' -> { key: 'position', dir: 'desc' })
-  const initialSort = (lastParams.sort || 'position_asc').split('_')
+  const initialSort = (lastParams.sort || 'position_desc').split('_')
   const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>(
     initialSort[0] as SortKey,
     initialSort[1] as 'asc' | 'desc'
@@ -52,10 +54,11 @@ export default function BayanPage() {
   useEffect(() => {
     setLastParams({
       search, authorId, categoryId, published,
+      offlineAvailable: String(offlineOnly),
       page: String(page),
       sort: sortParam,
     })
-  }, [search, authorId, categoryId, published, page, sortParam, setLastParams])
+  }, [search, authorId, categoryId, published, offlineOnly, page, sortParam, setLastParams])
 
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 
@@ -65,9 +68,10 @@ export default function BayanPage() {
       authorId: authorId || undefined,
       categoryId: categoryId || undefined,
       published: published === '' ? undefined : published === 'true',
+      offlineAvailable: offlineOnly || undefined,
       sort: sortParam,
     })
-  }, [fetch, page, search, authorId, categoryId, published, sortParam])
+  }, [fetch, page, search, authorId, categoryId, published, offlineOnly, sortParam])
 
   useEffect(() => { fetchAll(); fetchCategories() }, [fetchAll, fetchCategories])
   useEffect(() => { load() }, [load])
@@ -160,6 +164,11 @@ export default function BayanPage() {
               <SelectItem value="false">Draft</SelectItem>
             </SelectContent>
           </Select>
+
+          <label className="flex h-9 items-center gap-2 rounded-md border bg-card px-3 text-sm text-muted-foreground">
+            <Switch checked={offlineOnly} onCheckedChange={v => { setOfflineOnly(!!v); setPage(1) }} />
+            Offline only
+          </label>
         </div>
       </div>
 
@@ -168,7 +177,7 @@ export default function BayanPage() {
           <div className="overflow-x-auto">
           {/* table-fixed + colgroup: keeps column widths identical across sorts, so
               re-sorting can't re-measure columns and shift the layout. */}
-          <table className="w-full min-w-[1240px] table-fixed">
+          <table className="w-full min-w-[1320px] table-fixed">
             <colgroup>
               <col className="w-32" />
               <col />
@@ -177,6 +186,7 @@ export default function BayanPage() {
               <col className="w-40" />
               <col className="w-36" />
               <col className="w-36" />
+              <col className="w-24" />
               <col className="w-28" />
             </colgroup>
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
@@ -188,6 +198,7 @@ export default function BayanPage() {
                 <SortableHeader label="Location" sortKey="location" sort={sort} onSort={handleSort} />
                 <SortableHeader label="Date" sortKey="date" sort={sort} onSort={handleSort} />
                 <SortableHeader label="Status" sortKey="published" sort={sort} onSort={handleSort} />
+                <th className="text-left px-5 py-3.5"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Offline</span></th>
                 <th className="px-5 py-3.5" />
               </tr>
             </thead>
@@ -201,11 +212,12 @@ export default function BayanPage() {
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-24" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-20" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                  <td className="px-5 py-4"><Skeleton className="h-5 w-9 rounded-full" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-8 w-16" /></td>
                 </tr>
               ))}
               {!loading && result?.data.length === 0 && (
-                <tr><td colSpan={8} className="px-5 py-20 text-center">
+                <tr><td colSpan={9} className="px-5 py-20 text-center">
                   <div className="inline-flex w-14 h-14 rounded-2xl bg-muted items-center justify-center mb-4"><Mic className="w-6 h-6 text-muted-foreground/60" /></div>
                   <p className="font-medium">No bayan found</p>
                   <p className="text-sm text-muted-foreground mt-1">{search ? 'Try a different search' : 'Add your first entry'}</p>
@@ -228,6 +240,12 @@ export default function BayanPage() {
                     {item.published
                       ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
                       : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
+                  </td>
+                  <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                    <Switch
+                      checked={item.isOfflineAvailable}
+                      onCheckedChange={v => setOfflineAvailable(item.id, !!v).catch(() => toast.error('Failed to update offline availability'))}
+                    />
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">

@@ -70,7 +70,9 @@
     "location": "Location",
     "date": "Date",
     "audioDuration": "Audio duration",
-    "audioDurationValue": "{minutes, number} min"
+    "audioDurationValue": "{minutes, number} min",
+    "audioSize": "Audio size",
+    "topics": "Topics covered"
   },
   "BayanDetail": {
     "metaDescription": "A bayan delivered by {name}",
@@ -82,7 +84,8 @@
     "location": "Location",
     "date": "Date",
     "audioDuration": "Audio duration",
-    "download": "Download"
+    "download": "Download",
+    "topics": "Topics covered"
   },
   "BooksPage": {
     "metaTitle": "Books | Islami Jindegi",
@@ -128,7 +131,8 @@
     "share": "Share",
     "download": "Download",
     "audioDuration": "Audio duration",
-    "audioDurationValue": "{minutes, number} min"
+    "audioDurationValue": "{minutes, number} min",
+    "audioSize": "Audio size"
   },
   "DuaDetail": {
     "audioLabel": "Audio",
@@ -188,7 +192,8 @@
     "share": "Share",
     "download": "Download",
     "audioDuration": "Audio duration",
-    "audioDurationValue": "{minutes, number} min"
+    "audioDurationValue": "{minutes, number} min",
+    "audioSize": "Audio size"
   },
   "MalfuzatDetail": {
     "audioLabel": "Audio",
@@ -220,7 +225,8 @@
     "share": "Share",
     "download": "Download",
     "audioDuration": "Audio duration",
-    "audioDurationValue": "{minutes, number} min"
+    "audioDurationValue": "{minutes, number} min",
+    "audioSize": "Audio size"
   },
   "MasailDetail": {
     "audioLabel": "Audio",

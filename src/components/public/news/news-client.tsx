@@ -77,9 +77,9 @@ export function NewsClient({ initialItems, initialTotal, initialSearch }: Props)
         />
       </div>
 
-      <p className="text-base text-muted-foreground mb-4">
+      {/* <p className="text-base text-muted-foreground mb-4">
         {loading ? tCommon('loading') : t('resultCount', { count: total })}
-      </p>
+      </p> */}
 
       {/* List */}
       {loading ? (

@@ -32,6 +32,37 @@ async function fetchBooks(opts: {
   } catch { return { data: [], total: 0 } }
 }
 
+// Books beyond page 1 (and scroll position) only ever exist in this
+// component's state. `/books/[id]` lives in a different route group than
+// `/books` (reader chrome vs. public chrome), so there's no shared layout
+// segment for Next to preserve across navigation — going back to `/books`
+// always mounts a brand-new BooksClient seeded from the server's page-1
+// data. sessionStorage is what survives that remount (both for in-app
+// back-navigation and a hard browser back), so we stash the accumulated
+// list + scroll offsets here and restore them once, right after mount.
+const SCROLL_CACHE_KEY = 'ij:books-list-scroll-cache'
+
+interface BooksScrollCache {
+  filterKey: string
+  books: Book[]
+  total: number
+  page: number
+  scrollTop: number
+  windowScrollY: number
+}
+
+function readScrollCache(): BooksScrollCache | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(SCROLL_CACHE_KEY)
+    return raw ? (JSON.parse(raw) as BooksScrollCache) : null
+  } catch { return null }
+}
+
+function writeScrollCache(cache: BooksScrollCache) {
+  try { sessionStorage.setItem(SCROLL_CACHE_KEY, JSON.stringify(cache)) } catch { /* quota / private mode — safe to skip */ }
+}
+
 interface Props {
   initialBooks: Book[]
   initialTotal: number
@@ -63,19 +94,109 @@ export function BooksClient({
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const mounted = useRef(false)
+  const prevFilters = useRef({ search: initialSearch, selectedCategory: initialCategory, selectedAuthor: initialAuthor })
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const skipNextPageFetch = useRef(false)
+  const restoreAttempted = useRef(false)
+  // True from the moment a cache restore calls setBooks(...) until that
+  // update has actually landed in a render. See the big comment below for
+  // why this can't just be "have we run before".
+  const restoreInFlight = useRef(false)
 
   const hasMore = books.length < total
   const hasFilters = !!(search || selectedCategory || selectedAuthor)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
 
-  // Filters changed → reset to the first page and replace the list
-  // (skip initial render — server already sent data)
+  // Restore a previously-cached (accumulated) list + scroll position once on
+  // mount, AND keep that cache fresh afterwards (every list change, plus
+  // continuously while scrolling — scroll position isn't reflected in any
+  // state). These two concerns have to live in one effect: they both need
+  // to run on mount, in the same commit, and a *separate* "save" effect
+  // would close over the stale pre-restore `books` on that very commit
+  // (setBooks() here doesn't make the new value visible until a later
+  // render) and immediately clobber the cache with it — including on
+  // React StrictMode's dev-only double-invoke of a fresh mount, which runs
+  // this whole commit's effects twice before that later render ever happens.
   useEffect(() => {
-    if (!mounted.current) { mounted.current = true; return }
+    if (!restoreAttempted.current) {
+      restoreAttempted.current = true
+      const cached = readScrollCache()
+      const filterKey = `${initialSearch}|${initialCategory}|${initialAuthor}`
+      if (cached && cached.filterKey === filterKey) {
+        restoreInFlight.current = true
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setBooks(cached.books)
+        setTotal(cached.total)
+        setPage(cached.page)
+        // The page-append effect below would otherwise immediately re-fetch
+        // and re-append the highest cached page on mount (harmless thanks
+        // to its de-dupe, but a wasted request every single time).
+        skipNextPageFetch.current = true
+        // Wait a couple of frames so the DOM has actually grown to fit the
+        // restored list before jumping — otherwise the scroll target may
+        // not exist yet and the browser just clamps to whatever height
+        // exists right now.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollRef.current?.scrollTo({ top: cached.scrollTop })
+            window.scrollTo({ top: cached.windowScrollY })
+          })
+        })
+      }
+    }
+
+    if (restoreInFlight.current) {
+      if (books === initialBooks) return // still the stale pre-restore render
+      restoreInFlight.current = false
+    }
+
+    const filterKey = `${search}|${selectedCategory}|${selectedAuthor}`
+    const save = () => writeScrollCache({
+      filterKey,
+      books,
+      total,
+      page,
+      scrollTop: scrollRef.current?.scrollTop ?? 0,
+      windowScrollY: window.scrollY,
+    })
+
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => { save(); ticking = false })
+    }
+
+    const scrollEl = scrollRef.current
+    scrollEl?.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
+    save()
+
+    return () => {
+      scrollEl?.removeEventListener('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books, total, page, search, selectedCategory, selectedAuthor])
+
+  // Filters changed → reset to the first page and replace the list.
+  // Compares against the *previous actual values*, not a "have I run yet"
+  // flag: that boolean-flag idiom breaks under React StrictMode's dev-only
+  // double-invoke of a fresh mount's effects (the 2nd phantom invocation
+  // sees the flag already set and wrongly treats itself as a real filter
+  // change), firing an unwanted page-1 reset — which, among other things,
+  // stomped the scroll-position-restore effect above.
+  useEffect(() => {
+    if (
+      prevFilters.current.search === search &&
+      prevFilters.current.selectedCategory === selectedCategory &&
+      prevFilters.current.selectedAuthor === selectedAuthor
+    ) {
+      return
+    }
+    prevFilters.current = { search, selectedCategory, selectedAuthor }
 
     const params = new URLSearchParams()
     if (search) params.set('q', search)
@@ -106,6 +227,7 @@ export function BooksClient({
 
   // Next page requested by the scroll sentinel → append
   useEffect(() => {
+    if (skipNextPageFetch.current) { skipNextPageFetch.current = false; return }
     if (page === 1) return
     let cancelled = false
     fetchBooks({
@@ -255,9 +377,9 @@ export function BooksClient({
           )}
 
             {/* ── Count row ──────────────────────────────────────── */}
-            <p className="text-sm text-muted-foreground mt-4">
+            {/* <p className="text-sm text-muted-foreground mt-4">
               {loading ? t('loading') : t('resultCount', { count: total })}
-            </p>
+            </p> */}
           </div>
 
           {/* ── Book grid — scrolls inside the card, loads more at the end ── */}

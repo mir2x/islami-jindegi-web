@@ -305,9 +305,9 @@ export function ArticlesClient({
           </div>
         )}
 
-        <p className="text-base text-muted-foreground mt-4">
+        {/* <p className="text-base text-muted-foreground mt-4">
           {loading ? t('loading') : t('resultCount', { count: total })}
-        </p>
+        </p> */}
         </div>
 
         {/* List — scrolls inside the card */}

@@ -11,13 +11,16 @@ interface Props {
   className?: string
   /** Render the page buttons and the "go to page" control on a single row. */
   inline?: boolean
+  /** How many page numbers to show on each side of the current page. Default 2. */
+  siblingCount?: number
 }
 
-function getPages(current: number, total: number): (number | 'ellipsis')[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+function getPages(current: number, total: number, siblingCount: number): (number | 'ellipsis')[] {
+  const windowSize = siblingCount * 2 + 5 // siblings + current + first + last + 2 ellipses
+  if (total <= windowSize) return Array.from({ length: total }, (_, i) => i + 1)
 
-  const left = Math.max(2, current - 2)
-  const right = Math.min(total - 1, current + 2)
+  const left = Math.max(2, current - siblingCount)
+  const right = Math.min(total - 1, current + siblingCount)
   const pages: (number | 'ellipsis')[] = [1]
 
   if (left > 2) pages.push('ellipsis')
@@ -28,12 +31,12 @@ function getPages(current: number, total: number): (number | 'ellipsis')[] {
   return pages
 }
 
-export function PaginationBar({ page, totalPages, onPageChange, className, inline = false }: Props) {
+export function PaginationBar({ page, totalPages, onPageChange, className, inline = false, siblingCount = 2 }: Props) {
   const [goTo, setGoTo] = useState('')
 
   if (totalPages <= 1) return null
 
-  const pages = getPages(page, totalPages)
+  const pages = getPages(page, totalPages, siblingCount)
 
   function handleGoTo() {
     const n = parseInt(goTo, 10)
@@ -94,8 +97,9 @@ export function PaginationBar({ page, totalPages, onPageChange, className, inlin
         </button>
       </div>
 
-      {/* Go to page */}
-      <div className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+      {/* Go to page — dropped on narrow screens in inline mode; there's no room
+          for it alongside the search/filter/upload controls on one line. */}
+      <div className={cn('shrink-0 items-center gap-2 text-sm text-muted-foreground', inline ? 'hidden sm:flex' : 'flex')}>
         <span>Go to</span>
         <input
           type="number"

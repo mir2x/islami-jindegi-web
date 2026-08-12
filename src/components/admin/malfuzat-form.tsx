@@ -139,8 +139,8 @@ export function MalfuzatForm({ item }: Props) {
 
               <div className="space-y-1.5">
                 <Label>Excerpt <span className="ml-2 text-xs text-muted-foreground font-normal">short description</span></Label>
-                <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short description..." rows={3} maxLength={160} />
-                <p className="text-xs text-muted-foreground text-right">{excerpt.length}/160</p>
+                <Textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Short description..." rows={3} maxLength={500} />
+                <p className="text-xs text-muted-foreground text-right">{excerpt.length}/500</p>
               </div>
 
               <div className="space-y-1.5">

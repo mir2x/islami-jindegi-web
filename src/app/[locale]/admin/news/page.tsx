@@ -31,7 +31,7 @@ export default function NewsPage() {
   const [page, setPage] = useState(Number(lastParams.page) || 1)
   
   // Extract initial sort state from lastParams (e.g. 'position_desc' -> { key: 'position', dir: 'desc' })
-  const initialSort = (lastParams.sort || 'position_asc').split('_')
+  const initialSort = (lastParams.sort || 'position_desc').split('_')
   const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>(
     initialSort[0] as SortKey,
     initialSort[1] as 'asc' | 'desc'

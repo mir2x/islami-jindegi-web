@@ -70,7 +70,9 @@
     "location": "স্থান",
     "date": "তারিখ",
     "audioDuration": "অডিও সময়",
-    "audioDurationValue": "{minutes, number} মিনিট"
+    "audioDurationValue": "{minutes, number} মিনিট",
+    "audioSize": "অডিও সাইজ",
+    "topics": "বয়ানের বিষয়সমূহ"
   },
   "BayanDetail": {
     "metaDescription": "{name} কর্তৃক প্রদত্ত বয়ান",
@@ -82,7 +84,8 @@
     "location": "স্থান",
     "date": "তারিখ",
     "audioDuration": "অডিও সময়",
-    "download": "ডাউনলোড করুন"
+    "download": "ডাউনলোড করুন",
+    "topics": "বয়ানের বিষয়সমূহ"
   },
   "BooksPage": {
     "metaTitle": "কিতাব | ইসলামী যিন্দেগী",
@@ -128,7 +131,8 @@
     "share": "শেয়ার করুন",
     "download": "ডাউনলোড করুন",
     "audioDuration": "অডিও সময়",
-    "audioDurationValue": "{minutes, number} মিনিট"
+    "audioDurationValue": "{minutes, number} মিনিট",
+    "audioSize": "অডিও সাইজ"
   },
   "DuaDetail": {
     "audioLabel": "অডিও",
@@ -188,7 +192,8 @@
     "share": "শেয়ার করুন",
     "download": "ডাউনলোড করুন",
     "audioDuration": "অডিও সময়",
-    "audioDurationValue": "{minutes, number} মিনিট"
+    "audioDurationValue": "{minutes, number} মিনিট",
+    "audioSize": "অডিও সাইজ"
   },
   "MalfuzatDetail": {
     "audioLabel": "অডিও",
@@ -220,7 +225,8 @@
     "share": "শেয়ার করুন",
     "download": "ডাউনলোড করুন",
     "audioDuration": "অডিও সময়",
-    "audioDurationValue": "{minutes, number} মিনিট"
+    "audioDurationValue": "{minutes, number} মিনিট",
+    "audioSize": "অডিও সাইজ"
   },
   "MasailDetail": {
     "audioLabel": "অডিও",

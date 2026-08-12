@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -28,7 +29,7 @@ const PAGE_SIZE = 20
 
 export default function MasailPage() {
   const router = useRouter()
-  const { result, loading, fetch, remove, lastParams, setLastParams } = useMasailStore()
+  const { result, loading, fetch, remove, setOfflineAvailable, lastParams, setLastParams } = useMasailStore()
   const { fetchAll, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
 
@@ -36,6 +37,7 @@ export default function MasailPage() {
   const [authorId, setAuthorId] = useState(lastParams.authorId || '')
   const [categoryId, setCategoryId] = useState(lastParams.categoryId || '')
   const [published, setPublished] = useState(lastParams.published !== undefined ? String(lastParams.published) : '')
+  const [offlineOnly, setOfflineOnly] = useState(lastParams.offlineAvailable === true)
   const [page, setPage] = useState(lastParams.page || 1)
   const { sort, toggle: toggleSort, param: sortParam } = useTableSort<SortKey>(lastParams.sort as SortKey || 'position')
   const [authorOpen, setAuthorOpen] = useState(false)
@@ -51,11 +53,12 @@ export default function MasailPage() {
       authorId: authorId || undefined,
       categoryId: categoryId || undefined,
       published: published === '' ? undefined : published === 'true',
+      offlineAvailable: offlineOnly || undefined,
       sort: sortParam,
     }
     setLastParams(params)
     fetch(params)
-  }, [fetch, setLastParams, page, search, authorId, categoryId, published, sortParam])
+  }, [fetch, setLastParams, page, search, authorId, categoryId, published, offlineOnly, sortParam])
 
   useEffect(() => { fetchAll(); fetchCategories() }, [fetchAll, fetchCategories])
   useEffect(() => { load() }, [load])
@@ -148,6 +151,11 @@ export default function MasailPage() {
               <SelectItem value="false">Draft</SelectItem>
             </SelectContent>
           </Select>
+
+          <label className="flex h-9 items-center gap-2 rounded-md border bg-card px-3 text-sm text-muted-foreground">
+            <Switch checked={offlineOnly} onCheckedChange={v => { setOfflineOnly(!!v); setPage(1) }} />
+            Offline only
+          </label>
         </div>
       </div>
 
@@ -156,13 +164,14 @@ export default function MasailPage() {
           <div className="overflow-x-auto">
           {/* table-fixed + colgroup: keeps column widths identical across sorts, so
               re-sorting can't re-measure columns and shift the layout. */}
-          <table className="w-full min-w-[940px] table-fixed">
+          <table className="w-full min-w-[1020px] table-fixed">
             <colgroup>
               <col className="w-32" />
               <col />
               <col className="w-56" />
               <col className="w-32" />
               <col className="w-36" />
+              <col className="w-24" />
               <col className="w-28" />
             </colgroup>
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
@@ -172,6 +181,7 @@ export default function MasailPage() {
                 <SortableHeader label="Author" sortKey="author" sort={sort} onSort={handleSort} />
                 <SortableHeader label="Language" sortKey="language" sort={sort} onSort={handleSort} />
                 <SortableHeader label="Status" sortKey="published" sort={sort} onSort={handleSort} />
+                <th className="text-left px-5 py-3.5"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Offline</span></th>
                 <th className="px-5 py-3.5" />
               </tr>
             </thead>
@@ -183,11 +193,12 @@ export default function MasailPage() {
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-32" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                  <td className="px-5 py-4"><Skeleton className="h-5 w-9 rounded-full" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-8 w-16" /></td>
                 </tr>
               ))}
               {!loading && result?.data.length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-20 text-center">
+                <tr><td colSpan={7} className="px-5 py-20 text-center">
                   <div className="inline-flex w-14 h-14 rounded-2xl bg-muted items-center justify-center mb-4"><HelpCircle className="w-6 h-6 text-muted-foreground/60" /></div>
                   <p className="font-medium">No masail found</p>
                   <p className="text-sm text-muted-foreground mt-1">{search ? 'Try a different search' : 'Add your first entry'}</p>
@@ -203,6 +214,12 @@ export default function MasailPage() {
                     {item.published
                       ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Published</span>
                       : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Draft</span>}
+                  </td>
+                  <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                    <Switch
+                      checked={item.isOfflineAvailable}
+                      onCheckedChange={v => setOfflineAvailable(item.id, !!v).catch(() => toast.error('Failed to update offline availability'))}
+                    />
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">

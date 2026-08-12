@@ -9,6 +9,7 @@ interface MalfuzatParams {
   authorId?: string
   categoryId?: string
   published?: boolean
+  offlineAvailable?: boolean
   sort?: string
 }
 
@@ -20,10 +21,11 @@ interface MalfuzatStore {
   fetch: (params?: MalfuzatParams) => Promise<void>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
+  setOfflineAvailable: (id: string, value: boolean) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 
-export const useMalfuzatStore = create<MalfuzatStore>((set) => ({
+export const useMalfuzatStore = create<MalfuzatStore>((set, get) => ({
   result: null,
   loading: false,
   lastParams: { page: 1 },
@@ -38,6 +40,7 @@ export const useMalfuzatStore = create<MalfuzatStore>((set) => ({
     if (params.authorId) q.set('authorId', params.authorId)
     if (params.categoryId) q.set('categoryId', params.categoryId)
     if (params.published !== undefined) q.set('published', String(params.published))
+    if (params.offlineAvailable !== undefined) q.set('offlineAvailable', String(params.offlineAvailable))
     if (params.sort) q.set('sort', params.sort)
     const result = await api.get<PagedResult<MalfuzatListItem>>(`/api/malfuzat?${q}`)
     set({ result, loading: false })
@@ -45,5 +48,19 @@ export const useMalfuzatStore = create<MalfuzatStore>((set) => ({
 
   create: async (data) => { await api.post('/api/malfuzat', data) },
   update: async (id, data) => { await api.put(`/api/malfuzat/${id}`, data) },
+
+  setOfflineAvailable: async (id, value) => {
+    const prev = get().result
+    set(state => ({ result: state.result
+      ? { ...state.result, data: state.result.data.map(m => m.id === id ? { ...m, isOfflineAvailable: value } : m) }
+      : state.result }))
+    try {
+      await api.patch(`/api/malfuzat/${id}/offline-availability`, { isOfflineAvailable: value })
+    } catch (e) {
+      set({ result: prev })
+      throw e
+    }
+  },
+
   remove: async (id) => { await api.delete(`/api/malfuzat/${id}`) },
 }))

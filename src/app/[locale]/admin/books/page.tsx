@@ -14,6 +14,7 @@ import { useSubChapterStore } from '@/store/subchapter-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -35,7 +36,7 @@ type SubChapterSortKey = 'position' | 'title' | 'chapter' | 'book'
 export default function BooksPage() {
   const t = useTranslations('BooksAdmin')
   const tc = useTranslations('Common')
-  const { result, all: allBooks, loading, fetch, fetchAll: fetchAllBooks, remove, lastParams, setLastParams } = useBookStore()
+  const { result, all: allBooks, loading, fetch, fetchAll: fetchAllBooks, remove, setOfflineAvailable, lastParams, setLastParams } = useBookStore()
   const { fetchAll: fetchAuthors, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
   const { result: chapterResult, loading: chapterLoading, fetch: fetchChapters, remove: removeChapter } = useChapterStore()
@@ -47,11 +48,12 @@ export default function BooksPage() {
   const [search, setSearch] = useState(lastParams.search || '')
   const [authorId, setAuthorId] = useState(lastParams.authorId || '')
   const [categoryId, setCategoryId] = useState(lastParams.categoryId || '')
+  const [offlineOnly, setOfflineOnly] = useState(lastParams.offlineAvailable === 'true')
   const [bookFilter, setBookFilter] = useState('')
   const [page, setPage] = useState(Number(lastParams.page) || 1)
   
   // Extract initial sort state from lastParams (e.g. 'position_desc' -> { key: 'position', dir: 'desc' })
-  const initialSort = (lastParams.sort || 'position_asc').split('_')
+  const initialSort = (lastParams.sort || 'position_desc').split('_')
   const { sort, toggle: toggleSort, reset: resetSort, param: sortParam } = useTableSort<SortKey>(
     initialSort[0] as SortKey,
     initialSort[1] as 'asc' | 'desc'
@@ -69,17 +71,18 @@ export default function BooksPage() {
     if (tab === 'books') {
       setLastParams({
         search, authorId, categoryId,
+        offlineAvailable: String(offlineOnly),
         page: String(page),
         sort: sortParam,
       })
     }
-  }, [tab, search, authorId, categoryId, page, sortParam, setLastParams])
+  }, [tab, search, authorId, categoryId, offlineOnly, page, sortParam, setLastParams])
 
   const flatCategories = categories.flatMap(c => [c, ...c.children])
 
   const loadBooks = useCallback(() => {
-    fetch({ page, pageSize: BOOKS_PAGE_SIZE, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, sort: sortParam })
-  }, [fetch, page, search, authorId, categoryId, sortParam])
+    fetch({ page, pageSize: BOOKS_PAGE_SIZE, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, offlineAvailable: offlineOnly || undefined, sort: sortParam })
+  }, [fetch, page, search, authorId, categoryId, offlineOnly, sortParam])
 
   const loadChapters = useCallback(() => {
     fetchChapters({ page, pageSize: NESTED_PAGE_SIZE, search: search || undefined, bookId: bookFilter || undefined, sort: chSortParam })
@@ -206,6 +209,11 @@ export default function BooksPage() {
                   </CommandList></Command>
                 </PopoverContent>
               </Popover>
+
+              <label className="flex h-9 items-center gap-2 rounded-md border bg-card px-3 text-sm text-muted-foreground">
+                <Switch checked={offlineOnly} onCheckedChange={v => { setOfflineOnly(!!v); setPage(1) }} />
+                {tc('offlineFilterLabel')}
+              </label>
             </div>
           )}
 
@@ -241,13 +249,14 @@ export default function BooksPage() {
           <div className="overflow-x-auto">
             {/* table-fixed + colgroup: keeps column widths identical across sorts, so
                 re-sorting can't re-measure columns and shift the layout. */}
-            <table className="w-full min-w-[960px] table-fixed">
+            <table className="w-full min-w-[1040px] table-fixed">
               <colgroup>
                 <col className="w-32" />
                 <col />
                 <col className="w-56" />
                 <col className="w-36" />
                 <col className="w-36" />
+                <col className="w-24" />
                 <col className="w-28" />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-xl">
@@ -257,6 +266,7 @@ export default function BooksPage() {
                   <SortableHeader label={t('colAuthors')} sortKey="authors" sort={sort} onSort={handleSort} />
                   <SortableHeader label={t('colUpdatedAt')} sortKey="updated" sort={sort} onSort={handleSort} />
                   <SortableHeader label={t('colStatus')} sortKey="published" sort={sort} onSort={handleSort} />
+                  <th className="text-left px-5 py-3.5"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{tc('offlineColumn')}</span></th>
                   <th className="px-5 py-3.5" />
                 </tr>
               </thead>
@@ -268,11 +278,12 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-28" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-3.5 w-20" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                    <td className="px-5 py-4"><Skeleton className="h-5 w-9 rounded-full" /></td>
                     <td className="px-5 py-4"><Skeleton className="h-8 w-16 rounded-lg" /></td>
                   </tr>
                 ))}
                 {!loading && result?.data.length === 0 && (
-                  <tr><td colSpan={6} className="px-5 py-20 text-center">
+                  <tr><td colSpan={7} className="px-5 py-20 text-center">
                     <div className="inline-flex w-14 h-14 rounded-2xl bg-muted items-center justify-center mb-4"><BookOpen className="w-6 h-6 text-muted-foreground/60" /></div>
                     <p className="font-medium text-foreground">{t('emptyBooksTitle')}</p>
                     <p className="text-sm text-muted-foreground mt-1">{t('emptyBooksSubtitle')}</p>
@@ -296,6 +307,12 @@ export default function BooksPage() {
                       {book.published
                         ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{t('published')}</span>
                         : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{t('draft')}</span>}
+                    </td>
+                    <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                      <Switch
+                        checked={book.isOfflineAvailable}
+                        onCheckedChange={v => setOfflineAvailable(book.id, !!v).catch(() => toast.error(tc('offlineUpdateFailed')))}
+                      />
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">

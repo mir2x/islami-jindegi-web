@@ -176,7 +176,7 @@ export function NamazTimesClient({ namazTimes }: Props) {
     <div className="flex flex-col lg:flex-row gap-6 lg:items-stretch lg:flex-1 lg:min-h-0">
 
       {/* ── List column ─────────────────────────────────────────────────── */}
-      <div className="w-full lg:max-w-2xl lg:shrink-0 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+      <div className="w-full lg:max-w-md lg:shrink-0 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
         {/* ── Hero card ─────────────────────────────────────────────────── */}
         <div className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground mb-4">
           <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />

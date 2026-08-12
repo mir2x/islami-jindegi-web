@@ -90,14 +90,14 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="max-w-5xl h-[82vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-7xl sm:max-w-7xl h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 sm:px-6 pt-5 pb-4 border-b shrink-0">
           <DialogTitle>Media Library</DialogTitle>
         </DialogHeader>
 
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-3 border-b shrink-0 bg-muted/30">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-w-sm order-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search files..."
@@ -108,7 +108,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
           </div>
 
           {/* Type filter */}
-          <div className="flex border rounded-lg overflow-hidden bg-card">
+          <div className="flex border rounded-lg overflow-hidden bg-card order-2">
             {visibleTabs.map(t => (
               <button
                 key={t.value}
@@ -125,7 +125,23 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
             ))}
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          {result && totalPages > 1 && (
+            // Own full-width row on mobile (order-5 forces it after the always-visible
+            // controls, w-full forces a line break before it); inline between the type
+            // filter and upload button from sm: up once there's room for it.
+            <div className="order-5 w-full sm:order-3 sm:w-auto sm:flex-1 flex justify-center min-w-0 overflow-x-auto">
+              <PaginationBar
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                inline
+                siblingCount={1}
+                className="flex-nowrap"
+              />
+            </div>
+          )}
+
+          <div className="order-4 ml-auto flex items-center gap-2">
             <Button
               size="sm"
               className="gap-1.5"
@@ -176,7 +192,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
         {/* Grid */}
         <div className="flex-1 overflow-y-auto p-5">
           {loading && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {Array.from({ length: 24 }).map((_, i) => (
                 <div key={i} className="aspect-square rounded-xl bg-muted animate-pulse" />
               ))}
@@ -191,7 +207,7 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
           )}
 
           {!loading && result && result.data.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {result.data.map(item => (
                 <button
                   key={item.id}
@@ -210,11 +226,11 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 p-2 bg-muted">
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-4 bg-muted">
                       {item.type === 'audio'
-                        ? <FileAudio className="w-8 h-8 text-muted-foreground/50" />
-                        : <FileText className="w-8 h-8 text-muted-foreground/50" />}
-                      <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2 text-center w-full">
+                        ? <FileAudio className="w-14 h-14 text-muted-foreground/50" />
+                        : <FileText className="w-14 h-14 text-muted-foreground/50" />}
+                      <span className="text-sm text-muted-foreground leading-tight line-clamp-2 text-center w-full">
                         {item.fileName}
                       </span>
                     </div>
@@ -227,17 +243,13 @@ export function MediaPicker({ open, onClose, onSelect, accept }: Props) {
 
                   {/* Selected checkmark */}
                   {selected?.id === item.id && (
-                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow">
-                      <Check className="w-3 h-3 text-primary-foreground" />
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow">
+                      <Check className="w-3.5 h-3.5 text-primary-foreground" />
                     </div>
                   )}
                 </button>
               ))}
             </div>
-          )}
-
-          {totalPages > 1 && (
-            <PaginationBar page={page} totalPages={totalPages} onPageChange={setPage} className="my-4" />
           )}
         </div>
 

@@ -9,22 +9,24 @@ import { useMadrasahStore } from '@/store/madrasah-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PaginationBar } from '@/components/ui/pagination-bar'
 import type { MadrasahListItem } from '@/types'
 
 export default function MadrasahPage() {
   const router = useRouter()
-  const { result, loading, fetch, remove } = useMadrasahStore()
+  const { result, loading, fetch, remove, setOfflineAvailable } = useMadrasahStore()
 
   const [search, setSearch] = useState('')
+  const [offlineOnly, setOfflineOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [deleting, setDeleting] = useState<MadrasahListItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const load = useCallback(() => {
-    fetch({ page, pageSize: 20, search: search || undefined })
-  }, [fetch, page, search])
+    fetch({ page, pageSize: 20, search: search || undefined, offlineAvailable: offlineOnly || undefined })
+  }, [fetch, page, search, offlineOnly])
 
   useEffect(() => { load() }, [load])
 
@@ -62,19 +64,25 @@ export default function MadrasahPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search madrasahs..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9 bg-card" />
           </div>
+
+          <label className="flex h-9 items-center gap-2 rounded-md border bg-card px-3 text-sm text-muted-foreground">
+            <Switch checked={offlineOnly} onCheckedChange={v => { setOfflineOnly(!!v); setPage(1) }} />
+            Offline only
+          </label>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-6">
         <div className="bg-card border rounded-xl shadow-sm" style={{ overflow: 'clip' }}>
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px]">
+          <table className="w-full min-w-[660px]">
             <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm">
               <tr className="border-b">
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-16">Pos.</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-28">Info Fields</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-24">Photos</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-24">Offline</th>
                 <th className="px-5 py-3.5 w-24" />
               </tr>
             </thead>
@@ -85,11 +93,12 @@ export default function MadrasahPage() {
                   <td className="px-5 py-4"><Skeleton className="h-4 w-56" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-8" /></td>
                   <td className="px-5 py-4"><Skeleton className="h-3.5 w-8" /></td>
+                  <td className="px-5 py-4"><Skeleton className="h-5 w-9 rounded-full" /></td>
                   <td className="px-5 py-4" />
                 </tr>
               ))}
               {!loading && result?.data.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-20 text-center">
+                <tr><td colSpan={6} className="px-5 py-20 text-center">
                   <div className="inline-flex w-14 h-14 rounded-2xl bg-muted items-center justify-center mb-4"><School className="w-6 h-6 text-muted-foreground/60" /></div>
                   <p className="font-medium">No madrasahs found</p>
                   <p className="text-sm text-muted-foreground mt-1">{search ? 'Try a different search' : 'Add your first madrasah'}</p>
@@ -104,6 +113,12 @@ export default function MadrasahPage() {
                   </td>
                   <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{item.infoCount}</span></td>
                   <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{item.photoCount}</span></td>
+                  <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                    <Switch
+                      checked={item.isOfflineAvailable}
+                      onCheckedChange={v => setOfflineAvailable(item.id, !!v).catch(() => toast.error('Failed to update offline availability'))}
+                    />
+                  </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/madrasah/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>

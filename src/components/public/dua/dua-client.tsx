@@ -71,6 +71,11 @@ function formatTime(s: number, locale: string) {
   return toLocaleDigits(raw, locale)
 }
 
+function formatFileSize(bytes: number, locale: string) {
+  const mb = bytes / (1024 * 1024)
+  return `${toLocaleDigits(mb.toFixed(1), locale)} MB`
+}
+
 interface Props {
   initialItems: DuaListItem[]
   initialTotal: number
@@ -304,9 +309,9 @@ export function DuaClient({
           </div>
         )}
 
-        <p className="text-base text-muted-foreground mt-4">
+        {/* <p className="text-base text-muted-foreground mt-4">
           {loading ? tCommon('loading') : t('resultCount', { count: total })}
-        </p>
+        </p> */}
         </div>
 
         {/* List — scrolls inside the card */}
@@ -479,8 +484,21 @@ function AudioDetail({ detail, audioUrl }: { detail: DuaDetail; audioUrl: string
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [audioError, setAudioError] = useState(false)
+  const [audioSize, setAudioSize] = useState<number | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    setAudioSize(null)
+    let cancelled = false
+    fetch(audioUrl, { method: 'HEAD' })
+      .then(res => {
+        const len = res.headers.get('content-length')
+        if (!cancelled && len) setAudioSize(Number(len))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [audioUrl])
 
   const togglePlay = () => {
     if (!audioRef.current) return
@@ -553,6 +571,13 @@ function AudioDetail({ detail, audioUrl }: { detail: DuaDetail; audioUrl: string
           <span className="font-medium text-foreground">
             {t('audioDurationValue', { minutes: Math.max(1, Math.round(duration / 60)) })}
           </span>
+        </div>
+      )}
+
+      {audioSize != null && (
+        <div className="flex items-center gap-2 mt-2 text-base">
+          <span className="text-muted-foreground">{t('audioSize')}:</span>
+          <span className="font-medium text-foreground">{formatFileSize(audioSize, locale)}</span>
         </div>
       )}
 

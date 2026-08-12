@@ -6,6 +6,7 @@ interface PageParams {
   page?: number
   pageSize?: number
   search?: string
+  offlineAvailable?: boolean
 }
 
 interface PageStore {
@@ -15,6 +16,7 @@ interface PageStore {
   getById: (id: string) => Promise<PageDetail>
   create: (data: unknown) => Promise<void>
   update: (id: string, data: unknown) => Promise<void>
+  setOfflineAvailable: (id: string, value: boolean) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 
@@ -29,6 +31,7 @@ export const usePageStore = create<PageStore>(() => ({
       if (params.page) q.set('page', String(params.page))
       if (params.pageSize) q.set('pageSize', String(params.pageSize))
       if (params.search) q.set('search', params.search)
+      if (params.offlineAvailable !== undefined) q.set('offlineAvailable', String(params.offlineAvailable))
       const result = await api.get<PagedResult<PageListItem>>(`/api/pages?${q}`)
       usePageStore.setState({ result, loading: false })
     } catch {
@@ -39,5 +42,19 @@ export const usePageStore = create<PageStore>(() => ({
   getById: (id) => api.get<PageDetail>(`/api/pages/${id}`),
   create: (data) => api.post('/api/pages', data),
   update: (id, data) => api.put(`/api/pages/${id}`, data),
+
+  setOfflineAvailable: async (id, value) => {
+    const prev = usePageStore.getState().result
+    usePageStore.setState(state => ({ result: state.result
+      ? { ...state.result, data: state.result.data.map(p => p.id === id ? { ...p, isOfflineAvailable: value } : p) }
+      : state.result }))
+    try {
+      await api.patch(`/api/pages/${id}/offline-availability`, { isOfflineAvailable: value })
+    } catch (e) {
+      usePageStore.setState({ result: prev })
+      throw e
+    }
+  },
+
   remove: (id) => api.delete(`/api/pages/${id}`),
 }))

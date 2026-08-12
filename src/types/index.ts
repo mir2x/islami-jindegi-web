@@ -73,6 +73,7 @@ export interface Book {
   position: number
   publishedAt: string | null
   published: boolean
+  isOfflineAvailable: boolean
   createdAt: string
   updatedAt: string
   authors: Author[]
@@ -157,6 +158,7 @@ export interface MalfuzatListItem {
   hasAudio: boolean
   audioUrl: string | null
   published: boolean
+  isOfflineAvailable: boolean
   publishedAt: string | null
   position: number | null
   createdAt: string
@@ -189,6 +191,7 @@ export interface MasailListItem {
   hasAudio: boolean
   audioUrl: string | null
   published: boolean
+  isOfflineAvailable: boolean
   publishedAt: string | null
   position: number
   createdAt: string
@@ -222,6 +225,7 @@ export interface DuaListItem {
   language: string
   audioUrl: string | null
   published: boolean
+  isOfflineAvailable: boolean
   position: number
   createdAt: string
   updatedAt: string
@@ -247,6 +251,7 @@ export interface BayanListItem {
   location: string | null
   audioUrl: string | null
   published: boolean
+  isOfflineAvailable: boolean
   publishedAt: string
   position: number
   createdAt: string
@@ -287,6 +292,7 @@ export interface ArticleListItem {
   excerpt: string | null
   language: string
   published: boolean
+  isOfflineAvailable: boolean
   publishedAt: string | null
   position: number | null
   createdAt: string
@@ -332,6 +338,7 @@ export interface PageListItem {
   id: string
   title: string
   slug: string
+  isOfflineAvailable: boolean
   createdAt: string
   updatedAt: string
 }
@@ -363,6 +370,7 @@ export interface MadrasahListItem {
   position: number
   infoCount: number
   photoCount: number
+  isOfflineAvailable: boolean
   createdAt: string
   updatedAt: string
 }
@@ -375,6 +383,7 @@ export interface MadrasahDetail {
   position: number
   infos: MadrasahInfoItem[]
   photos: MadrasahPhotoItem[]
+  isOfflineAvailable: boolean
   createdAt: string
   updatedAt: string
 }
