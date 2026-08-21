@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, type CSSProperties } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import { useRouter } from '@/i18n/navigation'
 import {
   ChevronLeft, ChevronRight, ChevronDown, ArrowLeft,
   Play, Pause, SkipBack, SkipForward, Volume2, Settings, X,
@@ -44,6 +43,21 @@ const NAV_TAB_IDS = ['surah', 'verse', 'juz', 'page'] as const
 type NavTab = typeof NAV_TAB_IDS[number]
 const NAV_TAB_KEY = 'quran_nav_tab'
 
+// A Para can begin in the middle of a surah (for example Para 2 begins at
+// Al-Baqarah 2:142), so it cannot be derived from a surah's starting Para.
+const JUZ_STARTS = [
+  { surah: 1, ayah: 1 }, { surah: 2, ayah: 142 }, { surah: 2, ayah: 253 },
+  { surah: 3, ayah: 93 }, { surah: 4, ayah: 24 }, { surah: 4, ayah: 148 },
+  { surah: 5, ayah: 82 }, { surah: 6, ayah: 111 }, { surah: 7, ayah: 88 },
+  { surah: 8, ayah: 41 }, { surah: 9, ayah: 93 }, { surah: 11, ayah: 6 },
+  { surah: 12, ayah: 53 }, { surah: 15, ayah: 1 }, { surah: 17, ayah: 1 },
+  { surah: 18, ayah: 75 }, { surah: 21, ayah: 1 }, { surah: 23, ayah: 1 },
+  { surah: 25, ayah: 21 }, { surah: 27, ayah: 56 }, { surah: 29, ayah: 46 },
+  { surah: 33, ayah: 31 }, { surah: 36, ayah: 28 }, { surah: 39, ayah: 32 },
+  { surah: 41, ayah: 47 }, { surah: 46, ayah: 1 }, { surah: 51, ayah: 31 },
+  { surah: 58, ayah: 1 }, { surah: 67, ayah: 1 }, { surah: 78, ayah: 1 },
+] as const
+
 interface Props {
   surah: QuranSurahDetail
   allSurahs: QuranSurah[]
@@ -52,9 +66,14 @@ interface Props {
   initialAyah: number | null
 }
 
-export function SurahReader({ surah, allSurahs, reciters, translators, initialAyah }: Props) {
+const surahCache = new Map<number, QuranSurahDetail>()
+
+export function SurahReader({ surah: initialSurah, allSurahs, reciters, translators, initialAyah }: Props) {
   const t = useTranslations('SurahReader')
-  const router = useRouter()
+  // Keep the reader shell mounted while a different surah is retrieved. The URL is
+  // updated with the native History API, which Next.js supports without a route reload.
+  const [surah, setSurah] = useState(initialSurah)
+  const requestedSurahRef = useRef<number | null>(null)
   const NAV_TABS: { id: NavTab; label: string }[] = [
     { id: 'surah', label: t('navTabSurah') },
     { id: 'verse', label: t('navTabVerse') },
@@ -188,15 +207,75 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const ayahRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  const navigateToSurah = useCallback(async (number: number, ayah?: number, updateHistory = true) => {
+    if (number < 1 || number > 114) return
+
+    const query = ayah ? `?ayah=${ayah}` : ''
+    if (number === surah.surahNumber) {
+      if (ayah) {
+        if (updateHistory) window.history.pushState(null, '', `${window.location.pathname}${query}`)
+        setActiveAyah(ayah)
+        requestAnimationFrame(() => ayahRefs.current[ayah - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+      } else {
+        setActiveAyah(null)
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+      }
+      return
+    }
+
+    requestedSurahRef.current = number
+    if (updateHistory) {
+      const pathname = window.location.pathname.replace(/\/quran\/surah\/\d+$/, `/quran/surah/${number}`)
+      window.history.pushState(null, '', `${pathname}${query}`)
+    }
+
+    const nextSurah = surahCache.get(number)
+      ?? await api.get<QuranSurahDetail>(`/api/quran/surahs/${number}/ayahs`)
+    surahCache.set(number, nextSurah)
+    if (requestedSurahRef.current !== number) return
+
+    audioRef.current?.pause()
+    ayahRefs.current = []
+    setSurah(nextSurah)
+    setActiveAyah(ayah ?? null)
+    setActiveRange(null)
+    setPlayerVisible(false)
+    setIsPlaying(false)
+    setAudioError(false)
+    setRangeStart(1)
+    setRangeEnd(1)
+    setTilawatOpen(false)
+    requestAnimationFrame(() => {
+      if (ayah) ayahRefs.current[ayah - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      else scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+    })
+  }, [surah.surahNumber])
+
+  useEffect(() => {
+    surahCache.set(initialSurah.surahNumber, initialSurah)
+  }, [initialSurah])
+
+  useEffect(() => {
+    const onPopState = () => {
+      const match = window.location.pathname.match(/\/quran\/surah\/(\d+)$/)
+      if (!match) return
+      const number = Number(match[1])
+      const ayah = Number(new URLSearchParams(window.location.search).get('ayah')) || undefined
+      void navigateToSurah(number, ayah, false)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [navigateToSurah])
+
   const prevSurah = surah.surahNumber > 1 ? allSurahs.find(s => s.number === surah.surahNumber - 1) : null
   const nextSurah = surah.surahNumber < 114 ? allSurahs.find(s => s.number === surah.surahNumber + 1) : null
 
-  // Group surahs by juz (paraNumber)
-  const juzMap = allSurahs.reduce<Record<number, QuranSurah[]>>((acc, s) => {
-    if (!acc[s.paraNumber]) acc[s.paraNumber] = []
-    acc[s.paraNumber].push(s)
-    return acc
-  }, {})
+  const currentJuz = JUZ_STARTS.reduce((current, start, index) => {
+    const viewedAyah = activeAyah ?? 1
+    return start.surah < surah.surahNumber || (start.surah === surah.surahNumber && start.ayah <= viewedAyah)
+      ? index + 1
+      : current
+  }, 1)
 
   // ── Persist selections ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -405,7 +484,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
       ayahRefs.current[target.ayah - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       setActiveAyah(target.ayah)
     } else {
-      router.push(`/quran/surah/${target.sura}?ayah=${target.ayah}`)
+      void navigateToSurah(target.sura, target.ayah)
     }
   }
 
@@ -675,11 +754,12 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                   </div>
                   <div className="flex-1 overflow-y-auto">
                     {filteredSurahs.map(s => (
-                      <Link
+                      <button
+                        type="button"
                         key={s.number}
-                        href={`/quran/surah/${s.number}`}
+                        onClick={() => void navigateToSurah(s.number)}
                         className={cn(
-                          'flex items-center gap-3 px-4 py-2.5 hover:bg-muted transition-colors',
+                          'flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-muted transition-colors',
                           s.number === surah.surahNumber && 'bg-primary/10 text-primary'
                         )}
                       >
@@ -689,7 +769,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                           <p className="text-base text-muted-foreground">{t('ayahCount', { count: bn(s.totalAyahs) })}</p>
                         </div>
                         <p className="text-xl text-muted-foreground shrink-0" style={{ fontFamily: 'var(--quran-arabic-font)', direction: 'rtl' }}>{s.nameArabic}</p>
-                      </Link>
+                      </button>
                     ))}
                   </div>
                 </>
@@ -726,7 +806,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                               ayahRefs.current[n - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                               setActiveAyah(n)
                             } else {
-                              router.push(`/quran/surah/${selectedNavSurah.number}?ayah=${n}`)
+                              void navigateToSurah(selectedNavSurah.number, n)
                             }
                           }}
                           className={cn(
@@ -745,17 +825,18 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
               {/* ── পারা tab ── */}
               {navTab === 'juz' && (
                 <div className="flex-1 overflow-y-auto">
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map(juzNum => {
-                    const surahs = juzMap[juzNum] ?? []
-                    const firstSurah = surahs[0]
-                    if (!firstSurah) return null
-                    const isCurrentJuz = surah.paraNumber === juzNum
+                  {JUZ_STARTS.map((start, index) => {
+                    const juzNum = index + 1
+                    const startSurah = allSurahs.find(s => s.number === start.surah)
+                    if (!startSurah) return null
+                    const isCurrentJuz = currentJuz === juzNum
                     return (
-                      <Link
+                      <button
+                        type="button"
                         key={juzNum}
-                        href={`/quran/surah/${firstSurah.number}`}
+                        onClick={() => void navigateToSurah(start.surah, start.ayah)}
                         className={cn(
-                          'flex items-center gap-3 px-4 py-3 border-b border-border/50 hover:bg-muted transition-colors',
+                          'flex w-full items-center gap-3 px-4 py-3 text-left border-b border-border/50 hover:bg-muted transition-colors',
                           isCurrentJuz && 'bg-primary/10'
                         )}
                       >
@@ -768,11 +849,11 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                         <div className="flex-1 min-w-0">
                           <p className={cn('text-lg font-semibold', isCurrentJuz && 'text-primary')}>{t('para', { number: bn(juzNum) })}</p>
                           <p className="text-base text-muted-foreground truncate">
-                            {surahs.map(s => s.nameBengali).join(', ')}
+                            {t('surahAyah', { surahName: startSurah.nameBengali, ayahNumber: bn(start.ayah) })}
                           </p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                      </Link>
+                      </button>
                     )
                   })}
                 </div>
@@ -863,28 +944,30 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
           {/* Prev / Next surah */}
           <div className="max-w-2xl mx-auto w-full px-4 pb-6 grid grid-cols-2 gap-3">
             {prevSurah ? (
-              <Link
-                href={`/quran/surah/${prevSurah.number}`}
-                className="flex items-center gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              <button
+                type="button"
+                onClick={() => void navigateToSurah(prevSurah.number)}
+                className="flex w-full items-center gap-2 p-3.5 text-left rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
               >
                 <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{t('prevSurah')}</p>
                   <p className="text-sm font-semibold truncate group-hover:text-primary">{prevSurah.nameBengali}</p>
                 </div>
-              </Link>
+              </button>
             ) : <div />}
             {nextSurah && (
-              <Link
-                href={`/quran/surah/${nextSurah.number}`}
-                className="flex items-center justify-end gap-2 p-3.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              <button
+                type="button"
+                onClick={() => void navigateToSurah(nextSurah.number)}
+                className="flex w-full items-center justify-end gap-2 p-3.5 text-left rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all group"
               >
                 <div className="min-w-0 text-right">
                   <p className="text-xs text-muted-foreground">{t('nextSurah')}</p>
                   <p className="text-sm font-semibold truncate group-hover:text-primary">{nextSurah.nameBengali}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary" />
-              </Link>
+              </button>
             )}
           </div>
 
@@ -980,7 +1063,7 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
                 <p className="w-24 shrink-0 text-sm font-semibold text-foreground">{t('surahLabel')}</p>
                 <select
                   value={surah.surahNumber}
-                  onChange={e => router.push(`/quran/surah/${e.target.value}`)}
+                  onChange={e => void navigateToSurah(Number(e.target.value))}
                   className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-border bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {allSurahs.map(s => (
@@ -1076,8 +1159,8 @@ export function SurahReader({ surah, allSurahs, reciters, translators, initialAy
         </div>
       )}
 
-      {searchOpen && <QuranSearchModal onClose={() => setSearchOpen(false)} />}
-      {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
+      {searchOpen && <QuranSearchModal onClose={() => setSearchOpen(false)} onNavigate={navigateToSurah} />}
+      {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} onNavigate={navigateToSurah} />}
       {tafsirAyah !== null && (
         <TafsirModal
           surahNumber={surah.surahNumber}

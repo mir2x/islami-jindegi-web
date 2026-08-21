@@ -109,7 +109,11 @@
     "siteHeading": "Site",
     "about": "About us",
     "contact": "Contact us",
-    "copyright": "© {year} {brand}. All rights reserved."
+    "copyright": "© {year} {brand}. All rights reserved.",
+    "donate": "Donate",
+    "importantMatters": "Important Matters",
+    "askMasail": "Ask Question",
+    "privacyPolicy": "Privacy Policy"
   },
   "DuaPage": {
     "metaTitle": "Dua & Durud | Islami Jindegi",
@@ -340,5 +344,35 @@
     "tabBayans": "New bayan",
     "tabMalfuzat": "New malfuzat",
     "tabArticles": "New articles"
+  },
+  "AboutPage": {
+    "metaTitle": "About Us | Islami Jindegi",
+    "metaDescription": "Islami Jindegi — About Us",
+    "heading": "About Us",
+    "unavailable": "Information about us is currently unavailable. Please try again later."
+  },
+  "ContactPage": {
+    "metaTitle": "Contact Us | Islami Jindegi",
+    "metaDescription": "Islami Jindegi — Contact Us",
+    "heading": "Contact Us",
+    "unavailable": "Contact information is currently unavailable. Please try again later."
+  },
+  "ImportantMattersPage": {
+    "metaTitle": "Important Matters | Islami Jindegi",
+    "metaDescription": "Islami Jindegi — Important Matters",
+    "heading": "Important Matters",
+    "unavailable": "Important matters are currently unavailable. Please try again later."
+  },
+  "PrivacyPolicyPage": {
+    "metaTitle": "Privacy Policy | Islami Jindegi",
+    "metaDescription": "Islami Jindegi — Privacy Policy",
+    "heading": "Privacy Policy",
+    "unavailable": "The privacy policy is currently unavailable. Please try again later."
+  },
+  "AskMasailPage": {
+    "metaTitle": "Ask Question | Islami Jindegi",
+    "metaDescription": "Islami Jindegi — Ask Question",
+    "heading": "Ask Question",
+    "unavailable": "This information is currently unavailable. Please try again later."
   }
 }

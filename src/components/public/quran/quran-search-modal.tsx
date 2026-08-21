@@ -11,11 +11,12 @@ import { bn } from '@/lib/bengali-numerals'
 
 interface Props {
   onClose: () => void
+  onNavigate?: (surahNumber: number, ayahNumber?: number) => void | Promise<void>
 }
 
 const PAGE_SIZE = 20
 
-export function QuranSearchModal({ onClose }: Props) {
+export function QuranSearchModal({ onClose, onNavigate }: Props) {
   const t = useTranslations('QuranSearchModal')
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -55,7 +56,8 @@ export function QuranSearchModal({ onClose }: Props) {
   }
 
   function goToHit(hit: QuranSearchHit) {
-    router.push(`/quran/surah/${hit.surahNumber}?ayah=${hit.ayahNumber}`)
+    if (onNavigate) void onNavigate(hit.surahNumber, hit.ayahNumber)
+    else router.push(`/quran/surah/${hit.surahNumber}?ayah=${hit.ayahNumber}`)
     onClose()
   }
 

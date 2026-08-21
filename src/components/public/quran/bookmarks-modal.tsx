@@ -10,9 +10,10 @@ import { bn } from '@/lib/bengali-numerals'
 
 interface Props {
   onClose: () => void
+  onNavigate?: (surahNumber: number, ayahNumber?: number) => void | Promise<void>
 }
 
-export function BookmarksModal({ onClose }: Props) {
+export function BookmarksModal({ onClose, onNavigate }: Props) {
   const t = useTranslations('BookmarksModal')
   const router = useRouter()
   const [bookmarks, setBookmarks] = useState<QuranBookmark[]>([])
@@ -31,7 +32,8 @@ export function BookmarksModal({ onClose }: Props) {
   }, [onClose])
 
   function goTo(b: QuranBookmark) {
-    router.push(`/quran/surah/${b.surahNumber}?ayah=${b.ayahNumber}`)
+    if (onNavigate) void onNavigate(b.surahNumber, b.ayahNumber)
+    else router.push(`/quran/surah/${b.surahNumber}?ayah=${b.ayahNumber}`)
     onClose()
   }
 

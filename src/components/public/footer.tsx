@@ -8,6 +8,18 @@ export function Footer() {
   const tFooter = useTranslations('Footer')
   const tMeta = useTranslations('Metadata')
 
+  // The CMS-managed static pages (admin → Pages), minus 'bismillah-tafseer'
+  // which is reader content rather than a site page. Labels are localised;
+  // the page bodies themselves are single-language and served as authored.
+  const SITE_PAGES = [
+    { label: tFooter('about'), href: '/about' },
+    { label: tFooter('contact'), href: '/contact' },
+    { label: tFooter('donate'), href: '/donate' },
+    { label: tFooter('importantMatters'), href: '/important-matters' },
+    { label: tFooter('askMasail'), href: '/ask-masail' },
+    { label: tFooter('privacyPolicy'), href: '/privacy-policy' },
+  ]
+
   const SECTIONS = [
     { label: t('books'), href: '/books' },
     { label: t('bayan'), href: '/bayan' },
@@ -68,8 +80,11 @@ export function Footer() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{tFooter('siteHeading')}</p>
               <ul className="space-y-2">
-                <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{tFooter('about')}</Link></li>
-                <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{tFooter('contact')}</Link></li>
+                {SITE_PAGES.map(p => (
+                  <li key={p.href}>
+                    <Link href={p.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{p.label}</Link>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
