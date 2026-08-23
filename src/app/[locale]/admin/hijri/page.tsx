@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { Link } from '@/i18n/navigation'
 import { Plus, Pencil, Trash2, Moon, Filter } from 'lucide-react'
 import { toast } from 'sonner'
@@ -20,7 +20,7 @@ const HIJRI_MONTHS: Record<number, string> = {
 }
 
 export default function HijriSightingsPage() {
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const { result, loading, fetch, remove } = useHijriStore()
 
   const [countryCode, setCountryCode] = useState('')
@@ -164,7 +164,7 @@ export default function HijriSightingsPage() {
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost" size="icon"
-                        onClick={() => router.push(`/admin/hijri/${s.id}/edit`)}
+                        onClick={e => navigate(`/admin/hijri/${s.id}/edit`, e)}
                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       >
                         <Pencil className="w-3.5 h-3.5" />

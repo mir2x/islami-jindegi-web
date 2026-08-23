@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useEffect, useState, useCallback } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { Link } from '@/i18n/navigation'
 import { Plus, Search, Pencil, Trash2, Tag, ChevronRight, FolderOpen } from 'lucide-react'
 import { toast } from 'sonner'
@@ -21,7 +21,7 @@ const PAGE_SIZE = 20
 type SortKey = 'title' | 'subs' | 'position'
 
 export default function CategoriesPage() {
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const { result, pagedLoading: loading, fetchPaged, fetch, remove } = useCategoryStore()
 
   const [search, setSearch] = useState('')
@@ -174,7 +174,7 @@ export default function CategoriesPage() {
                         ><Plus className="w-3.5 h-3.5" /></Button>
                         <Button
                           variant="ghost" size="icon"
-                          onClick={() => router.push(`/admin/categories/${parent.id}/edit`)}
+                          onClick={e => navigate(`/admin/categories/${parent.id}/edit`, e)}
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         ><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button
@@ -202,7 +202,7 @@ export default function CategoriesPage() {
                         <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           <Button
                             variant="ghost" size="icon"
-                            onClick={() => router.push(`/admin/categories/${child.id}/edit`)}
+                            onClick={e => navigate(`/admin/categories/${child.id}/edit`, e)}
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
                           ><Pencil className="w-3.5 h-3.5" /></Button>
                           <Button

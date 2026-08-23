@@ -72,7 +72,7 @@ export async function getBayans(opts: {
 } = {}) {
   const q = new URLSearchParams()
   q.set('published', 'true')
-  q.set('sort', 'date')
+  q.set('sort', 'position_desc')
   q.set('page', String(opts.page ?? 1))
   q.set('pageSize', String(opts.pageSize ?? 20))
   if (opts.search) q.set('search', opts.search)

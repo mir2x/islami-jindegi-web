@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { useChapterStore } from '@/store/chapter-store'
 import { useSubChapterStore } from '@/store/subchapter-store'
 import { PublicViewButton } from '@/components/admin/public-view-button'
@@ -37,7 +38,7 @@ function SubChapterRow({
   chapterId: string
 }) {
   const t = useTranslations('BooksAdmin')
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const [expanded, setExpanded] = useState(false)
   const hasChildren = childSubs && childSubs.length > 0
 
@@ -62,7 +63,7 @@ function SubChapterRow({
         </button>
         <div className="shrink-0 mt-2 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => router.push(`/admin/subchapters/${sub.id}/edit`)}
+            onClick={e => navigate(`/admin/subchapters/${sub.id}/edit`, e)}
             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
             title={t('editSubchapterTooltip')}
           >
@@ -120,7 +121,7 @@ function ChapterRowControlled({
   bookId: string
 }) {
   const t = useTranslations('BooksAdmin')
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const [localExpanded, setLocalExpanded] = useState(false)
   const expanded = forceExpanded || localExpanded
 
@@ -148,7 +149,7 @@ function ChapterRowControlled({
         </button>
         <div className="shrink-0 flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => router.push(`/admin/chapters/${chapter.id}/edit`)}
+            onClick={e => navigate(`/admin/chapters/${chapter.id}/edit`, e)}
             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
             title={t('editChapterTooltip')}
           >
@@ -211,6 +212,7 @@ export default function BookDetailPage() {
   const tc = useTranslations('Common')
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const navigate = useAdminNavigation()
   const { remove: removeChapter } = useChapterStore()
   const { remove: removeSubChapter } = useSubChapterStore()
 
@@ -289,7 +291,7 @@ export default function BookDetailPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
         <button
-          onClick={() => router.push('/admin/books')}
+          onClick={e => navigate('/admin/books', e)}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -297,7 +299,7 @@ export default function BookDetailPage() {
         </button>
         <div className="flex items-center gap-2">
           <PublicViewButton href={`/books/${id}`} />
-          <Button onClick={() => router.push(`/admin/books/${id}/edit`)} variant="outline" className="gap-2">
+          <Button onClick={e => navigate(`/admin/books/${id}/edit`, e)} variant="outline" className="gap-2">
             <Pencil className="w-3.5 h-3.5" />
             {t('editBook')}
           </Button>

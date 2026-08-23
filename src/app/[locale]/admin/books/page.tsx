@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { Link } from '@/i18n/navigation'
 import { Plus, Search, Pencil, Trash2, BookOpen, Check, ChevronsUpDown, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -42,7 +42,7 @@ export default function BooksPage() {
   const { result: chapterResult, loading: chapterLoading, fetch: fetchChapters, remove: removeChapter } = useChapterStore()
   const { result: subResult, loading: subLoading, fetch: fetchSubs, remove: removeSub } = useSubChapterStore()
 
-  const router = useRouter()
+  const navigate = useAdminNavigation()
 
   const [tab, setTab] = useState<Tab>('books')
   const [search, setSearch] = useState(lastParams.search || '')
@@ -290,7 +290,7 @@ export default function BooksPage() {
                   </td></tr>
                 )}
                 {!loading && result?.data.map((book: Book) => (
-                  <tr key={book.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/books/${book.id}`)}>
+                  <tr key={book.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={e => navigate(`/admin/books/${book.id}`, e)}>
                     <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{book.position}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -316,7 +316,7 @@ export default function BooksPage() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/books/${book.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); navigate(`/admin/books/${book.id}/edit`, e) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting({ id: book.id, title: book.title, type: 'books' }) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </td>
@@ -371,7 +371,7 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{c.subChapterCount || '—'}</span></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/chapters/${c.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={e => navigate(`/admin/chapters/${c.id}/edit`, e)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleting({ id: c.id, title: c.title, type: 'chapters' })} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </td>
@@ -426,7 +426,7 @@ export default function BooksPage() {
                     <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-1">{s.bookTitle}</p></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/subchapters/${s.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={e => navigate(`/admin/subchapters/${s.id}/edit`, e)} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleting({ id: s.id, title: s.title, type: 'subchapters' })} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </td>

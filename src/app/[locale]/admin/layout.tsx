@@ -12,6 +12,21 @@ import { GoogleSignInButton } from '@/components/admin/google-sign-in-button'
 import { useAuthStore } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 
+function MainSiteLink({ className }: { className: string }) {
+  return (
+    <Link
+      href="/"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Open Islami Jindegi website in a new tab"
+      title="Open Islami Jindegi website"
+      className={cn(className, 'transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring')}
+    >
+      IJ
+    </Link>
+  )
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations('AdminNav')
   const nav = [
@@ -143,14 +158,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           'flex items-center px-3 py-5 h-[74px]',
           collapsed ? 'justify-center' : 'gap-3 px-5'
         )}>
-          <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30">
-            IJ
-          </div>
+          <MainSiteLink className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30" />
           {!collapsed && (
-            <div className="min-w-0 flex-1">
+            <Link
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open Islami Jindegi website in a new tab"
+              className="min-w-0 flex-1 rounded-md hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            >
               <p className="text-lg font-bold leading-tight text-sidebar-foreground truncate">{t('brand')}</p>
               <p className="text-sm font-semibold tracking-[0.16em] uppercase text-sidebar-foreground/45 mt-0.5">{t('brandSub')}</p>
-            </div>
+            </Link>
           )}
           {!collapsed && (
             <button
@@ -240,13 +259,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <SheetContent side="left" className="w-[240px] p-0 gap-0 flex flex-col bg-sidebar border-sidebar-border">
           <SheetTitle className="sr-only">{t('navigation')}</SheetTitle>
           <div className="flex items-center gap-3 px-5 py-5 h-[74px] shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30">
-              IJ
-            </div>
-            <div className="min-w-0 flex-1">
+          <MainSiteLink className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black tracking-wider shrink-0 shadow-lg shadow-sidebar-primary/30" />
+            <Link
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open Islami Jindegi website in a new tab"
+              className="min-w-0 flex-1 rounded-md hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            >
               <p className="text-lg font-bold leading-tight text-sidebar-foreground truncate">{t('brand')}</p>
               <p className="text-sm font-semibold tracking-[0.16em] uppercase text-sidebar-foreground/45 mt-0.5">{t('brandSub')}</p>
-            </div>
+            </Link>
           </div>
           <div className="mx-4 h-px bg-sidebar-border" />
           <nav className="flex-1 pt-4 pb-4 px-3 flex flex-col gap-0.5 overflow-y-auto">
@@ -288,10 +311,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black shrink-0">
-            IJ
-          </div>
-          <p className="text-lg font-bold text-sidebar-foreground truncate">{t('brand')} {t('brandSub')}</p>
+          <MainSiteLink className="w-7 h-7 rounded-lg bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-sm font-black shrink-0" />
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open Islami Jindegi website in a new tab"
+            className="min-w-0 text-lg font-bold text-sidebar-foreground truncate rounded-md hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          >
+            {t('brand')} {t('brandSub')}
+          </Link>
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? t('switchToLight') : t('switchToDark')}

@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { Plus, Search, Pencil, Trash2, Mic, Check, ChevronsUpDown, X } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Mic, Check, ChevronsUpDown, Copy, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useBayanStore } from '@/store/bayan-store'
 import { useAuthorStore } from '@/store/author-store'
@@ -20,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { PaginationBar } from '@/components/ui/pagination-bar'
 import { SortableHeader, useTableSort } from '@/components/ui/sortable-header'
 import { cn } from '@/lib/utils'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 
 /** Sortable columns. Values match the API's `sort` keys (`<key>_asc` / `<key>_desc`). */
 type SortKey = 'position' | 'title' | 'author' | 'language' | 'location' | 'date' | 'published'
@@ -28,7 +28,7 @@ import type { BayanListItem } from '@/types'
 const PAGE_SIZE = 20
 
 export default function BayanPage() {
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const { result, loading, fetch, remove, setOfflineAvailable, lastParams, setLastParams } = useBayanStore()
   const { fetchAll, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
@@ -88,6 +88,15 @@ export default function BayanPage() {
       load()
     } catch { toast.error('Failed to delete') }
     finally { setDeleteLoading(false) }
+  }
+
+  async function handleCopyId(id: string) {
+    try {
+      await navigator.clipboard.writeText(id)
+      toast.success('Bayan GUID copied')
+    } catch {
+      toast.error('Failed to copy Bayan GUID')
+    }
   }
 
   const totalPages = result ? Math.ceil(result.total / result.pageSize) : 1
@@ -224,12 +233,15 @@ export default function BayanPage() {
                 </td></tr>
               )}
               {!loading && result?.data.map((item: BayanListItem) => (
-                <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/bayan/${item.id}/edit`)}>
+                <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={event => navigate(`/admin/bayan/${item.id}/edit`, event)}>
                   <td className="px-5 py-4">
                     <span className="text-sm font-mono text-muted-foreground">{item.position}</span>
                   </td>
                   <td className="px-5 py-4">
-                    <p className="font-semibold leading-snug truncate">{item.title}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="font-semibold leading-snug truncate">{item.title}</p>
+                      <Button variant="ghost" size="icon" aria-label="Copy Bayan GUID" title="Copy Bayan GUID" onClick={e => { e.stopPropagation(); handleCopyId(item.id) }} className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"><Copy className="w-3.5 h-3.5" /></Button>
+                    </div>
                     {item.excerpt && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{item.excerpt}</p>}
                   </td>
                   <td className="px-5 py-4"><p className="text-sm text-muted-foreground line-clamp-2">{item.author?.name ?? '—'}</p></td>
@@ -249,7 +261,7 @@ export default function BayanPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/bayan/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); navigate(`/admin/bayan/${item.id}/edit`, e) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting(item) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
                   </td>

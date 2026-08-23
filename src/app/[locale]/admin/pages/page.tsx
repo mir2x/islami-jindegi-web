@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { Link } from '@/i18n/navigation'
 import { Plus, Search, Pencil, Trash2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,7 +16,7 @@ import { PaginationBar } from '@/components/ui/pagination-bar'
 import type { PageListItem } from '@/types'
 
 export default function PagesPage() {
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const { result, loading, fetch, remove, setOfflineAvailable } = usePageStore()
 
   const [search, setSearch] = useState('')
@@ -104,7 +104,7 @@ export default function PagesPage() {
                 </td></tr>
               )}
               {!loading && result?.data.map(item => (
-                <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/pages/${item.id}/edit`)}>
+                <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={e => navigate(`/admin/pages/${item.id}/edit`, e)}>
                   <td className="px-5 py-4"><p className="font-semibold leading-snug">{item.title}</p></td>
                   <td className="px-5 py-4"><Badge variant="outline" className="text-xs font-mono">{item.slug}</Badge></td>
                   <td className="px-5 py-4"><span className="text-sm text-muted-foreground">{new Date(item.updatedAt).toLocaleDateString()}</span></td>
@@ -116,7 +116,7 @@ export default function PagesPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/pages/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); navigate(`/admin/pages/${item.id}/edit`, e) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting(item) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
                   </td>

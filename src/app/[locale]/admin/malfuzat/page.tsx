@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { Link } from '@/i18n/navigation'
 import { Plus, Search, Pencil, Trash2, ScrollText, Check, ChevronsUpDown, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -28,7 +28,7 @@ import type { MalfuzatListItem } from '@/types'
 const PAGE_SIZE = 20
 
 export default function MalfuzatPage() {
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const { result, loading, fetch, remove, setOfflineAvailable, lastParams, setLastParams } = useMalfuzatStore()
   const { fetchAll, all: authors } = useAuthorStore()
   const { fetch: fetchCategories, categories } = useCategoryStore()
@@ -208,7 +208,7 @@ export default function MalfuzatPage() {
                 </td></tr>
               )}
               {!loading && result?.data.map((item: MalfuzatListItem) => (
-                <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => router.push(`/admin/malfuzat/${item.id}/edit`)}>
+                <tr key={item.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={e => navigate(`/admin/malfuzat/${item.id}/edit`, e)}>
                   <td className="px-5 py-4"><span className="text-sm font-mono text-muted-foreground">{item.position ?? '—'}</span></td>
                   <td className="px-5 py-4">
                     <p className="font-semibold leading-snug truncate">{item.title}</p>
@@ -234,7 +234,7 @@ export default function MalfuzatPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/admin/malfuzat/${item.id}/edit`) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); navigate(`/admin/malfuzat/${item.id}/edit`, e) }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); setDeleting(item) }} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
                   </td>

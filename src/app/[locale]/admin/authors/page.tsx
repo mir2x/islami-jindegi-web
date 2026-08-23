@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useAdminNavigation } from '@/lib/use-admin-navigation'
 import { Link } from '@/i18n/navigation'
 import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -20,7 +20,7 @@ type SortKey = 'name' | 'position'
 const PAGE_SIZE = 20
 
 export default function AuthorsPage() {
-  const router = useRouter()
+  const navigate = useAdminNavigation()
   const { result, loading, fetch, remove } = useAuthorStore()
 
   const [search, setSearch] = useState('')
@@ -146,7 +146,7 @@ export default function AuthorsPage() {
                   <td className="px-5 py-4 text-sm text-muted-foreground">{author.position}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/authors/${author.id}/edit`)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                      <Button variant="ghost" size="icon" onClick={e => navigate(`/admin/authors/${author.id}/edit`, e)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setDeleting(author)} className="h-8 w-8 text-muted-foreground hover:text-destructive">

@@ -37,7 +37,7 @@ function useIsDesktop() {
 async function fetchBayans(opts: {
   search?: string; categoryId?: string; authorId?: string; page?: number
 }): Promise<{ data: BayanListItem[]; total: number }> {
-  const q = new URLSearchParams({ published: 'true', sort: 'date', page: String(opts.page ?? 1), pageSize: String(PAGE_SIZE) })
+  const q = new URLSearchParams({ published: 'true', sort: 'position_desc', page: String(opts.page ?? 1), pageSize: String(PAGE_SIZE) })
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
