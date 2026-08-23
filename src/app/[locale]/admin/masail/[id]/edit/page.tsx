@@ -14,7 +14,7 @@ export default function EditMasailPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<MasailDetail>(`/api/masail/${id}`).then(setItem).finally(() => setLoading(false))
+    api.get<MasailDetail>(`/api/masail/${id}/admin`).then(setItem).finally(() => setLoading(false))
   }, [id])
 
   return (

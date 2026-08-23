@@ -14,7 +14,7 @@ export default function EditMalfuzatPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<MalfuzatDetail>(`/api/malfuzat/${id}`).then(setItem).finally(() => setLoading(false))
+    api.get<MalfuzatDetail>(`/api/malfuzat/${id}/admin`).then(setItem).finally(() => setLoading(false))
   }, [id])
 
   return (

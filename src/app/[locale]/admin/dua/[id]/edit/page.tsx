@@ -14,7 +14,7 @@ export default function EditDuaPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<DuaDetail>(`/api/dua/${id}`).then(setItem).finally(() => setLoading(false))
+    api.get<DuaDetail>(`/api/dua/${id}/admin`).then(setItem).finally(() => setLoading(false))
   }, [id])
 
   return (

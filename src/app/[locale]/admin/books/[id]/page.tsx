@@ -223,7 +223,7 @@ export default function BookDetailPage() {
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const loadBook = useCallback(() => {
-    api.get<BookDetail>(`/api/books/${id}`).then(setBook).finally(() => setLoading(false))
+    api.get<BookDetail>(`/api/books/${id}/admin`).then(setBook).finally(() => setLoading(false))
   }, [id])
 
   useEffect(() => { loadBook() }, [loadBook])

@@ -15,7 +15,7 @@ export default function EditBookPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<BookDetail>(`/api/books/${id}`)
+    api.get<BookDetail>(`/api/books/${id}/admin`)
       .then(setBook)
       .finally(() => setLoading(false))
   }, [id])

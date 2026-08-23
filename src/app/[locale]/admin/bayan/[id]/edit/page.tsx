@@ -14,7 +14,7 @@ export default function EditBayanPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<BayanDetail>(`/api/bayan/${id}`).then(setItem).finally(() => setLoading(false))
+    api.get<BayanDetail>(`/api/bayan/${id}/admin`).then(setItem).finally(() => setLoading(false))
   }, [id])
 
   return (

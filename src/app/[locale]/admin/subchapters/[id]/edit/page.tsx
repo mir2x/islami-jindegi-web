@@ -16,7 +16,7 @@ export default function EditSubChapterPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<SubChapterDetail>(`/api/subchapters/${id}`)
+    api.get<SubChapterDetail>(`/api/subchapters/${id}/admin`)
       .then(setSubChapter)
       .finally(() => setLoading(false))
   }, [id])

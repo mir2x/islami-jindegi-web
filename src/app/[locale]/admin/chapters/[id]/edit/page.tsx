@@ -16,7 +16,7 @@ export default function EditChapterPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<ChapterDetail>(`/api/chapters/${id}`)
+    api.get<ChapterDetail>(`/api/chapters/${id}/admin`)
       .then(setChapter)
       .finally(() => setLoading(false))
   }, [id])

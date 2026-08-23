@@ -14,7 +14,7 @@ export default function EditArticlePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<ArticleDetail>(`/api/articles/${id}`).then(setItem).finally(() => setLoading(false))
+    api.get<ArticleDetail>(`/api/articles/${id}/admin`).then(setItem).finally(() => setLoading(false))
   }, [id])
 
   return (
