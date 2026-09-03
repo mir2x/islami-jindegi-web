@@ -6,6 +6,7 @@ import { Check, ChevronsUpDown, X, ChevronDown } from 'lucide-react'
 import { useBookStore } from '@/store/book-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -76,7 +77,7 @@ export function BookSheet({ open, onOpenChange, book, onSuccess }: Props) {
   const [authorOpen, setAuthorOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'book')
 
   useEffect(() => {
     if (open) {

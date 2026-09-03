@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useBayanStore } from '@/store/bayan-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -60,7 +61,7 @@ export default function BayanPage() {
     })
   }, [search, authorId, categoryId, published, offlineOnly, page, sortParam, setLastParams])
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'bayan')
 
   const load = useCallback(() => {
     fetch({
@@ -113,7 +114,7 @@ export default function BayanPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> entries</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/bayan/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/bayan/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Bayan
           </Button>
         </div>

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useBookStore } from '@/store/book-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { useChapterStore } from '@/store/chapter-store'
 import { useSubChapterStore } from '@/store/subchapter-store'
 import { Button } from '@/components/ui/button'
@@ -78,7 +79,7 @@ export default function BooksPage() {
     }
   }, [tab, search, authorId, categoryId, offlineOnly, page, sortParam, setLastParams])
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'book')
 
   const loadBooks = useCallback(() => {
     fetch({ page, pageSize: BOOKS_PAGE_SIZE, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, offlineAvailable: offlineOnly || undefined, sort: sortParam })
@@ -148,9 +149,9 @@ export default function BooksPage() {
             {t('title')}
             {totalCount !== undefined && <span className="ml-2 font-semibold text-muted-foreground">({totalCount.toLocaleString()})</span>}
           </h1>
-          {tab === 'books' && <Button render={<Link href="/admin/books/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> {t('addBook')}</Button>}
-          {tab === 'chapters' && <Button render={<Link href="/admin/chapters/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> {t('addChapter')}</Button>}
-          {tab === 'subchapters' && <Button render={<Link href="/admin/subchapters/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> {t('addSubchapter')}</Button>}
+          {tab === 'books' && <Button nativeButton={false} render={<Link href="/admin/books/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> {t('addBook')}</Button>}
+          {tab === 'chapters' && <Button nativeButton={false} render={<Link href="/admin/chapters/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> {t('addChapter')}</Button>}
+          {tab === 'subchapters' && <Button nativeButton={false} render={<Link href="/admin/subchapters/new" />} className="gap-2 shadow-sm"><Plus className="w-4 h-4" /> {t('addSubchapter')}</Button>}
         </div>
 
         <div className="flex items-center gap-1 border-b border-border">

@@ -12,7 +12,7 @@ export function PublicViewButton({ href }: Props) {
     <Button
       variant="outline"
       size="sm"
-      render={<Link href={href} target="_blank" rel="noopener noreferrer" />}
+      nativeButton={false} render={<Link href={href} target="_blank" rel="noopener noreferrer" />}
       className="gap-1.5"
     >
       <ExternalLink className="w-3.5 h-3.5" />

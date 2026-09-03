@@ -81,7 +81,7 @@ export default function NewsPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> articles</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/news/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/news/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add News
           </Button>
         </div>

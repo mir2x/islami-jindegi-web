@@ -52,7 +52,7 @@ export default function NamazTimesPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> entries</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/namaz-times/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/namaz-times/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Namaz Time
           </Button>
         </div>

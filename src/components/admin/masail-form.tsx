@@ -7,6 +7,7 @@ import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useMasailStore } from '@/store/masail-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { RichEditor } from '@/components/admin/rich-editor'
 import { MediaField } from '@/components/admin/media-field'
 import { PublicViewButton } from '@/components/admin/public-view-button'
@@ -47,7 +48,7 @@ export function MasailForm({ item }: Props) {
   const [authorOpen, setAuthorOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'masail')
   const isEdit = !!item
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useBayanStore } from '@/store/bayan-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { MediaField } from '@/components/admin/media-field'
 import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Button } from '@/components/ui/button'
@@ -46,7 +47,7 @@ export function BayanForm({ item }: Props) {
   const [authorOpen, setAuthorOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'bayan')
   const isEdit = !!item
 
   useEffect(() => {

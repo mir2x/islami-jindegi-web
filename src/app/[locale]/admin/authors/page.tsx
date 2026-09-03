@@ -70,7 +70,7 @@ export default function AuthorsPage() {
                 : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/authors/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/authors/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Author
           </Button>
         </div>

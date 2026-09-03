@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useMasailStore } from '@/store/masail-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +46,7 @@ export default function MasailPage() {
   const [deleting, setDeleting] = useState<MasailListItem | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'masail')
 
   const load = useCallback(() => {
     const params = {
@@ -91,7 +92,7 @@ export default function MasailPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> entries</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/masail/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/masail/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Masail
           </Button>
         </div>

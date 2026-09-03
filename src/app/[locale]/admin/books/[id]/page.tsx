@@ -399,10 +399,10 @@ export default function BookDetailPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" render={<Link href={`/admin/subchapters/new?bookId=${id}`} />} className="gap-1.5 text-xs">
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/admin/subchapters/new?bookId=${id}`} />} className="gap-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> {t('addSubchapter')}
             </Button>
-            <Button variant="outline" size="sm" render={<Link href={`/admin/chapters/new?bookId=${id}`} />} className="gap-1.5 text-xs">
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/admin/chapters/new?bookId=${id}`} />} className="gap-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> {t('addChapter')}
             </Button>
             {book.chapters.length > 0 && (

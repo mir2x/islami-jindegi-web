@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useRouter } from '@/i18n/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Merge, AlertTriangle } from 'lucide-react'
 import { useCategoryStore } from '@/store/category-store'
+import { ApiError } from '@/lib/api'
+import { CONTENT_MODULES } from '@/lib/modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Category } from '@/types'
 
@@ -16,15 +19,19 @@ interface Props {
   defaultParentId?: string
 }
 
+/** Mirrors the API's unique index, which is on the normalised title. */
+const norm = (s: string) => s.trim().replace(/[‘’]/g, "'").normalize('NFC')
+
 export function CategoryForm({ category, defaultParentId }: Props) {
   const router = useRouter()
-  const { categories, fetch: fetchCategories, create, update } = useCategoryStore()
+  const { categories, fetch: fetchCategories, create, update, merge } = useCategoryStore()
   const isEdit = !!category
 
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState(category?.title ?? '')
-  const [position, setPosition] = useState(category ? String(category.position) : '')
   const [parentId, setParentId] = useState(category?.parentId ?? defaultParentId ?? '')
+  const [modules, setModules] = useState<string[]>(category?.modules?.map(m => m.module) ?? [])
+  const [conflict, setConflict] = useState<string | null>(null)
 
   useEffect(() => {
     fetchCategories()
@@ -32,16 +39,26 @@ export function CategoryForm({ category, defaultParentId }: Props) {
 
   const parentCategories = categories.filter(c => !c.parentId)
 
+  /** The existing category a rejected rename collided with, so we can offer to merge into it. */
+  const conflictTarget = useMemo(() => {
+    if (!conflict) return null
+    const all = categories.flatMap(c => [c, ...c.children])
+    return all.find(c => norm(c.title) === norm(title) && c.id !== category?.id) ?? null
+  }, [conflict, categories, title, category?.id])
+
+  const positionIn = (key: string) => category?.modules?.find(m => m.module === key)?.position
+
+  function toggleModule(key: string, checked: boolean) {
+    setModules(prev => (checked ? [...prev, key] : prev.filter(m => m !== key)))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { toast.error('Title is required'); return }
     setLoading(true)
+    setConflict(null)
     try {
-      const payload = {
-        title: title.trim(),
-        position: position ? parseInt(position) : undefined,
-        parentId: parentId || null,
-      }
+      const payload = { title: title.trim(), parentId: parentId || null, modules }
       if (isEdit) {
         await update(category.id, payload)
         toast.success('Category updated')
@@ -50,8 +67,25 @@ export function CategoryForm({ category, defaultParentId }: Props) {
         toast.success('Category created')
       }
       router.back()
-    } catch {
-      toast.error('Something went wrong')
+    } catch (err) {
+      // A duplicate title is the common case here: staff used to consolidate categories by
+      // renaming one onto another, which is what created the duplicates in the first place.
+      if (err instanceof ApiError && err.status === 409) setConflict(err.message)
+      else toast.error(err instanceof ApiError ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleMerge() {
+    if (!category || !conflictTarget) return
+    setLoading(true)
+    try {
+      await merge(category.id, conflictTarget.id)
+      toast.success(`Merged into "${conflictTarget.title}"`)
+      router.back()
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Merge failed')
     } finally {
       setLoading(false)
     }
@@ -99,19 +133,57 @@ export function CategoryForm({ category, defaultParentId }: Props) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="space-y-1.5">
-              <Label>Position</Label>
-              <Input
-                type="number"
-                value={position}
-                onChange={e => setPosition(e.target.value)}
-                placeholder="Auto"
-                min={1}
-                className="w-40"
-              />
+          <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Appears in</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                A new category is added to the end of each list.{' '}
+                <Link
+                  href={modules.length ? `/admin/categories/reorder?module=${modules[0]}` : '/admin/categories/reorder'}
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Reorder
+                </Link>{' '}
+                to arrange it.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+              {CONTENT_MODULES.map(m => {
+                const checked = modules.includes(m.key)
+                const pos = positionIn(m.key)
+                return (
+                  <label key={m.key} className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <Checkbox checked={checked} onCheckedChange={v => toggleModule(m.key, !!v)} />
+                    <span className="text-sm">{m.label}</span>
+                    {checked && pos !== undefined && (
+                      <span className="text-xs text-muted-foreground">#{pos}</span>
+                    )}
+                  </label>
+                )
+              })}
             </div>
           </div>
+
+          {conflict && (
+            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 space-y-3">
+              <div className="flex gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-destructive">Duplicate title</p>
+                  <p className="text-muted-foreground mt-1">{conflict}</p>
+                </div>
+              </div>
+              {isEdit && conflictTarget && (
+                <Button type="button" variant="outline" size="sm" onClick={handleMerge} disabled={loading}>
+                  <Merge className="w-4 h-4" />
+                  Merge into &quot;{conflictTarget.title}&quot;
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button type="submit" disabled={loading} className="sm:px-8">

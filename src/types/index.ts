@@ -51,14 +51,27 @@ export interface Admin {
   createdAt: string
 }
 
+export interface CategoryModuleMembership {
+  module: string
+  position: number
+}
+
 export interface Category {
   id: string
   title: string
+  /** Legacy global position. Ordering is per-module now — see `modules`. */
   position: number
   parentId: string | null
   children: Category[]
   createdAt: string
   updatedAt: string
+  /** Which module lists this category appears in, and where. Only the category endpoints send it. */
+  modules?: CategoryModuleMembership[]
+}
+
+export interface CategoryUsage {
+  module: string
+  items: number
 }
 
 export interface Book {

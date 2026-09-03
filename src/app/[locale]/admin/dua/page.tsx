@@ -7,6 +7,7 @@ import { Plus, Search, Pencil, Trash2, Sparkles, Check, ChevronsUpDown, X } from
 import { toast } from 'sonner'
 import { useDuaStore } from '@/store/dua-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -56,7 +57,7 @@ export default function DuaPage() {
     })
   }, [search, categoryId, published, offlineOnly, page, sortParam, setLastParams])
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'dua')
 
   const load = useCallback(() => {
     fetch({
@@ -99,7 +100,7 @@ export default function DuaPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> entries</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/dua/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/dua/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Dua
           </Button>
         </div>

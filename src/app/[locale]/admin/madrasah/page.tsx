@@ -54,7 +54,7 @@ export default function MadrasahPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> madrasahs</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/madrasah/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/madrasah/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Madrasah
           </Button>
         </div>

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useDuaStore } from '@/store/dua-store'
 import { useCategoryStore } from '@/store/category-store'
+import { categoriesForModule } from '@/lib/modules'
 import { RichEditor } from '@/components/admin/rich-editor'
 import { MediaField } from '@/components/admin/media-field'
 import { PublicViewButton } from '@/components/admin/public-view-button'
@@ -42,7 +43,7 @@ export function DuaForm({ item }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([])
   const [categoryOpen, setCategoryOpen] = useState(false)
 
-  const flatCategories = categories.flatMap(c => [c, ...c.children])
+  const flatCategories = categoriesForModule(categories, 'dua')
   const isEdit = !!item
 
   useEffect(() => {

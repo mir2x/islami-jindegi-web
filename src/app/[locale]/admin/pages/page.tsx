@@ -55,7 +55,7 @@ export default function PagesPage() {
               {result ? <><span className="font-semibold text-foreground">{result.total.toLocaleString()}</span> static pages</> : 'Loading...'}
             </p>
           </div>
-          <Button render={<Link href="/admin/pages/new" />} className="gap-2 shadow-sm">
+          <Button nativeButton={false} render={<Link href="/admin/pages/new" />} className="gap-2 shadow-sm">
             <Plus className="w-4 h-4" /> Add Page
           </Button>
         </div>
