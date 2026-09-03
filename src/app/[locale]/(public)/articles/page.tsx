@@ -17,9 +17,11 @@ export default async function ArticlesPage({
   const search = sp.q ?? ''
   const categoryId = sp.category ?? ''
   const authorId = sp.author ?? ''
+  const dateFrom = sp.dateFrom ?? ''
+  const dateTo = sp.dateTo ?? ''
 
   const [result, authors, categories] = await Promise.all([
-    getArticles({ search: search || undefined, categoryId: categoryId || undefined, authorId: authorId || undefined, page: 1 }),
+    getArticles({ search: search || undefined, categoryId: categoryId || undefined, authorId: authorId || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined, page: 1 }),
     getArticleAuthors(),
     getArticleCategories(),
   ])
@@ -34,6 +36,8 @@ export default async function ArticlesPage({
         initialSearch={search}
         initialCategory={categoryId}
         initialAuthor={authorId}
+        initialDateFrom={dateFrom}
+        initialDateTo={dateTo}
       />
     </div>
   )

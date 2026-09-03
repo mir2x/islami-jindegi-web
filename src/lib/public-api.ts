@@ -28,6 +28,8 @@ export async function getBooks(opts: {
   search?: string
   categoryId?: string
   authorId?: string
+  dateFrom?: string
+  dateTo?: string
 } = {}) {
   const q = new URLSearchParams()
   q.set('published', 'true')
@@ -36,6 +38,9 @@ export async function getBooks(opts: {
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.dateFrom || opts.dateTo) q.set('sort', 'date_desc')
   return get<PagedResult<Book>>(`/api/books?${q}`, 120)
 }
 
@@ -69,6 +74,8 @@ export async function getBayans(opts: {
   search?: string
   categoryId?: string
   authorId?: string
+  dateFrom?: string
+  dateTo?: string
 } = {}) {
   const q = new URLSearchParams()
   q.set('published', 'true')
@@ -78,6 +85,9 @@ export async function getBayans(opts: {
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.dateFrom || opts.dateTo) q.set('sort', 'date_desc')
   return get<PagedResult<BayanListItem>>(`/api/bayan?${q}`, 120)
 }
 
@@ -107,6 +117,8 @@ export async function getMalfuzats(opts: {
   categoryId?: string
   authorId?: string
   hasAudio?: boolean
+  dateFrom?: string
+  dateTo?: string
 } = {}) {
   const q = new URLSearchParams()
   q.set('published', 'true')
@@ -116,6 +128,9 @@ export async function getMalfuzats(opts: {
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
   if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.dateFrom || opts.dateTo) q.set('sort', 'date_desc')
   return get<PagedResult<MalfuzatListItem>>(`/api/malfuzat?${q}`, 120)
 }
 
@@ -139,6 +154,8 @@ export async function getDuas(opts: {
   search?: string
   categoryId?: string
   hasAudio?: boolean
+  dateFrom?: string
+  dateTo?: string
 } = {}) {
   const q = new URLSearchParams()
   q.set('published', 'true')
@@ -147,6 +164,9 @@ export async function getDuas(opts: {
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.dateFrom || opts.dateTo) q.set('sort', 'date_desc')
   return get<PagedResult<DuaListItem>>(`/api/dua?${q}`, 120)
 }
 
@@ -165,6 +185,8 @@ export async function getMasails(opts: {
   search?: string
   categoryId?: string
   authorId?: string
+  dateFrom?: string
+  dateTo?: string
   hasAudio?: boolean
 } = {}) {
   const q = new URLSearchParams()
@@ -174,6 +196,9 @@ export async function getMasails(opts: {
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.dateFrom || opts.dateTo) q.set('sort', 'date_desc')
   if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
   return get<PagedResult<MasailListItem>>(`/api/masail?${q}`, 120)
 }
@@ -203,6 +228,8 @@ export async function getArticles(opts: {
   search?: string
   categoryId?: string
   authorId?: string
+  dateFrom?: string
+  dateTo?: string
 } = {}) {
   const q = new URLSearchParams()
   q.set('published', 'true')
@@ -211,6 +238,9 @@ export async function getArticles(opts: {
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.dateFrom || opts.dateTo) q.set('sort', 'date_desc')
   return get<PagedResult<ArticleListItem>>(`/api/articles?${q}`, 120)
 }
 

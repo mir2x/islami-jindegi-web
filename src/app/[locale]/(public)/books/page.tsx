@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function BooksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; author?: string }>
+  searchParams: Promise<{ q?: string; category?: string; author?: string; dateFrom?: string; dateTo?: string }>
 }) {
   const sp = await searchParams
 
@@ -23,6 +23,8 @@ export default async function BooksPage({
       search: sp.q,
       categoryId: sp.category,
       authorId: sp.author,
+      dateFrom: sp.dateFrom,
+      dateTo: sp.dateTo,
       page: 1,
     }),
     getBookCategories(),
@@ -39,6 +41,8 @@ export default async function BooksPage({
         initialSearch={sp.q ?? ''}
         initialCategory={sp.category ?? ''}
         initialAuthor={sp.author ?? ''}
+        initialDateFrom={sp.dateFrom ?? ''}
+        initialDateTo={sp.dateTo ?? ''}
       />
     </div>
   )

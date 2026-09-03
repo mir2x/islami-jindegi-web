@@ -12,6 +12,7 @@ import type { MalfuzatListItem, MalfuzatDetail, MalfuzatAuthorOption, MalfuzatCa
 import { cn } from '@/lib/utils'
 import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
+import { DateFilter, type DateRange } from '@/components/public/date-filter'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
 import { ShareActions, htmlToText } from '@/components/public/share-actions'
 import { ZoomControl } from '@/components/public/zoom-control'
@@ -38,13 +39,16 @@ function useIsDesktop() {
 }
 
 async function fetchMalfuzats(opts: {
-  search?: string; categoryId?: string; authorId?: string; page?: number; hasAudio?: boolean
+  search?: string; categoryId?: string; authorId?: string; page?: number; hasAudio?: boolean; dateFrom?: string; dateTo?: string; sort?: string
 }): Promise<{ data: MalfuzatListItem[]; total: number }> {
   const q = new URLSearchParams({ published: 'true', page: String(opts.page ?? 1), pageSize: String(PAGE_SIZE) })
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
   if (opts.hasAudio !== undefined) q.set('hasAudio', String(opts.hasAudio))
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.sort) q.set('sort', opts.sort)
   try {
     const res = await fetch(`${BASE}/api/malfuzat?${q}`)
     if (!res.ok) return { data: [], total: 0 }
@@ -86,11 +90,13 @@ interface Props {
   initialCategory: string
   initialAuthor: string
   initialTab: Tab
+  initialDateFrom: string
+  initialDateTo: string
 }
 
 export function MalfuzatClient({
   initialItems, initialTotal, categories, authors,
-  initialSearch, initialCategory, initialAuthor, initialTab,
+  initialSearch, initialCategory, initialAuthor, initialTab, initialDateFrom, initialDateTo,
 }: Props) {
   const router = useRouter()
   const t = useTranslations('MalfuzatPage')
@@ -101,6 +107,7 @@ export function MalfuzatClient({
   const [search, setSearch] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [selectedAuthor, setSelectedAuthor] = useState(initialAuthor)
+  const [dateRange, setDateRange] = useState<DateRange>({ from: initialDateFrom, to: initialDateTo })
   const [authorSearch, setAuthorSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
   const [page, setPage] = useState(1)
@@ -119,7 +126,7 @@ export function MalfuzatClient({
   const isDesktop = useIsDesktop()
 
   const hasMore = items.length < total
-  const hasFilters = !!(search || selectedCategory || selectedAuthor)
+  const hasFilters = !!(search || selectedCategory || selectedAuthor || dateRange.from || dateRange.to)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
 
@@ -140,6 +147,8 @@ export function MalfuzatClient({
     if (search) params.set('q', search)
     if (selectedCategory) params.set('category', selectedCategory)
     if (selectedAuthor) params.set('author', selectedAuthor)
+    if (dateRange.from) params.set('dateFrom', dateRange.from)
+    if (dateRange.to) params.set('dateTo', dateRange.to)
     const qs = params.toString()
     router.replace(qs ? `/malfuzat?${qs}` : '/malfuzat', { scroll: false })
 
@@ -153,6 +162,9 @@ export function MalfuzatClient({
         authorId: selectedAuthor || undefined,
         page: 1,
         hasAudio: tabToHasAudio(tab),
+        dateFrom: dateRange.from || undefined,
+        dateTo: dateRange.to || undefined,
+        sort: dateRange.from || dateRange.to ? 'date_desc' : undefined,
       })
       setItems(result.data)
       setTotal(result.total)
@@ -163,7 +175,7 @@ export function MalfuzatClient({
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, search, selectedCategory, selectedAuthor])
+  }, [tab, search, selectedCategory, selectedAuthor, dateRange])
 
   // Next page requested by the scroll sentinel → append
   useEffect(() => {
@@ -175,6 +187,9 @@ export function MalfuzatClient({
       authorId: selectedAuthor || undefined,
       page,
       hasAudio: tabToHasAudio(tab),
+      dateFrom: dateRange.from || undefined,
+      dateTo: dateRange.to || undefined,
+      sort: dateRange.from || dateRange.to ? 'date_desc' : undefined,
     }).then(result => {
       if (cancelled) return
       // De-dupe defensively: a filter reset racing an append could re-send page 1 rows.
@@ -219,7 +234,7 @@ export function MalfuzatClient({
   const switchTab = (t: Tab) => { setTab(t); setSelectedId(null) }
   const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id) }
   const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id) }
-  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
+  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setDateRange({ from: '', to: '' }) }
 
   const selectItem = (id: string) => {
     setSelectedId(id)
@@ -304,11 +319,10 @@ export function MalfuzatClient({
         </div>
 
         {/* Search */}
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t('searchPlaceholder')}
-        />
+        <div className="flex items-center gap-2">
+          <SearchInput className="min-w-0 flex-1" value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
+          <DateFilter value={dateRange} onChange={setDateRange} />
+        </div>
 
         <MobileFilterSheet
           open={authorSheetOpen}

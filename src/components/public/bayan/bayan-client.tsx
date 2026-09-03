@@ -11,6 +11,7 @@ import type { BayanListItem, BayanAuthorOption, BayanCategoryOption, PagedResult
 import { cn } from '@/lib/utils'
 import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
+import { DateFilter, type DateRange } from '@/components/public/date-filter'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
 import { ShareActions } from '@/components/public/share-actions'
 import { ZoomControl } from '@/components/public/zoom-control'
@@ -35,12 +36,15 @@ function useIsDesktop() {
 }
 
 async function fetchBayans(opts: {
-  search?: string; categoryId?: string; authorId?: string; page?: number
+  search?: string; categoryId?: string; authorId?: string; dateFrom?: string; dateTo?: string; sort?: string; page?: number
 }): Promise<{ data: BayanListItem[]; total: number }> {
   const q = new URLSearchParams({ published: 'true', sort: 'position_desc', page: String(opts.page ?? 1), pageSize: String(PAGE_SIZE) })
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.sort) q.set('sort', opts.sort)
   try {
     const res = await fetch(`${BASE}/api/bayan?${q}`)
     if (!res.ok) return { data: [], total: 0 }
@@ -82,11 +86,13 @@ interface Props {
   initialSearch: string
   initialCategory: string
   initialAuthor: string
+  initialDateFrom: string
+  initialDateTo: string
 }
 
 export function BayanClient({
   initialBayans, initialTotal, categories, authors,
-  initialSearch, initialCategory, initialAuthor,
+  initialSearch, initialCategory, initialAuthor, initialDateFrom, initialDateTo,
 }: Props) {
   const router = useRouter()
   const t = useTranslations('BayanPage')
@@ -96,6 +102,7 @@ export function BayanClient({
   const [search, setSearch] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [selectedAuthor, setSelectedAuthor] = useState(initialAuthor)
+  const [dateRange, setDateRange] = useState<DateRange>({ from: initialDateFrom, to: initialDateTo })
   const [authorSearch, setAuthorSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
   const [page, setPage] = useState(1)
@@ -113,7 +120,7 @@ export function BayanClient({
   const isDesktop = useIsDesktop()
 
   const hasMore = bayans.length < total
-  const hasFilters = !!(search || selectedCategory || selectedAuthor)
+  const hasFilters = !!(search || selectedCategory || selectedAuthor || dateRange.from || dateRange.to)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
 
@@ -130,6 +137,8 @@ export function BayanClient({
     if (search) params.set('q', search)
     if (selectedCategory) params.set('category', selectedCategory)
     if (selectedAuthor) params.set('author', selectedAuthor)
+    if (dateRange.from) params.set('dateFrom', dateRange.from)
+    if (dateRange.to) params.set('dateTo', dateRange.to)
     const qs = params.toString()
     router.replace(qs ? `/bayan?${qs}` : '/bayan', { scroll: false })
 
@@ -141,6 +150,9 @@ export function BayanClient({
         search: search || undefined,
         categoryId: selectedCategory || undefined,
         authorId: selectedAuthor || undefined,
+        dateFrom: dateRange.from || undefined,
+        dateTo: dateRange.to || undefined,
+        sort: dateRange.from || dateRange.to ? 'date_desc' : undefined,
         page: 1,
       })
       setBayans(result.data)
@@ -152,7 +164,7 @@ export function BayanClient({
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategory, selectedAuthor])
+  }, [search, selectedCategory, selectedAuthor, dateRange])
 
   // Next page requested by the scroll sentinel → append
   useEffect(() => {
@@ -162,6 +174,9 @@ export function BayanClient({
       search: search || undefined,
       categoryId: selectedCategory || undefined,
       authorId: selectedAuthor || undefined,
+      dateFrom: dateRange.from || undefined,
+      dateTo: dateRange.to || undefined,
+      sort: dateRange.from || dateRange.to ? 'date_desc' : undefined,
       page,
     }).then(result => {
       if (cancelled) return
@@ -195,7 +210,7 @@ export function BayanClient({
 
   const setCategory = (id: string) => { setSelectedCategory(id === selectedCategory ? '' : id) }
   const setAuthor = (id: string) => { setSelectedAuthor(id === selectedAuthor ? '' : id) }
-  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
+  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setDateRange({ from: '', to: '' }) }
 
   const selectItem = (id: string) => {
     setSelectedId(id)
@@ -256,11 +271,10 @@ export function BayanClient({
         </div>
 
         {/* Search */}
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t('searchPlaceholder')}
-        />
+        <div className="flex items-center gap-2">
+          <SearchInput className="min-w-0 flex-1" value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
+          <DateFilter value={dateRange} onChange={setDateRange} />
+        </div>
 
         <MobileFilterSheet
           open={authorSheetOpen}
@@ -376,6 +390,8 @@ function BayanRow({ bayan, selected, onSelect }: {
   selected: boolean
   onSelect: () => void
 }) {
+  const locale = useLocale()
+
   return (
     <button
       onClick={onSelect}
@@ -406,6 +422,9 @@ function BayanRow({ bayan, selected, onSelect }: {
             </span>
           )}
         </div>
+        <p className="mt-1 text-sm text-muted-foreground tabular-nums">
+          {formatDate(bayan.publishedAt, locale)}
+        </p>
       </div>
     </button>
   )

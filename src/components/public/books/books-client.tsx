@@ -11,6 +11,7 @@ import {
 import type { Book, BookAuthorOption, BookCategoryOption, PagedResult } from '@/types'
 import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
+import { DateFilter, type DateRange } from '@/components/public/date-filter'
 import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobile-filter-sheet'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
 
@@ -18,12 +19,15 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 const PAGE_SIZE = 24
 
 async function fetchBooks(opts: {
-  search?: string; categoryId?: string; authorId?: string; page?: number
+  search?: string; categoryId?: string; authorId?: string; dateFrom?: string; dateTo?: string; sort?: string; page?: number
 }): Promise<{ data: Book[]; total: number }> {
   const q = new URLSearchParams({ published: 'true', page: String(opts.page ?? 1), pageSize: String(PAGE_SIZE) })
   if (opts.search) q.set('search', opts.search)
   if (opts.categoryId) q.set('categoryId', opts.categoryId)
   if (opts.authorId) q.set('authorId', opts.authorId)
+  if (opts.dateFrom) q.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) q.set('dateTo', opts.dateTo)
+  if (opts.sort) q.set('sort', opts.sort)
   try {
     const res = await fetch(`${BASE}/api/books?${q}`)
     if (!res.ok) return { data: [], total: 0 }
@@ -71,11 +75,13 @@ interface Props {
   initialSearch: string
   initialCategory: string
   initialAuthor: string
+  initialDateFrom: string
+  initialDateTo: string
 }
 
 export function BooksClient({
   initialBooks, initialTotal, categories, authors,
-  initialSearch, initialCategory, initialAuthor,
+  initialSearch, initialCategory, initialAuthor, initialDateFrom, initialDateTo,
 }: Props) {
   const router = useRouter()
   const t = useTranslations('BooksPage')
@@ -85,6 +91,7 @@ export function BooksClient({
   const [search, setSearch] = useState(initialSearch)
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [selectedAuthor, setSelectedAuthor] = useState(initialAuthor)
+  const [dateRange, setDateRange] = useState<DateRange>({ from: initialDateFrom, to: initialDateTo })
   const [authorSearch, setAuthorSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
   const [page, setPage] = useState(1)
@@ -94,7 +101,7 @@ export function BooksClient({
   const [categorySheetOpen, setCategorySheetOpen] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const prevFilters = useRef({ search: initialSearch, selectedCategory: initialCategory, selectedAuthor: initialAuthor })
+  const prevFilters = useRef({ search: initialSearch, selectedCategory: initialCategory, selectedAuthor: initialAuthor, dateFrom: initialDateFrom, dateTo: initialDateTo })
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const skipNextPageFetch = useRef(false)
@@ -105,7 +112,7 @@ export function BooksClient({
   const restoreInFlight = useRef(false)
 
   const hasMore = books.length < total
-  const hasFilters = !!(search || selectedCategory || selectedAuthor)
+  const hasFilters = !!(search || selectedCategory || selectedAuthor || dateRange.from || dateRange.to)
   const activeAuthorName = authors.find(a => a.id === selectedAuthor)?.name
   const activeCategoryName = categories.find(c => c.id === selectedCategory)?.title
 
@@ -123,7 +130,7 @@ export function BooksClient({
     if (!restoreAttempted.current) {
       restoreAttempted.current = true
       const cached = readScrollCache()
-      const filterKey = `${initialSearch}|${initialCategory}|${initialAuthor}`
+      const filterKey = `${initialSearch}|${initialCategory}|${initialAuthor}|${initialDateFrom}|${initialDateTo}`
       if (cached && cached.filterKey === filterKey) {
         restoreInFlight.current = true
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -152,7 +159,7 @@ export function BooksClient({
       restoreInFlight.current = false
     }
 
-    const filterKey = `${search}|${selectedCategory}|${selectedAuthor}`
+    const filterKey = `${search}|${selectedCategory}|${selectedAuthor}|${dateRange.from}|${dateRange.to}`
     const save = () => writeScrollCache({
       filterKey,
       books,
@@ -179,7 +186,7 @@ export function BooksClient({
       window.removeEventListener('scroll', onScroll)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [books, total, page, search, selectedCategory, selectedAuthor])
+  }, [books, total, page, search, selectedCategory, selectedAuthor, dateRange, initialBooks, initialSearch, initialCategory, initialAuthor, initialDateFrom, initialDateTo])
 
   // Filters changed → reset to the first page and replace the list.
   // Compares against the *previous actual values*, not a "have I run yet"
@@ -192,16 +199,20 @@ export function BooksClient({
     if (
       prevFilters.current.search === search &&
       prevFilters.current.selectedCategory === selectedCategory &&
-      prevFilters.current.selectedAuthor === selectedAuthor
+      prevFilters.current.selectedAuthor === selectedAuthor &&
+      prevFilters.current.dateFrom === dateRange.from &&
+      prevFilters.current.dateTo === dateRange.to
     ) {
       return
     }
-    prevFilters.current = { search, selectedCategory, selectedAuthor }
+    prevFilters.current = { search, selectedCategory, selectedAuthor, dateFrom: dateRange.from, dateTo: dateRange.to }
 
     const params = new URLSearchParams()
     if (search) params.set('q', search)
     if (selectedCategory) params.set('category', selectedCategory)
     if (selectedAuthor) params.set('author', selectedAuthor)
+    if (dateRange.from) params.set('dateFrom', dateRange.from)
+    if (dateRange.to) params.set('dateTo', dateRange.to)
     const qs = params.toString()
     router.replace(qs ? `/books?${qs}` : '/books', { scroll: false })
 
@@ -212,6 +223,9 @@ export function BooksClient({
         search: search || undefined,
         categoryId: selectedCategory || undefined,
         authorId: selectedAuthor || undefined,
+        dateFrom: dateRange.from || undefined,
+        dateTo: dateRange.to || undefined,
+        sort: dateRange.from || dateRange.to ? 'date_desc' : undefined,
         page: 1,
       })
       setBooks(result.data)
@@ -223,7 +237,7 @@ export function BooksClient({
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedCategory, selectedAuthor])
+  }, [search, selectedCategory, selectedAuthor, dateRange])
 
   // Next page requested by the scroll sentinel → append
   useEffect(() => {
@@ -234,6 +248,9 @@ export function BooksClient({
       search: search || undefined,
       categoryId: selectedCategory || undefined,
       authorId: selectedAuthor || undefined,
+      dateFrom: dateRange.from || undefined,
+      dateTo: dateRange.to || undefined,
+      sort: dateRange.from || dateRange.to ? 'date_desc' : undefined,
       page,
     }).then(result => {
       if (cancelled) return
@@ -267,7 +284,7 @@ export function BooksClient({
 
   const setCategory = (id: string) => setSelectedCategory(id === selectedCategory ? '' : id)
   const setAuthor = (id: string) => setSelectedAuthor(id === selectedAuthor ? '' : id)
-  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor('') }
+  const clearAll = () => { setSearch(''); setSelectedCategory(''); setSelectedAuthor(''); setDateRange({ from: '', to: '' }) }
 
   const filteredAuthors = authorSearch.trim()
     ? authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()))
@@ -324,11 +341,10 @@ export function BooksClient({
         <div className="flex flex-col min-h-0 lg:flex-1 rounded-2xl border border-border bg-card overflow-hidden">
           <div className="shrink-0 p-4">
             {/* Search */}
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder={t('searchPlaceholder')}
-            />
+            <div className="flex items-center gap-2">
+              <SearchInput className="min-w-0 flex-1" value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
+              <DateFilter value={dateRange} onChange={setDateRange} />
+            </div>
 
           <MobileFilterSheet
             open={authorSheetOpen}

@@ -16,7 +16,7 @@ type Tab = 'all' | 'text' | 'audio'
 export default async function MalfuzatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; author?: string; tab?: string }>
+  searchParams: Promise<{ q?: string; category?: string; author?: string; tab?: string; dateFrom?: string; dateTo?: string }>
 }) {
   const sp = await searchParams
   const tab = (sp.tab === 'text' || sp.tab === 'audio' ? sp.tab : 'all') as Tab
@@ -29,6 +29,8 @@ export default async function MalfuzatPage({
       authorId: sp.author,
       page: 1,
       hasAudio,
+      dateFrom: sp.dateFrom,
+      dateTo: sp.dateTo,
     }),
     getMalfuzatCategories(),
     getMalfuzatAuthors(),
@@ -45,6 +47,8 @@ export default async function MalfuzatPage({
         initialCategory={sp.category ?? ''}
         initialAuthor={sp.author ?? ''}
         initialTab={tab}
+        initialDateFrom={sp.dateFrom ?? ''}
+        initialDateTo={sp.dateTo ?? ''}
       />
     </div>
   )
