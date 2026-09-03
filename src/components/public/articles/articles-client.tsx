@@ -17,6 +17,7 @@ import { ShareActions, htmlToText } from '@/components/public/share-actions'
 import { ZoomControl } from '@/components/public/zoom-control'
 import { AdminEditButton } from '@/components/public/admin-edit-button'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
+import { openDetailInNewTab } from '@/lib/open-detail-in-new-tab'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 const PAGE_SIZE = 20
@@ -387,7 +388,10 @@ function ArticleRow({ item, selected, onSelect }: {
 }) {
   return (
     <button
-      onClick={onSelect}
+      onClick={event => {
+        if (event.ctrlKey || event.metaKey) { openDetailInNewTab(`/articles/${item.id}`); return }
+        onSelect()
+      }}
       className={cn(
         'group w-full flex items-center gap-4 p-4 text-left rounded-xl border transition-colors',
         selected ? 'border-primary/50 bg-primary/5' : 'border-border bg-card hover:bg-primary/5'

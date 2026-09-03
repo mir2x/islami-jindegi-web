@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { ThemeProvider } from '@/components/theme-provider'
+import { CtrlClickNewTab } from '@/components/public/ctrl-click-new-tab'
 import '../globals.css'
 
 const poppins = Poppins({
@@ -66,6 +67,7 @@ export default async function RootLayout({
             disableTransitionOnChange
             storageKey="ij-theme"
           >
+            <CtrlClickNewTab />
             {children}
           </ThemeProvider>
         </NextIntlClientProvider>
