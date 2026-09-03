@@ -7,7 +7,7 @@ import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useArticleStore } from '@/store/article-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
-import { categoriesForModule } from '@/lib/modules'
+import { authorsForModule, categoriesForModule } from '@/lib/modules'
 import { RichEditor } from '@/components/admin/rich-editor'
 import { MediaField } from '@/components/admin/media-field'
 import { PublicViewButton } from '@/components/admin/public-view-button'
@@ -48,6 +48,8 @@ export function ArticleForm({ item }: Props) {
   const [categoryOpen, setCategoryOpen] = useState(false)
 
   const flatCategories = categoriesForModule(categories, 'article')
+  // Only the authors this module actually credits, in that module's own order.
+  const moduleAuthors = authorsForModule(authors, 'article')
   const isEdit = !!item
 
   useEffect(() => {
@@ -162,7 +164,7 @@ export function ArticleForm({ item }: Props) {
                 <PopoverContent className="w-full p-0" align="start">
                   <Command><CommandInput placeholder="Search authors..." /><CommandList>
                     <CommandEmpty>No authors found.</CommandEmpty>
-                    <CommandGroup>{authors.map(a => (
+                    <CommandGroup>{moduleAuthors.map(a => (
                       <CommandItem key={a.id} value={a.name} onSelect={() => { setAuthorId(a.id); setAuthorOpen(false) }}>
                         <Check className={cn('mr-2 w-4 h-4', authorId === a.id ? 'opacity-100' : 'opacity-0')} />{a.name}
                       </CommandItem>

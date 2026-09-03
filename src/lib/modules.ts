@@ -1,4 +1,4 @@
-import type { Category } from '@/types'
+import type { Author, Category } from '@/types'
 
 /** Module keys must match ContentModules in the API — they are stored in category_modules.Module. */
 export const CONTENT_MODULES = [
@@ -36,4 +36,32 @@ export function categoriesForModule(categories: Category[], module: string): Cat
     .filter(c => c.modules?.some(m => m.module === module))
     .sort((a, b) => positionIn(a) - positionIn(b))
     .flatMap(c => [c, ...c.children])
+}
+
+/**
+ * The modules that attribute content to an author. Deliberately not `CONTENT_MODULES`: dua has
+ * no author, so the author module list is five, not six. Keys match AuthorModules in the API.
+ */
+export const AUTHOR_MODULES = CONTENT_MODULES.filter(m => m.key !== 'dua')
+
+/**
+ * The authors a module actually uses, in that module's own order.
+ *
+ * The old system had five separate author tables, each with its own position; unifying them
+ * collapsed those into one column holding the books ordering. `author_modules` restores the
+ * per-module position recovered from the legacy tables.
+ *
+ * Falls back to the full list when no author reports membership: during a deploy the API may
+ * still be the older build that does not send `modules`, and empty pickers would be worse than
+ * unfiltered ones.
+ */
+export function authorsForModule(authors: Author[], module: string): Author[] {
+  if (!authors.some(a => a.modules?.length)) return authors
+
+  const positionIn = (a: Author) =>
+    a.modules?.find(m => m.module === module)?.position ?? Number.MAX_SAFE_INTEGER
+
+  return authors
+    .filter(a => a.modules?.some(m => m.module === module))
+    .sort((a, b) => positionIn(a) - positionIn(b))
 }

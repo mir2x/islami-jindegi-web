@@ -8,7 +8,7 @@ import { Check, ChevronsUpDown, X, ArrowLeft } from 'lucide-react'
 import { useBookStore } from '@/store/book-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
-import { categoriesForModule } from '@/lib/modules'
+import { authorsForModule, categoriesForModule } from '@/lib/modules'
 import { MediaField } from '@/components/admin/media-field'
 import { PublicViewButton } from '@/components/admin/public-view-button'
 import { Button } from '@/components/ui/button'
@@ -54,6 +54,8 @@ export function BookForm({ book }: Props) {
   const [categoryOpen, setCategoryOpen] = useState(false)
 
   const flatCategories = categoriesForModule(categories, 'book')
+  // Only the authors this module actually credits, in that module's own order.
+  const moduleAuthors = authorsForModule(authors, 'book')
   const isEdit = !!book
 
   useEffect(() => {
@@ -226,7 +228,7 @@ export function BookForm({ book }: Props) {
                       <CommandList>
                         <CommandEmpty>{t('noAuthorsFound')}</CommandEmpty>
                         <CommandGroup>
-                          {authors.map(a => (
+                          {moduleAuthors.map(a => (
                             <CommandItem key={a.id} value={a.name} onSelect={() => toggleAuthor(a)}>
                               <Check className={cn('mr-2 w-4 h-4', selectedAuthors.find(x => x.id === a.id) ? 'opacity-100' : 'opacity-0')} />
                               {a.name}

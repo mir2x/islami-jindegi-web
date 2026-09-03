@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { useBookStore } from '@/store/book-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
-import { categoriesForModule } from '@/lib/modules'
+import { authorsForModule, categoriesForModule } from '@/lib/modules'
 import { useChapterStore } from '@/store/chapter-store'
 import { useSubChapterStore } from '@/store/subchapter-store'
 import { Button } from '@/components/ui/button'
@@ -80,6 +80,8 @@ export default function BooksPage() {
   }, [tab, search, authorId, categoryId, offlineOnly, page, sortParam, setLastParams])
 
   const flatCategories = categoriesForModule(categories, 'book')
+  // Only the authors this module actually credits, in that module's own order.
+  const moduleAuthors = authorsForModule(authors, 'book')
 
   const loadBooks = useCallback(() => {
     fetch({ page, pageSize: BOOKS_PAGE_SIZE, search: search || undefined, authorId: authorId || undefined, categoryId: categoryId || undefined, offlineAvailable: offlineOnly || undefined, sort: sortParam })
@@ -181,7 +183,7 @@ export default function BooksPage() {
                 <PopoverContent className="w-64 p-0" align="start">
                   <Command><CommandInput placeholder={t('searchAuthorsPlaceholder')} /><CommandList>
                     <CommandEmpty>{t('noAuthorsFound')}</CommandEmpty>
-                    <CommandGroup>{authors.map(a => (
+                    <CommandGroup>{moduleAuthors.map(a => (
                       <CommandItem key={a.id} value={a.name} onSelect={() => { setAuthorId(a.id === authorId ? '' : a.id); setPage(1); setAuthorOpen(false) }}>
                         <Check className={cn('mr-2 w-4 h-4', authorId === a.id ? 'opacity-100' : 'opacity-0')} />{a.name}
                       </CommandItem>

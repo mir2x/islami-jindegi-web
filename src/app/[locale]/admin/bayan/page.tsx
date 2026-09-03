@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { useBayanStore } from '@/store/bayan-store'
 import { useAuthorStore } from '@/store/author-store'
 import { useCategoryStore } from '@/store/category-store'
-import { categoriesForModule } from '@/lib/modules'
+import { authorsForModule, categoriesForModule } from '@/lib/modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -62,6 +62,8 @@ export default function BayanPage() {
   }, [search, authorId, categoryId, published, offlineOnly, page, sortParam, setLastParams])
 
   const flatCategories = categoriesForModule(categories, 'bayan')
+  // Only the authors this module actually credits, in that module's own order.
+  const moduleAuthors = authorsForModule(authors, 'bayan')
 
   const load = useCallback(() => {
     fetch({
@@ -136,7 +138,7 @@ export default function BayanPage() {
             <PopoverContent className="w-64 p-0" align="start">
               <Command><CommandInput placeholder="Search authors..." /><CommandList>
                 <CommandEmpty>No authors found.</CommandEmpty>
-                <CommandGroup>{authors.map(a => (
+                <CommandGroup>{moduleAuthors.map(a => (
                   <CommandItem key={a.id} value={a.name} onSelect={() => { setAuthorId(a.id === authorId ? '' : a.id); setPage(1); setAuthorOpen(false) }}>
                     <Check className={cn('mr-2 w-4 h-4', authorId === a.id ? 'opacity-100' : 'opacity-0')} />{a.name}
                   </CommandItem>

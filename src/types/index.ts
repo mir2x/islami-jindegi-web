@@ -35,13 +35,26 @@ export interface MediaItem {
   updatedAt: string
 }
 
+export interface AuthorModuleMembership {
+  module: string
+  position: number
+}
+
 export interface Author {
   id: string
   name: string
   info: string | null
+  /** Legacy global position, which is really the books ordering. Per-module now — see `modules`. */
   position: number
   createdAt: string
   updatedAt: string
+  /** Which module lists this author appears in, and where. Only the author endpoints send it. */
+  modules?: AuthorModuleMembership[]
+}
+
+export interface AuthorUsage {
+  module: string
+  items: number
 }
 
 export interface Admin {
