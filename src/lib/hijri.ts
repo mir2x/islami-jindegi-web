@@ -68,7 +68,9 @@ export async function resolveCountryCode(lat: number, lng: number): Promise<stri
 
 async function fetchDay(date: string, countryCode: string): Promise<BackendDay | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/hijri/date?date=${date}&country-code=${countryCode}`)
+    const res = await fetch(`${API_BASE}/api/hijri/date?date=${date}&country-code=${countryCode}`, {
+      cache: 'no-store',
+    })
     if (!res.ok) return null
     const json = await res.json()
     // data === null means the backend signalled fallback — treat as unavailable.
@@ -96,13 +98,14 @@ export async function getHijriToday(lat: number, lng: number, country?: string):
   let today = cache[todayKey] ?? null
   let tomorrow = cache[tomorrowKey] ?? null
 
-  if (!today || !tomorrow) {
-    const [a, b] = await Promise.all([
-      fetchDay(dateStr(base), countryCode),
-      fetchDay(dateStr(next), countryCode),
-    ])
-    today = a ?? today
-    tomorrow = b ?? tomorrow
+  const [a, b] = await Promise.all([
+    fetchDay(dateStr(base), countryCode),
+    fetchDay(dateStr(next), countryCode),
+  ])
+
+  if (a || b) {
+    if (a) today = a
+    if (b) tomorrow = b
     // Keeping only the two current keys also prunes stale entries.
     const fresh: Record<string, BackendDay> = {}
     if (today) fresh[todayKey] = today

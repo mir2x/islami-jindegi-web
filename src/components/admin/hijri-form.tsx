@@ -99,6 +99,7 @@ export function HijriForm({ item }: Props) {
         await create(payload)
         toast.success('Sighting created')
       }
+      try { localStorage.removeItem('ij_hijri_cache') } catch { /* ignore */ }
       router.push('/admin/hijri')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
