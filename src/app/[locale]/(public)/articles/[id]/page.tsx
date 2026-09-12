@@ -5,6 +5,8 @@ import { ArrowLeft, User, Tag, Calendar } from 'lucide-react'
 import { getArticle, getArticles } from '@/lib/public-api'
 import { getTranslations } from 'next-intl/server'
 import { AdminEditButton } from '@/components/public/admin-edit-button'
+import { DownloadPdfButton } from '@/components/public/download-pdf-button'
+import { buildDownloadFilename } from '@/lib/utils'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string; locale: string }> }): Promise<Metadata> {
   const { id, locale } = await params
@@ -66,6 +68,20 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
           ) : item.excerpt ? (
             <p className="text-base text-foreground/80 leading-relaxed">{item.excerpt}</p>
           ) : null}
+
+          {item.documentUrl && (
+            <div className="mt-6">
+              <DownloadPdfButton
+                url={item.documentUrl}
+                filename={
+                  item.author
+                    ? buildDownloadFilename(item.title, item.author.name, item.documentUrl)
+                    : `${item.title}.pdf`
+                }
+                label={t('downloadPdf')}
+              />
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}

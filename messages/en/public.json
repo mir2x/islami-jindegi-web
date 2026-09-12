@@ -40,10 +40,12 @@
     "noDetail": "Details not available.",
     "selectPrompt": "Select an article to view its details",
     "print": "Print",
-    "share": "Share"
+    "share": "Share",
+    "downloadPdf": "Download PDF"
   },
   "ArticleDetail": {
-    "moreArticles": "More articles"
+    "moreArticles": "More articles",
+    "downloadPdf": "Download PDF"
   },
   "ThemeToggle": {
     "toggleTheme": "Toggle theme"

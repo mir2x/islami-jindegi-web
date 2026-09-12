@@ -3,10 +3,11 @@
 import { useState, useRef, useCallback } from 'react'
 import {
   Play, Pause, Download, MapPin, Calendar,
-  Clock, Share2, Mic, Check,
+  Clock, Share2, Mic, Check, Loader2,
 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 import type { BayanListItem } from '@/types'
+import { downloadFile, buildDownloadFilename } from '@/lib/utils'
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds)) return '0:00'
@@ -32,6 +33,7 @@ export function BayanPlayerCard({ bayan, className }: Props) {
   const [duration, setDuration] = useState(0)
   const [audioError, setAudioError] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
@@ -63,6 +65,18 @@ export function BayanPlayerCard({ bayan, className }: Props) {
     await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
+  }
+
+  const handleDownload = async () => {
+    if (!bayan.audioUrl || isDownloading) return
+    setIsDownloading(true)
+    try {
+      await downloadFile(bayan.audioUrl, buildDownloadFilename(bayan.title, bayan.author.name, bayan.audioUrl))
+    } catch {
+      window.open(bayan.audioUrl, '_blank')
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const progressPct = duration ? (currentTime / duration) * 100 : 0
@@ -185,13 +199,14 @@ export function BayanPlayerCard({ bayan, className }: Props) {
       </div>
 
       {bayan.audioUrl && (
-        <a
-          href={bayan.audioUrl}
-          download
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60"
         >
-          <Download className="w-4 h-4" /> {t('download')}
-        </a>
+          {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} {t('download')}
+        </button>
       )}
     </div>
   )

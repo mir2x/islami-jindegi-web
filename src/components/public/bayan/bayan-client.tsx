@@ -5,10 +5,10 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import {
   Mic, X, MapPin,
-  Play, Pause, Printer, Download,
+  Play, Pause, Printer, Download, Loader2,
 } from 'lucide-react'
 import type { BayanListItem, BayanAuthorOption, BayanCategoryOption, PagedResult } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, downloadFile, buildDownloadFilename } from '@/lib/utils'
 import { SidebarOptionSection } from '@/components/public/filter-sidebar'
 import { SearchInput } from '@/components/public/search-input'
 import { DateFilter, type DateRange } from '@/components/public/date-filter'
@@ -445,6 +445,7 @@ function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
   const [duration, setDuration] = useState(0)
   const [audioError, setAudioError] = useState(false)
   const [audioSize, setAudioSize] = useState<number | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressRef = useRef<HTMLDivElement | null>(null)
 
@@ -483,6 +484,18 @@ function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
   }, [duration])
 
   const pct = duration ? (currentTime / duration) * 100 : 0
+
+  const handleDownload = async () => {
+    if (!bayan?.audioUrl || isDownloading) return
+    setIsDownloading(true)
+    try {
+      await downloadFile(bayan.audioUrl, buildDownloadFilename(bayan.title, bayan.author.name, bayan.audioUrl))
+    } catch {
+      window.open(bayan.audioUrl, '_blank')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <div className="flex flex-col w-full min-h-0 rounded-2xl border border-border bg-card overflow-hidden print:overflow-visible print:border-none print:rounded-none">
@@ -599,13 +612,14 @@ function BayanDetailPanel({ bayan }: { bayan: BayanListItem | null }) {
             </div>
 
             {bayan.audioUrl && (
-              <a
-                href={bayan.audioUrl}
-                download
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-base font-medium text-foreground hover:bg-muted transition-colors print:hidden"
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-base font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60 print:hidden"
               >
-                <Download className="w-4 h-4" /> {t('download')}
-              </a>
+                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} {t('download')}
+              </button>
             )}
 
             {bayan.categories.length > 0 && (

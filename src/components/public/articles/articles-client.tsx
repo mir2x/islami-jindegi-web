@@ -16,6 +16,8 @@ import { MobileFilterTrigger, MobileFilterSheet } from '@/components/public/mobi
 import { ShareActions, htmlToText } from '@/components/public/share-actions'
 import { ZoomControl } from '@/components/public/zoom-control'
 import { AdminEditButton } from '@/components/public/admin-edit-button'
+import { DownloadPdfButton } from '@/components/public/download-pdf-button'
+import { buildDownloadFilename } from '@/lib/utils'
 import { fetchNamedOptions, fetchTitledOptions } from '@/lib/public-filter-options'
 import { openDetailInNewTab } from '@/lib/open-detail-in-new-tab'
 
@@ -499,6 +501,19 @@ function ArticleDetailPanel({ detail, loading, hasSelection, locale }: {
               />
             ) : (
               <p className="text-base text-muted-foreground">{detail.excerpt ?? t('noDetail')}</p>
+            )}
+            {detail.documentUrl && (
+              <div className="mt-6 print:hidden">
+                <DownloadPdfButton
+                  url={detail.documentUrl}
+                  filename={
+                    detail.author
+                      ? buildDownloadFilename(detail.title, detail.author.name, detail.documentUrl)
+                      : `${detail.title}.pdf`
+                  }
+                  label={t('downloadPdf')}
+                />
+              </div>
             )}
             {detail.categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-6 pt-6 border-t border-border/60">

@@ -40,10 +40,12 @@
     "noDetail": "বিস্তারিত পাওয়া যায়নি।",
     "selectPrompt": "বিস্তারিত দেখতে একটি প্রবন্ধ নির্বাচন করুন",
     "print": "প্রিন্ট করুন",
-    "share": "শেয়ার করুন"
+    "share": "শেয়ার করুন",
+    "downloadPdf": "পিডিএফ ডাউনলোড করুন"
   },
   "ArticleDetail": {
-    "moreArticles": "আরও প্রবন্ধ"
+    "moreArticles": "আরও প্রবন্ধ",
+    "downloadPdf": "পিডিএফ ডাউনলোড করুন"
   },
   "ThemeToggle": {
     "toggleTheme": "থিম পরিবর্তন করুন"
